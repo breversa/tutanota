@@ -1,4 +1,5 @@
 import Contacts
+import TutanotaSharedFramework
 import Foundation
 
 private let PERMISSION_ERROR_DOMAIN = "de.tutao.tutanota.PermissionError"

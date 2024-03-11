@@ -1,4 +1,4 @@
-import type { CredentialsEncryption, PersistentCredentials } from "./CredentialsProvider.js"
+import type { CredentialsEncryption } from "./CredentialsProvider.js"
 import { CredentialsAndDatabaseKey } from "./CredentialsProvider.js"
 import type { DeviceEncryptionFacade } from "../../api/worker/facades/DeviceEncryptionFacade"
 import { base64ToUint8Array, stringToUtf8Uint8Array, uint8ArrayToBase64, utf8Uint8ArrayToString } from "@tutao/tutanota-utils"
@@ -7,6 +7,7 @@ import { KeyPermanentlyInvalidatedError } from "../../api/common/error/KeyPerman
 import { CredentialsKeyProvider } from "./CredentialsKeyProvider.js"
 import { NativeCredentialsFacade } from "../../native/common/generatedipc/NativeCredentialsFacade.js"
 import { CryptoError } from "@tutao/tutanota-crypto/error.js"
+import { PersistedCredentials } from "../../native/common/generatedipc/PersistedCredentials.js"
 
 /**
  * Credentials encryption implementation that uses the native (platform-specific) keychain implementation. It uses an intermediate key to
@@ -19,7 +20,7 @@ export class NativeCredentialsEncryption implements CredentialsEncryption {
 		private readonly nativeCredentials: NativeCredentialsFacade,
 	) {}
 
-	async encrypt({ credentials, databaseKey }: CredentialsAndDatabaseKey): Promise<PersistentCredentials> {
+	async encrypt({ credentials, databaseKey }: CredentialsAndDatabaseKey): Promise<PersistedCredentials> {
 		const { encryptedPassword } = credentials
 
 		if (encryptedPassword == null) {
@@ -59,7 +60,7 @@ export class NativeCredentialsEncryption implements CredentialsEncryption {
 		}
 	}
 
-	async decrypt(encryptedCredentials: PersistentCredentials): Promise<CredentialsAndDatabaseKey> {
+	async decrypt(encryptedCredentials: PersistedCredentials): Promise<CredentialsAndDatabaseKey> {
 		try {
 			const credentialsKey = await this.credentialsKeyProvider.getCredentialsKey()
 

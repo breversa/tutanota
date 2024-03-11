@@ -20,23 +20,23 @@ export class CredentialsKeyProvider {
 	 * and also stored in the device's credentials storage.
 	 */
 	async getCredentialsKey(): Promise<Uint8Array> {
-		const encryptedCredentialsKey = this.credentialsStorage.getCredentialsEncryptionKey()
+		const encryptedCredentialsKey = await this.credentialsStorage.getCredentialsEncryptionKey()
 
 		if (encryptedCredentialsKey) {
-			const credentialsKey = await this.nativeCredentials.decryptUsingKeychain(encryptedCredentialsKey, this.getEncryptionMode())
+			const credentialsKey = await this.nativeCredentials.decryptUsingKeychain(encryptedCredentialsKey, await this.getEncryptionMode())
 			return credentialsKey
 		} else {
 			const credentialsKey = await this.deviceEncryptionFacade.generateKey()
-			const encryptedCredentialsKey = await this.nativeCredentials.encryptUsingKeychain(credentialsKey, this.getEncryptionMode())
+			const encryptedCredentialsKey = await this.nativeCredentials.encryptUsingKeychain(credentialsKey, await this.getEncryptionMode())
 
-			this.credentialsStorage.setCredentialsEncryptionKey(encryptedCredentialsKey)
+			await this.credentialsStorage.setCredentialsEncryptionKey(encryptedCredentialsKey)
 
 			return credentialsKey
 		}
 	}
 
-	private getEncryptionMode(): CredentialEncryptionMode {
-		const encryptionMode = this.credentialsStorage.getCredentialEncryptionMode()
+	private async getEncryptionMode(): Promise<CredentialEncryptionMode> {
+		const encryptionMode = await this.credentialsStorage.getCredentialEncryptionMode()
 
 		if (!encryptionMode) {
 			throw new Error("Encryption mode not set")

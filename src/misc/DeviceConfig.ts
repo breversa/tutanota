@@ -2,7 +2,6 @@ import type { Base64 } from "@tutao/tutanota-utils"
 import { base64ToUint8Array, typedEntries, uint8ArrayToBase64 } from "@tutao/tutanota-utils"
 import type { LanguageCode } from "./LanguageViewModel"
 import type { ThemePreference } from "../gui/theme"
-import type { CredentialsStorage, PersistentCredentials } from "./credentials/CredentialsProvider.js"
 import { ProgrammingError } from "../api/common/error/ProgrammingError"
 import type { CredentialEncryptionMode } from "./credentials/CredentialEncryptionMode"
 import { assertMainOrNodeBoot } from "../api/common/Env"
@@ -10,6 +9,8 @@ import { PersistedAssignmentData, UsageTestStorage } from "./UsageTestModel"
 import { client } from "./ClientDetector"
 import { NewsItemStorage } from "./news/NewsModel.js"
 import { CalendarViewType } from "../calendar/gui/CalendarGuiUtils.js"
+import { PersistedCredentials } from "../native/common/generatedipc/PersistedCredentials.js"
+import { CredentialsStorage } from "./credentials/CredentialsProvider.js"
 
 assertMainOrNodeBoot()
 export const defaultThemePreference: ThemePreference = "auto:light|dark"
@@ -19,7 +20,7 @@ export const defaultThemePreference: ThemePreference = "auto:light|dark"
  */
 interface ConfigObject {
 	_version: number
-	_credentials: Map<Id, PersistentCredentials>
+	_credentials: Map<Id, PersistedCredentials>
 	scheduledAlarmModelVersionPerUser: Record<Id, number>
 	_themeId: ThemePreference
 	_language: LanguageCode | null
@@ -125,11 +126,14 @@ export class DeviceConfig implements CredentialsStorage, UsageTestStorage, NewsI
 		}
 	}
 
-	store(persistentCredentials: PersistentCredentials): void {
+	async store(persistentCredentials: PersistedCredentials): Promise<void> {
 		const existing = this.config._credentials.get(persistentCredentials.credentialInfo.userId)
 
+		let credentialsWithKey
 		if (existing?.databaseKey) {
-			persistentCredentials.databaseKey = existing.databaseKey
+			credentialsWithKey = { ...persistentCredentials, databaseKey: existing.databaseKey }
+		} else {
+			credentialsWithKey = { ...persistentCredentials }
 		}
 
 		this.config._credentials.set(persistentCredentials.credentialInfo.userId, persistentCredentials)
@@ -137,15 +141,15 @@ export class DeviceConfig implements CredentialsStorage, UsageTestStorage, NewsI
 		this.writeToStorage()
 	}
 
-	loadByUserId(userId: Id): PersistentCredentials | null {
+	async loadByUserId(userId: Id): Promise<PersistedCredentials | null> {
 		return this.config._credentials.get(userId) ?? null
 	}
 
-	loadAll(): Array<PersistentCredentials> {
+	async loadAll(): Promise<Array<PersistedCredentials>> {
 		return Array.from(this.config._credentials.values())
 	}
 
-	deleteByUserId(userId: Id): void {
+	async deleteByUserId(userId: Id): Promise<void> {
 		this.config._credentials.delete(userId)
 
 		this.writeToStorage()
@@ -258,21 +262,21 @@ export class DeviceConfig implements CredentialsStorage, UsageTestStorage, NewsI
 		}
 	}
 
-	getCredentialEncryptionMode(): CredentialEncryptionMode | null {
+	async getCredentialEncryptionMode(): Promise<CredentialEncryptionMode | null> {
 		return this.config._credentialEncryptionMode
 	}
 
-	setCredentialEncryptionMode(encryptionMode: CredentialEncryptionMode | null) {
+	async setCredentialEncryptionMode(encryptionMode: CredentialEncryptionMode | null) {
 		this.config._credentialEncryptionMode = encryptionMode
 
 		this.writeToStorage()
 	}
 
-	getCredentialsEncryptionKey(): Uint8Array | null {
+	async getCredentialsEncryptionKey(): Promise<Uint8Array | null> {
 		return this.config._encryptedCredentialsKey ? base64ToUint8Array(this.config._encryptedCredentialsKey) : null
 	}
 
-	setCredentialsEncryptionKey(value: Uint8Array | null) {
+	async setCredentialsEncryptionKey(value: Uint8Array | null) {
 		if (value != null) {
 			this.config._encryptedCredentialsKey = uint8ArrayToBase64(value)
 		} else {

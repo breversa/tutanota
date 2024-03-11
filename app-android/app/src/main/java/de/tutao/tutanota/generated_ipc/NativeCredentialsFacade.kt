@@ -37,7 +37,7 @@ interface NativeCredentialsFacade {
 		encryptionMode: CredentialEncryptionMode,
 	): Unit
 	 suspend fun getCredentialsEncryptionKey(
-	): DataWrapper
+	): DataWrapper?
 	 suspend fun setCredentialsEncryptionKey(
 		credentialsEncryptionKey: DataWrapper?,
 	): Unit

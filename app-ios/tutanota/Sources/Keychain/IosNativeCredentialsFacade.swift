@@ -7,10 +7,43 @@ public enum CredentialEncryptionMode: String, Codable {
 	case biometrics = "BIOMETRICS"
 }
 
-class IosNativeCredentialsFacade: NativeCredentialsFacade {
-	private let keychainManager: KeychainManager
+struct NotImplemented: Error {
 
-	init(keychainManager: KeychainManager) { self.keychainManager = keychainManager }
+}
+
+class IosNativeCredentialsFacade: NativeCredentialsFacade {
+	private static let ENCRYPTION_MODE_KEY = "credentialEncryptionMode"
+	private static let CREDENTIALS_ENCRYPTION_KEY_KEY = "credentialsEncryptionKey"
+
+	private let keychainManager: KeychainManager
+	private let credentialsDb: CredentialsDatabase
+	private let userDefaults: UserDefaults
+
+	init(keychainManager: KeychainManager, credentialsDb: CredentialsDatabase, userDefaults: UserDefaults) {
+		self.keychainManager = keychainManager
+		self.credentialsDb = credentialsDb
+		self.userDefaults = userDefaults
+	}
+
+	func loadAll() async throws -> [PersistedCredentials] { try self.credentialsDb.getAll() }
+	func store(_ credentials: PersistedCredentials) async throws { try self.credentialsDb.store(credentials: credentials) }
+	func loadByUserId(_ id: String) async throws -> PersistedCredentials? { throw NotImplemented() }
+	func deleteByUserId(_ id: String) async throws { throw NotImplemented() }
+	func getCredentialEncryptionMode() async throws -> CredentialEncryptionMode? {
+		let value = self.userDefaults.value(forKey: Self.ENCRYPTION_MODE_KEY) as! String?
+		return value.flatMap(CredentialEncryptionMode.init(rawValue:))
+	}
+	func setCredentialEncryptionMode(_ encryptionMode: CredentialEncryptionMode) async throws {
+		self.userDefaults.setValue(encryptionMode.rawValue, forKey: Self.ENCRYPTION_MODE_KEY)
+	}
+	func getCredentialsEncryptionKey() async throws -> DataWrapper? {
+		let value = self.userDefaults.value(forKey: Self.CREDENTIALS_ENCRYPTION_KEY_KEY) as! String?
+		return value.flatMap { Data(base64Encoded: $0) }?.wrap()
+	}
+	func setCredentialsEncryptionKey(_ credentialsEncryptionKey: DataWrapper?) async throws {
+		let base64 = credentialsEncryptionKey.map { wrapper in wrapper.data.base64EncodedString() }
+		self.userDefaults.setValue(base64, forKey: Self.CREDENTIALS_ENCRYPTION_KEY_KEY)
+	}
 
 	func encryptUsingKeychain(_ data: DataWrapper, _ encryptionMode: CredentialEncryptionMode) async throws -> DataWrapper {
 		let encryptedData = try self.keychainManager.encryptData(encryptionMode: encryptionMode, data: data.data)

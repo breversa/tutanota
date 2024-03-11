@@ -76,7 +76,7 @@ class NativeCredentialsFacadeReceiveDispatcher(
 				return json.encodeToString(result)
 			}
 			"getCredentialsEncryptionKey" -> {
-				val result: DataWrapper = this.facade.getCredentialsEncryptionKey(
+				val result: DataWrapper? = this.facade.getCredentialsEncryptionKey(
 				)
 				return json.encodeToString(result)
 			}

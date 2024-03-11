@@ -2,15 +2,15 @@ import Foundation
 
 /* that type is just too long */typealias SqliteDestructor = (@convention(c) (UnsafeMutableRawPointer?) -> Void)?
 
-class SqlCipherStatement {
+class SqliteStatement {
 	private let originalQuery: String
 	private let stmt: OpaquePointer
-	private let db: SqlCipherDb
+	private let db: SqliteDb
 	// this evilness is required because SQLITE_TRANSIENT and SQLITE_STATIC are defined in slqite3.h but it's not accepted by swift.
 	private static let LIFETIME_TRANSIENT: SqliteDestructor = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 	private static let LIFETIME_STATIC: SqliteDestructor = unsafeBitCast(0, to: sqlite3_destructor_type.self)
 
-	init(db: SqlCipherDb, query: String, stmt: OpaquePointer) {
+	init(db: SqliteDb, query: String, stmt: OpaquePointer) {
 		self.stmt = stmt
 		self.db = db
 		self.originalQuery = query
@@ -40,7 +40,7 @@ class SqlCipherStatement {
 				i,  // index of the "?" to bind to
 				textCStr,  // pointer of the c-string to bind
 				UInt64(value.utf8.count),  // byte length of the string
-				SqlCipherStatement.LIFETIME_TRANSIENT,  // lifetime of the third param (we remain responsible, sqlite copies the buffer).
+				SqliteStatement.LIFETIME_TRANSIENT,  // lifetime of the third param (we remain responsible, sqlite copies the buffer).
 				UInt8(SQLITE_UTF8)  // encoding id
 			)
 		case .bytes(let value):
@@ -49,7 +49,7 @@ class SqlCipherStatement {
 				i,  // index of the "?" to bind to
 				(value.data as NSData).bytes,  // pointer to the buffer
 				Int32(value.data.count),  // byte size of the buffer
-				SqlCipherStatement.LIFETIME_TRANSIENT
+				SqliteStatement.LIFETIME_TRANSIENT
 			)
 		}
 

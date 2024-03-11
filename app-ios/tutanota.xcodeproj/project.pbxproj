@@ -246,6 +246,11 @@
 		3D9B12B42721A1E2002B46A1 /* TUTErrorFactory.m in Sources */ = {isa = PBXBuildFile; fileRef = 3D9B12B22721A1E2002B46A1 /* TUTErrorFactory.m */; };
 		3D9CDA4F2AD58266000B9267 /* KyberTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D9CDA4E2AD58266000B9267 /* KyberTest.swift */; };
 		3DA047BF212C1BBE0062C36C /* CompatibilityTestData.json in Resources */ = {isa = PBXBuildFile; fileRef = 3DA047BE212C1BBD0062C36C /* CompatibilityTestData.json */; };
+		3DA88BC32B9F5C1800881F0A /* PersistedCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA88BC12B9F5C1800881F0A /* PersistedCredentials.swift */; };
+		3DA88BC42B9F5C1800881F0A /* CredentialsInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA88BC22B9F5C1800881F0A /* CredentialsInfo.swift */; };
+		3DA88BC62B9F5C7100881F0A /* CredentialType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA88BC52B9F5C7000881F0A /* CredentialType.swift */; };
+		3DA88BCB2B9F5F9600881F0A /* CredentialsDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA88BCA2B9F5F9600881F0A /* CredentialsDatabase.swift */; };
+		3DA88BCD2B9F643200881F0A /* SqliteDb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA88BCC2B9F643200881F0A /* SqliteDb.swift */; };
 		3DAA23A9267A208200219051 /* UIColorExtensionsTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DAA23A8267A208200219051 /* UIColorExtensionsTest.swift */; };
 		3DAED2AF29A6267D00806DEA /* NotificationsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DAED2AE29A6267D00806DEA /* NotificationsHandler.swift */; };
 		3DB07C7B27303F0600BFBB4D /* Keys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DB07C7A27303F0600BFBB4D /* Keys.swift */; };
@@ -255,7 +260,7 @@
 		3DC5DECD2858C1F5007364FF /* IosNativePushFacade.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DC5DECC2858C1F5007364FF /* IosNativePushFacade.swift */; };
 		3DCA74F62B63BE900007A1B0 /* UserPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DCA74F52B63BE900007A1B0 /* UserPreferences.swift */; };
 		3DCB9B8528F710CC0042A6BB /* TaggedSqlValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DCB9B8428F710CC0042A6BB /* TaggedSqlValue.swift */; };
-		3DCB9B8728F711220042A6BB /* SqlCipherStatement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DCB9B8628F711220042A6BB /* SqlCipherStatement.swift */; };
+		3DCB9B8728F711220042A6BB /* SqliteStatement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DCB9B8628F711220042A6BB /* SqliteStatement.swift */; };
 		3DCC3F472ACED5DB00C9C27E /* UnfairLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DCC3F462ACED5DB00C9C27E /* UnfairLock.swift */; };
 		3DCE7AA22719D04B0085E40D /* NotificationStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DCE7AA12719D04B0085E40D /* NotificationStorage.swift */; };
 		3DCE7AA7271D63BF0085E40D /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DCE7AA6271D63BF0085E40D /* ViewController.swift */; };
@@ -566,6 +571,11 @@
 		3D9B12B22721A1E2002B46A1 /* TUTErrorFactory.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TUTErrorFactory.m; sourceTree = "<group>"; };
 		3D9CDA4E2AD58266000B9267 /* KyberTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KyberTest.swift; sourceTree = "<group>"; };
 		3DA047BE212C1BBD0062C36C /* CompatibilityTestData.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = CompatibilityTestData.json; sourceTree = "<group>"; };
+		3DA88BC12B9F5C1800881F0A /* PersistedCredentials.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PersistedCredentials.swift; sourceTree = "<group>"; };
+		3DA88BC22B9F5C1800881F0A /* CredentialsInfo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CredentialsInfo.swift; sourceTree = "<group>"; };
+		3DA88BC52B9F5C7000881F0A /* CredentialType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialType.swift; sourceTree = "<group>"; };
+		3DA88BCA2B9F5F9600881F0A /* CredentialsDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialsDatabase.swift; sourceTree = "<group>"; };
+		3DA88BCC2B9F643200881F0A /* SqliteDb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SqliteDb.swift; sourceTree = "<group>"; };
 		3DAA23A5267A202000219051 /* tutanotaTests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "tutanotaTests-Bridging-Header.h"; sourceTree = "<group>"; };
 		3DAA23A8267A208200219051 /* UIColorExtensionsTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIColorExtensionsTest.swift; sourceTree = "<group>"; };
 		3DAED2AE29A6267D00806DEA /* NotificationsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsHandler.swift; sourceTree = "<group>"; };
@@ -576,7 +586,7 @@
 		3DC5DECC2858C1F5007364FF /* IosNativePushFacade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IosNativePushFacade.swift; sourceTree = "<group>"; };
 		3DCA74F52B63BE900007A1B0 /* UserPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPreferences.swift; sourceTree = "<group>"; };
 		3DCB9B8428F710CC0042A6BB /* TaggedSqlValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaggedSqlValue.swift; sourceTree = "<group>"; };
-		3DCB9B8628F711220042A6BB /* SqlCipherStatement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SqlCipherStatement.swift; sourceTree = "<group>"; };
+		3DCB9B8628F711220042A6BB /* SqliteStatement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SqliteStatement.swift; sourceTree = "<group>"; };
 		3DCC3F462ACED5DB00C9C27E /* UnfairLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnfairLock.swift; sourceTree = "<group>"; };
 		3DCE7AA12719D04B0085E40D /* NotificationStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationStorage.swift; sourceTree = "<group>"; };
 		3DCE7AA6271D63BF0085E40D /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -880,6 +890,9 @@
 				3DE46D2D2849E33000DC9D43 /* IosThemeFacade.swift */,
 				3D3AFAE7285B0DB60077F302 /* IosMobileSystemFacade.swift */,
 				3D239301287EC96200DD7396 /* CustomSchemeHandlers.swift */,
+				3DA88BC52B9F5C7000881F0A /* CredentialType.swift */,
+				3DA88BCA2B9F5F9600881F0A /* CredentialsDatabase.swift */,
+				3DA88BCC2B9F643200881F0A /* SqliteDb.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -1484,6 +1497,8 @@
 		3DBA56B62850AAA6004416BE /* GeneratedIpc */ = {
 			isa = PBXGroup;
 			children = (
+				3DA88BC22B9F5C1800881F0A /* CredentialsInfo.swift */,
+				3DA88BC12B9F5C1800881F0A /* PersistedCredentials.swift */,
 				3D78ACB62B601F5C009C9EED /* StructuredAddress.swift */,
 				3D78ACB72B601F5C009C9EED /* StructuredPhoneNumber.swift */,
 				3D78AC762B600F1B009C9EED /* CommonNativeFacade.swift */,
@@ -1663,7 +1678,7 @@
 				3D4E3CA128EC5C4F001FA9D1 /* IosSqlCipherFade.swift */,
 				3DDE413A28F4665700837BE6 /* SqlCipherDb.swift */,
 				3DCB9B8428F710CC0042A6BB /* TaggedSqlValue.swift */,
-				3DCB9B8628F711220042A6BB /* SqlCipherStatement.swift */,
+				3DCB9B8628F711220042A6BB /* SqliteStatement.swift */,
 			);
 			path = Offline;
 			sourceTree = "<group>";
@@ -2163,6 +2178,7 @@
 			files = (
 				3D78ACA72B600F1C009C9EED /* IntegrationInfo.swift in Sources */,
 				3D78AC972B600F1C009C9EED /* MobileFacadeSendDispatcher.swift in Sources */,
+				3DA88BC42B9F5C1800881F0A /* CredentialsInfo.swift in Sources */,
 				3D9B1294272167D4002B46A1 /* IconFactory.swift in Sources */,
 				3D378EE72536F51F0001F1F3 /* FileChooser.swift in Sources */,
 				3D9B12A027218AF9002B46A1 /* RepeatRule.swift in Sources */,
@@ -2184,6 +2200,7 @@
 				3DC5DECD2858C1F5007364FF /* IosNativePushFacade.swift in Sources */,
 				3D3AFAEC285C5C6E0077F302 /* DataFile.swift in Sources */,
 				3D84F5822723225C00858A58 /* Utils.swift in Sources */,
+				3DA88BCB2B9F5F9600881F0A /* CredentialsDatabase.swift in Sources */,
 				3D78ACAC2B600F1C009C9EED /* NativeInterface.swift in Sources */,
 				3D448A8B292BB1D00030DB2F /* SharingStorage.swift in Sources */,
 				3D9B12B42721A1E2002B46A1 /* TUTErrorFactory.m in Sources */,
@@ -2204,12 +2221,14 @@
 				3D0E44AC2B3C3CE500F933A1 /* kem.c in Sources */,
 				3D69DE002AD4427E00C6C900 /* Kyber.swift in Sources */,
 				3D0E44A62B3C3CE500F933A1 /* ntt.c in Sources */,
+				3DA88BC62B9F5C7100881F0A /* CredentialType.swift in Sources */,
 				3D891F082105B12F0031E528 /* rsa_oaep_sha256.c in Sources */,
 				3D9B12AF2721966C002B46A1 /* IdTuple.swift in Sources */,
 				3D92867F273BBA9D006B8FB2 /* KeyGeneratorSecureEnclave.swift in Sources */,
 				3D0E44CA2B3C3EC000F933A1 /* rand_entropy.c in Sources */,
 				3D78AC882B600F1C009C9EED /* SqlCipherFacade.swift in Sources */,
 				3D9B12A6272192C2002B46A1 /* AlarmNotification.swift in Sources */,
+				3DA88BCD2B9F643200881F0A /* SqliteDb.swift in Sources */,
 				3D78ACA12B600F1C009C9EED /* KyberKeyPair.swift in Sources */,
 				3D78ACAF2B600F1C009C9EED /* ThemeFacadeReceiveDispatcher.swift in Sources */,
 				3D78ACAD2B600F1C009C9EED /* NativeCryptoFacadeReceiveDispatcher.swift in Sources */,
@@ -2221,7 +2240,7 @@
 				3D78ACA02B600F1C009C9EED /* RsaKeyPair.swift in Sources */,
 				3D4E3CA228EC5C4F001FA9D1 /* IosSqlCipherFade.swift in Sources */,
 				3D0EB1FC26F4BEE4002E5102 /* AlarmManager.swift in Sources */,
-				3DCB9B8728F711220042A6BB /* SqlCipherStatement.swift in Sources */,
+				3DCB9B8728F711220042A6BB /* SqliteStatement.swift in Sources */,
 				3DC299FD2673668000E1E79F /* QueryUtils.swift in Sources */,
 				3D78ACA52B600F1C009C9EED /* FileFacadeReceiveDispatcher.swift in Sources */,
 				3D78AC8E2B600F1C009C9EED /* NativeCredentialsFacadeReceiveDispatcher.swift in Sources */,
@@ -2260,6 +2279,7 @@
 				3D73DA3427319A91008E7A8A /* Operation.swift in Sources */,
 				3D0E44CE2B3C40AB00F933A1 /* kem.c in Sources */,
 				3DE46D2B2848EBDA00DC9D43 /* IosFileFacade.swift in Sources */,
+				3DA88BC32B9F5C1800881F0A /* PersistedCredentials.swift in Sources */,
 				3D4A426729B6453700B10451 /* AlarmScheduler.swift in Sources */,
 				3D0E44A72B3C3CE500F933A1 /* poly.c in Sources */,
 				3D78AC9F2B600F1C009C9EED /* NativeShortcut.swift in Sources */,

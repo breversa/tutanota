@@ -33,7 +33,7 @@ export async function createCredentialsProvider(
 	if (usingKeychainAuthenticationWithOptions()) {
 		const { NativeCredentialsFacadeSendDispatcher } = await import("../../native/common/generatedipc/NativeCredentialsFacadeSendDispatcher.js")
 		const nativeCredentials = new NativeCredentialsFacadeSendDispatcher(assertNotNull(nativeApp))
-		const credentialsKeyProvider = new CredentialsKeyProvider(nativeCredentials, nativeCredentials, deviceEncryptionFacade)
+		const credentialsKeyProvider = new CredentialsKeyProvider(nativeCredentials, deviceEncryptionFacade)
 		const credentialsEncryption = new NativeCredentialsEncryption(credentialsKeyProvider, deviceEncryptionFacade, nativeCredentials)
 		const credentialsKeyMigrator = new DefaultCredentialsKeyMigrator(nativeCredentials)
 		return new CredentialsProvider(

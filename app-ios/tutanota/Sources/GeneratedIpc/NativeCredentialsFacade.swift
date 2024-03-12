@@ -31,7 +31,7 @@ public protocol NativeCredentialsFacade {
 	func getCredentialEncryptionMode(
 	) async throws -> CredentialEncryptionMode?
 	func setCredentialEncryptionMode(
-		_ encryptionMode: CredentialEncryptionMode
+		_ encryptionMode: CredentialEncryptionMode?
 	) async throws -> Void
 	func getCredentialsEncryptionKey(
 	) async throws -> DataWrapper?

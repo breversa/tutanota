@@ -8,6 +8,7 @@ import { SqlCipherFacade } from "../../native/common/generatedipc/SqlCipherFacad
 import { CredentialsInfo } from "../../native/common/generatedipc/CredentialsInfo.js"
 import { CredentialType } from "./CredentialType.js"
 import { PersistedCredentials } from "../../native/common/generatedipc/PersistedCredentials.js"
+import { NativeCredentialsFacade } from "../../native/common/generatedipc/NativeCredentialsFacade"
 
 // /**
 //  * Type for persistent credentials, that contain the full credentials data.
@@ -54,53 +55,53 @@ export interface CredentialsEncryption {
 /**
  * Interface for storing credentials on a device.
  */
-export interface CredentialsStorage {
-	/**
-	 * Stores {@param persistedCredentials}. If another set of credentials exists for the same userId, it will be overwritten.
-	 * @param persistedCredentials
-	 */
-	store(persistedCredentials: PersistedCredentials): Promise<void>
+// export interface CredentialsStorage {
+// 	/**
+// 	 * Stores {@param persistedCredentials}. If another set of credentials exists for the same userId, it will be overwritten.
+// 	 * @param persistedCredentials
+// 	 */
+// 	store(persistedCredentials: PersistedCredentials): Promise<void>
 
-	/**
-	 * Loads the credentials for {@param userId}.
-	 * @param userId
-	 */
-	loadByUserId(userId: Id): Promise<PersistedCredentials | null>
+// 	/**
+// 	 * Loads the credentials for {@param userId}.
+// 	 * @param userId
+// 	 */
+// 	loadByUserId(userId: Id): Promise<PersistedCredentials | null>
 
-	/**
-	 * Loads all credentials stored on the device.
-	 */
-	loadAll(): Promise<ReadonlyArray<PersistedCredentials>>
+// 	/**
+// 	 * Loads all credentials stored on the device.
+// 	 */
+// 	loadAll(): Promise<ReadonlyArray<PersistedCredentials>>
 
-	/**
-	 * Deletes any stored credentials for {@param userId}.
-	 * @param userId
-	 */
-	deleteByUserId(userId: Id): Promise<void>
+// 	/**
+// 	 * Deletes any stored credentials for {@param userId}.
+// 	 * @param userId
+// 	 */
+// 	deleteByUserId(userId: Id): Promise<void>
 
-	/**
-	 * Returns the credentials encryption mode, i.e. how the intermediate key used for encrypting credentials is encrypted on the device.
-	 */
-	getCredentialEncryptionMode(): Promise<CredentialEncryptionMode | null>
+// 	/**
+// 	 * Returns the credentials encryption mode, i.e. how the intermediate key used for encrypting credentials is encrypted on the device.
+// 	 */
+// 	getCredentialEncryptionMode(): Promise<CredentialEncryptionMode | null>
 
-	/**
-	 * Sets the credentials encryption mode, i.e. how the intermediate key used for encrypting credentials is encrypted on the device.
-	 * @param encryptionMode
-	 */
-	setCredentialEncryptionMode(encryptionMode: CredentialEncryptionMode | null): Promise<void>
+// 	/**
+// 	 * Sets the credentials encryption mode, i.e. how the intermediate key used for encrypting credentials is encrypted on the device.
+// 	 * @param encryptionMode
+// 	 */
+// 	setCredentialEncryptionMode(encryptionMode: CredentialEncryptionMode | null): Promise<void>
 
-	/**
-	 * Returns the (encrypted) key used for encrypting the access token and the database key
-	 * This is encrypted using a key in the device's keystore
-	 */
-	getCredentialsEncryptionKey(): Promise<Uint8Array | null>
+// 	/**
+// 	 * Returns the (encrypted) key used for encrypting the access token and the database key
+// 	 * This is encrypted using a key in the device's keystore
+// 	 */
+// 	getCredentialsEncryptionKey(): Promise<Uint8Array | null>
 
-	/**
-	 * Sets the (encrypted) key used for encrypting credentials.
-	 * @param credentialsEncryptionKey
-	 */
-	setCredentialsEncryptionKey(credentialsEncryptionKey: Uint8Array | null): Promise<void>
-}
+// 	/**
+// 	 * Sets the (encrypted) key used for encrypting credentials.
+// 	 * @param credentialsEncryptionKey
+// 	 */
+// 	setCredentialsEncryptionKey(credentialsEncryptionKey: Uint8Array | null): Promise<void>
+// }
 
 export type CredentialsAndDatabaseKey = {
 	credentials: Credentials
@@ -113,7 +114,7 @@ export type CredentialsAndDatabaseKey = {
 export class CredentialsProvider {
 	constructor(
 		private readonly credentialsEncryption: CredentialsEncryption,
-		private readonly storage: CredentialsStorage,
+		private readonly storage: NativeCredentialsFacade,
 		private readonly keyMigrator: CredentialsKeyMigrator,
 		private readonly databaseKeyFactory: DatabaseKeyFactory,
 		private readonly sqliteCipherFacade: SqlCipherFacade | null,

@@ -64,6 +64,15 @@ class CredentialsDatabase {
 		])
 		.run()
 	}
+
+	func delete(userId: String) throws {
+		try db.prepare(
+			query: """
+				DELETE FROM credentials WHERE userId == ?
+				"""
+		)
+		.bindParams([.string(value: userId)]).run()
+	}
 }
 
 private extension TaggedSqlValue {

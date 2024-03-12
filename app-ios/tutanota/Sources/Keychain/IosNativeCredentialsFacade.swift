@@ -27,14 +27,17 @@ class IosNativeCredentialsFacade: NativeCredentialsFacade {
 
 	func loadAll() async throws -> [PersistedCredentials] { try self.credentialsDb.getAll() }
 	func store(_ credentials: PersistedCredentials) async throws { try self.credentialsDb.store(credentials: credentials) }
-	func loadByUserId(_ id: String) async throws -> PersistedCredentials? { throw NotImplemented() }
-	func deleteByUserId(_ id: String) async throws { throw NotImplemented() }
+	func loadByUserId(_ id: String) async throws -> PersistedCredentials? {
+		let credentials = try self.credentialsDb.getAll()
+		return credentials.first { persistedCredentials in persistedCredentials.credentialInfo.userId == id }
+	}
+	func deleteByUserId(_ id: String) async throws { try self.credentialsDb.delete(userId: id) }
 	func getCredentialEncryptionMode() async throws -> CredentialEncryptionMode? {
 		let value = self.userDefaults.value(forKey: Self.ENCRYPTION_MODE_KEY) as! String?
 		return value.flatMap(CredentialEncryptionMode.init(rawValue:))
 	}
-	func setCredentialEncryptionMode(_ encryptionMode: CredentialEncryptionMode) async throws {
-		self.userDefaults.setValue(encryptionMode.rawValue, forKey: Self.ENCRYPTION_MODE_KEY)
+	func setCredentialEncryptionMode(_ encryptionMode: CredentialEncryptionMode?) async throws {
+		self.userDefaults.setValue(encryptionMode?.rawValue, forKey: Self.ENCRYPTION_MODE_KEY)
 	}
 	func getCredentialsEncryptionKey() async throws -> DataWrapper? {
 		let value = self.userDefaults.value(forKey: Self.CREDENTIALS_ENCRYPTION_KEY_KEY) as! String?

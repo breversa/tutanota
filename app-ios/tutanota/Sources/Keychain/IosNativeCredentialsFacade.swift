@@ -1,11 +1,6 @@
 import Foundation
 import LocalAuthentication
-
-public enum CredentialEncryptionMode: String, Codable {
-	case deviceLock = "DEVICE_LOCK"
-	case systemPassword = "SYSTEM_PASSWORD"
-	case biometrics = "BIOMETRICS"
-}
+import TutanotaSharedFramework
 
 struct NotImplemented: Error {
 

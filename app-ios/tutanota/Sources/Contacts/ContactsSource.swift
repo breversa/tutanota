@@ -1,5 +1,6 @@
 import Contacts
 import Foundation
+import TutanotaSharedFramework
 
 let CONTACTS_ERROR_DOMAIN = "Contacts"
 

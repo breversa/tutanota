@@ -5,7 +5,7 @@
  * Key definition for shortcuts.
  */
 public struct CredentialsInfo : Codable {
-	let login: String
-	let userId: String
-	let type: CredentialType
+	public let login: String
+	public let userId: String
+	public let type: CredentialType
 }

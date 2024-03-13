@@ -1,5 +1,6 @@
 import Foundation
 import LocalAuthentication
+import TutanotaSharedFramework
 
 #if !targetEnvironment(simulator)
 	import CryptoTokenKit

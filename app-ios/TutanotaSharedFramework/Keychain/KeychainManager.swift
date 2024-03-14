@@ -1,6 +1,5 @@
 import Foundation
 import LocalAuthentication
-import TutanotaSharedFramework
 
 #if !targetEnvironment(simulator)
 	import CryptoTokenKit
@@ -22,7 +21,7 @@ class CredentialAuthenticationError: TutanotaError {
 	override var name: String { get { CREDENTIAL_AUTHENTICATION_ERROR_DOMAIN } }
 }
 
-class KeychainManager: NSObject {
+public class KeychainManager: NSObject {
 	private static let DEVICE_LOCK_DATA_KEY_ALIAS = "DeviceLockDataKey"
 	private static let SYSTEM_PASSWORD_DATA_KEY_ALIAS = "SystemPasswordDataKey"
 	private static let BIOMETRICS_DATA_KEY_ALIAS = "BiometricsDataKey"
@@ -30,9 +29,9 @@ class KeychainManager: NSObject {
 
 	private let keyGenerator: KeyGenerator
 
-	init(keyGenerator: KeyGenerator) { self.keyGenerator = keyGenerator }
+	public init(keyGenerator: KeyGenerator) { self.keyGenerator = keyGenerator }
 
-	func storeKey(_ key: Data, withId keyId: String) throws {
+	public func storeKey(_ key: Data, withId keyId: String) throws {
 		let keyTag = self.keyTagFromKeyId(keyId: keyId)
 
 		let existingKey = try? self.getKey(keyId: keyId)
@@ -53,7 +52,7 @@ class KeychainManager: NSObject {
 		if status != errSecSuccess { throw TUTErrorFactory.createError("Could not store the key, status: \(status)") }
 	}
 
-	func getKey(keyId: String) throws -> Data? {
+	public func getKey(keyId: String) throws -> Data? {
 		let keyTag = self.keyTagFromKeyId(keyId: keyId)
 		let getQuery: [String: Any] = [kSecClass as String: kSecClassKey, kSecAttrApplicationTag as String: keyTag, kSecReturnData as String: true]
 		var item: CFTypeRef?
@@ -67,7 +66,7 @@ class KeychainManager: NSObject {
 		}
 	}
 
-	func removePushIdentifierKeys() throws {
+	public func removePushIdentifierKeys() throws {
 		// TODO: Don't delete all of teh keyz when fingerprints
 		let deleteQuery: [String: Any] = [kSecClass as String: kSecClassKey]
 		let status = SecItemDelete(deleteQuery as CFDictionary)
@@ -80,7 +79,7 @@ class KeychainManager: NSObject {
 		if status != errSecSuccess { throw TUTErrorFactory.createError("Failed to delete key: \(status)") }
 	}
 
-	func encryptData(encryptionMode: CredentialEncryptionMode, data: Data) throws -> Data {
+	public func encryptData(encryptionMode: CredentialEncryptionMode, data: Data) throws -> Data {
 		let privateKey = try self.getDataKey(mode: encryptionMode)
 		guard let publicKey = SecKeyCopyPublicKey(privateKey) else {
 			throw TUTErrorFactory.createError("Cannot get public key from private key for mode \(encryptionMode)")
@@ -100,7 +99,7 @@ class KeychainManager: NSObject {
 		return encryptedData
 	}
 
-	func decryptData(encryptionMode: CredentialEncryptionMode, encryptedData: Data) throws -> Data {
+	public func decryptData(encryptionMode: CredentialEncryptionMode, encryptedData: Data) throws -> Data {
 		let key = try self.getDataKey(mode: encryptionMode)
 
 		var error: Unmanaged<CFError>?

@@ -1,4 +1,5 @@
 import UIKit
+import TutanotaSharedFramework
 
 @UIApplicationMain class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 	var window: UIWindow?
@@ -47,7 +48,7 @@ import UIKit
 		let credentialsEncryption = IosNativeCredentialsFacade(
 			keychainManager: keychainManager,
 			credentialsDb: credentialsDb,
-			userDefaults: UserDefaults.standard
+			userDefaults: UserDefaults(suiteName: "group.de.tutao.tutanota")!
 		)
 
 		self.viewController = ViewController(

@@ -1,6 +1,6 @@
 import Foundation
 
-extension URLSession {
+public extension URLSession {
 	func synchronousDataTask(with url: URL) throws -> (Data, URLResponse) {
 		var data: Data?
 		var response: URLResponse?

@@ -3,7 +3,9 @@ import LocalAuthentication
 
 /// Secure enclave and also CryptoTokenKit are unavailable in the simulator. We need to conditionally compile based on the target environment
 /// otherwise the app will crash in the simulator when it tries to load the dynamic lib
-class KeyGenerator {
+public class KeyGenerator {
+	public init() {}
+
 	func generateKey(tag: String, accessControl: SecAccessControl) throws -> SecKey {
 		var attributes: [String: Any] = [
 			kSecAttrKeyType as String: kSecAttrKeyTypeEC, kSecAttrKeySizeInBits as String: 256, kSecAttrAccessControl as String: accessControl,

@@ -1,12 +1,11 @@
 import Foundation
 import LocalAuthentication
-import TutanotaSharedFramework
 
 struct NotImplemented: Error {
 
 }
 
-class IosNativeCredentialsFacade: NativeCredentialsFacade {
+public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 	private static let ENCRYPTION_MODE_KEY = "credentialEncryptionMode"
 	private static let CREDENTIALS_ENCRYPTION_KEY_KEY = "credentialsEncryptionKey"
 
@@ -14,46 +13,46 @@ class IosNativeCredentialsFacade: NativeCredentialsFacade {
 	private let credentialsDb: CredentialsDatabase
 	private let userDefaults: UserDefaults
 
-	init(keychainManager: KeychainManager, credentialsDb: CredentialsDatabase, userDefaults: UserDefaults) {
+	public init(keychainManager: KeychainManager, credentialsDb: CredentialsDatabase, userDefaults: UserDefaults) {
 		self.keychainManager = keychainManager
 		self.credentialsDb = credentialsDb
 		self.userDefaults = userDefaults
 	}
 
-	func loadAll() async throws -> [PersistedCredentials] { try self.credentialsDb.getAll() }
-	func store(_ credentials: PersistedCredentials) async throws { try self.credentialsDb.store(credentials: credentials) }
-	func loadByUserId(_ id: String) async throws -> PersistedCredentials? {
+	public func loadAll() async throws -> [PersistedCredentials] { try self.credentialsDb.getAll() }
+	public func store(_ credentials: PersistedCredentials) async throws { try self.credentialsDb.store(credentials: credentials) }
+	public func loadByUserId(_ id: String) async throws -> PersistedCredentials? {
 		let credentials = try self.credentialsDb.getAll()
 		return credentials.first { persistedCredentials in persistedCredentials.credentialInfo.userId == id }
 	}
-	func deleteByUserId(_ id: String) async throws { try self.credentialsDb.delete(userId: id) }
-	func getCredentialEncryptionMode() async throws -> CredentialEncryptionMode? {
+	public func deleteByUserId(_ id: String) async throws { try self.credentialsDb.delete(userId: id) }
+	public func getCredentialEncryptionMode() async throws -> CredentialEncryptionMode? {
 		let value = self.userDefaults.value(forKey: Self.ENCRYPTION_MODE_KEY) as! String?
 		return value.flatMap(CredentialEncryptionMode.init(rawValue:))
 	}
-	func setCredentialEncryptionMode(_ encryptionMode: CredentialEncryptionMode?) async throws {
+	public func setCredentialEncryptionMode(_ encryptionMode: CredentialEncryptionMode?) async throws {
 		self.userDefaults.setValue(encryptionMode?.rawValue, forKey: Self.ENCRYPTION_MODE_KEY)
 	}
-	func getCredentialsEncryptionKey() async throws -> DataWrapper? {
+	public func getCredentialsEncryptionKey() async throws -> DataWrapper? {
 		let value = self.userDefaults.value(forKey: Self.CREDENTIALS_ENCRYPTION_KEY_KEY) as! String?
 		return value.flatMap { Data(base64Encoded: $0) }?.wrap()
 	}
-	func setCredentialsEncryptionKey(_ credentialsEncryptionKey: DataWrapper?) async throws {
+	public func setCredentialsEncryptionKey(_ credentialsEncryptionKey: DataWrapper?) async throws {
 		let base64 = credentialsEncryptionKey.map { wrapper in wrapper.data.base64EncodedString() }
 		self.userDefaults.setValue(base64, forKey: Self.CREDENTIALS_ENCRYPTION_KEY_KEY)
 	}
 
-	func encryptUsingKeychain(_ data: DataWrapper, _ encryptionMode: CredentialEncryptionMode) async throws -> DataWrapper {
+	public func encryptUsingKeychain(_ data: DataWrapper, _ encryptionMode: CredentialEncryptionMode) async throws -> DataWrapper {
 		let encryptedData = try self.keychainManager.encryptData(encryptionMode: encryptionMode, data: data.data)
 		return DataWrapper(data: encryptedData)
 	}
 
-	func decryptUsingKeychain(_ encryptedData: DataWrapper, _ encryptionMode: CredentialEncryptionMode) async throws -> DataWrapper {
+	public func decryptUsingKeychain(_ encryptedData: DataWrapper, _ encryptionMode: CredentialEncryptionMode) async throws -> DataWrapper {
 		let data = try self.keychainManager.decryptData(encryptionMode: encryptionMode, encryptedData: encryptedData.data)
 		return DataWrapper(data: data)
 	}
 
-	func getSupportedEncryptionModes() async -> [CredentialEncryptionMode] {
+	public func getSupportedEncryptionModes() async -> [CredentialEncryptionMode] {
 		var supportedModes = [CredentialEncryptionMode.deviceLock]
 		let context = LAContext()
 

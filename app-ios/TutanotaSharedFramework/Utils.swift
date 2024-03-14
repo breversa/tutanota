@@ -8,6 +8,7 @@ let SYS_MODEL_VERSION = 85
 public func addSystemModelHeaders(to headers: inout [String: String]) { headers["v"] = String(SYS_MODEL_VERSION) }
 
 public func makeDbPath(fileName: String) -> URL {
-	let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-	return docs.appendingPathComponent(fileName)
+	let sharedDirectory = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.de.tutao.tutanota")
+
+	return (sharedDirectory?.appendingPathComponent(fileName))!
 }

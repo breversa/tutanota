@@ -6,28 +6,11 @@ import { NativeShortcut } from "../common/generatedipc/NativeShortcut.js"
 import { Shortcut } from "../../misc/KeyManager.js"
 import { Keys } from "../../api/common/TutanotaConstants.js"
 import { IMainLocator } from "../../api/main/MainLocator.js"
-import { CredentialEncryptionMode } from "../common/generatedipc/CredentialEncryptionMode"
-import { deviceConfig } from "../../misc/DeviceConfig.js"
 
 export class WebDesktopFacade implements DesktopFacade {
 	print(): Promise<void> {
 		window.print()
 		return Promise.resolve()
-	}
-
-	getCredentialsEncryptionKey(): Promise<Uint8Array | null> {
-		return deviceConfig.getCredentialsEncryptionKey()
-	}
-
-	setCredentialsEncryptionKey(credentialsEncryptionKey: Uint8Array | null): Promise<void> {
-		return deviceConfig.setCredentialsEncryptionKey(credentialsEncryptionKey)
-	}
-
-	getCredentialEncryptionMode(): Promise<CredentialEncryptionMode | null> {
-		return deviceConfig.getCredentialEncryptionMode()
-	}
-	async setCredentialEncryptionMode(encryptionMode: CredentialEncryptionMode): Promise<void> {
-		await deviceConfig.setCredentialEncryptionMode(encryptionMode)
 	}
 
 	async showSpellcheckDropdown(): Promise<void> {

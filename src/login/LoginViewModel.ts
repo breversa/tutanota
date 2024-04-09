@@ -259,7 +259,7 @@ export class LoginViewModel implements ILoginViewModel {
 	}
 
 	getAllCredentials(): Array<PersistedCredentials> {
-		// FIXME
+		// FIXME is only needed for migration banner
 		throw new Error("Not implemented!")
 	}
 

@@ -5875,6 +5875,47 @@ export const typeModels = {
         "app": "sys",
         "version": "96"
     },
+    "IdTupleWrapper": {
+        "name": "IdTupleWrapper",
+        "since": 96,
+        "type": "AGGREGATED_TYPE",
+        "id": 2223,
+        "rootId": "A3N5cwAIrw",
+        "versioned": false,
+        "encrypted": false,
+        "values": {
+            "_id": {
+                "final": true,
+                "name": "_id",
+                "id": 2224,
+                "since": 96,
+                "type": "CustomId",
+                "cardinality": "One",
+                "encrypted": false
+            },
+            "listElementId": {
+                "final": true,
+                "name": "listElementId",
+                "id": 2226,
+                "since": 96,
+                "type": "GeneratedId",
+                "cardinality": "One",
+                "encrypted": false
+            },
+            "listId": {
+                "final": true,
+                "name": "listId",
+                "id": 2225,
+                "since": 96,
+                "type": "GeneratedId",
+                "cardinality": "One",
+                "encrypted": false
+            }
+        },
+        "associations": {},
+        "app": "sys",
+        "version": "96"
+    },
     "InstanceSessionKey": {
         "name": "InstanceSessionKey",
         "since": 82,

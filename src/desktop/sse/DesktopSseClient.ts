@@ -1,14 +1,16 @@
 import type { App } from "electron"
-import { base64ToUint8Array, TimeoutSetter, uint8ArrayToString } from "@tutao/tutanota-utils"
 import {
 	assertNotNull,
 	base64ToBase64Url,
+	base64ToUint8Array,
 	filterInt,
 	neverNull,
 	randomIntFromInterval,
 	remove,
 	stringToUtf8Uint8Array,
+	TimeoutSetter,
 	uint8ArrayToBase64,
+	uint8ArrayToString,
 } from "@tutao/tutanota-utils"
 import type { DesktopNotifier } from "../DesktopNotifier"
 import { NotificationResult } from "../DesktopNotifier"
@@ -32,7 +34,7 @@ import tutanotaModelInfo from "../../api/entities/tutanota/ModelInfo.js"
 import { DesktopNativeCredentialsFacade } from "../credentials/DesktopNativeCredentialsFacade.js"
 import { CredentialEncryptionMode } from "../../misc/credentials/CredentialEncryptionMode.js"
 import { uint8ArrayToBitArray } from "@tutao/tutanota-crypto"
-import { Agent, fetch } from "undici"
+import { Agent, fetch as undiciFetch } from "undici"
 
 export type SseInfo = {
 	identifier: string
@@ -77,6 +79,7 @@ export class DesktopSseClient {
 		nativeCredentialsFacade: DesktopNativeCredentialsFacade,
 		alarmStorage: DesktopAlarmStorage,
 		lang: LanguageViewModelType,
+		private readonly fetch: typeof undiciFetch,
 		delayHandler: TimeoutSetter = setTimeout,
 	) {
 		this._app = app
@@ -433,8 +436,7 @@ export class DesktopSseClient {
 			return
 		}
 
-		this._downloadMailMetadata(ni).then((meta) => {
-			console.log(meta)
+		this.downloadMailMetadata(ni).then((meta) => {
 			this._notifier.submitGroupedNotification(
 				title,
 				`sender: ${meta.sender.address} first recipient: ${meta.firstRecipient.address}`,
@@ -547,10 +549,10 @@ export class DesktopSseClient {
 		return url.toString()
 	}
 
-	private _makeMailMetadataUrl(sseInfo: SseInfo, ni: NotificationInfo): string {
+	private makeMailMetadataUrl(sseInfo: SseInfo, mailId: IdTupleWrapper): URL {
 		const url = new URL(sseInfo.sseOrigin)
-		url.pathname = "rest/tutanota/mail/" + base64ToBase64Url(ni.mailId?.listId ?? "") + "/" + base64ToBase64Url(ni.mailId?.listElementId ?? "")
-		return url.toString()
+		url.pathname = `rest/tutanota/mail/${base64ToBase64Url(mailId.listId)}/${base64ToBase64Url(mailId.listElementId)}`
+		return url
 	}
 
 	_disconnect() {
@@ -596,55 +598,53 @@ export class DesktopSseClient {
 		return url.toString()
 	}
 
-	private async _downloadMailMetadata(ni: NotificationInfo): Promise<any> {
-		return new Promise(async (resolve, reject) => {
-			const url = this._makeMailMetadataUrl(assertNotNull(this._connectedSseInfo), assertNotNull(ni))
+	private async downloadMailMetadata(ni: NotificationInfo): Promise<any> {
+		const url = this.makeMailMetadataUrl(assertNotNull(this._connectedSseInfo), assertNotNull(ni.mailId))
 
-			// decrypt access token
-			const credentials = await this._nativeCredentialFacade.loadByUserId(ni.userId)
-			const encryptedCredentialsKey = await this._nativeCredentialFacade.getCredentialsEncryptionKey()
-			if (!encryptedCredentialsKey || !credentials) return
-			const credentialsKey = await this._nativeCredentialFacade.decryptUsingKeychain(encryptedCredentialsKey, CredentialEncryptionMode.DEVICE_LOCK)
-			const decryptedAccessToken = uint8ArrayToString(
-				"utf-8",
-				this._crypto.aesDecryptBytes(uint8ArrayToBitArray(credentialsKey), base64ToUint8Array(credentials.accessToken)),
-			)
+		// decrypt access token
+		const credentials = await this._nativeCredentialFacade.loadByUserId(ni.userId)
+		const encryptedCredentialsKey = await this._nativeCredentialFacade.getCredentialsEncryptionKey()
+		if (!encryptedCredentialsKey || !credentials) return
+		const credentialsKey = await this._nativeCredentialFacade.decryptUsingKeychain(encryptedCredentialsKey, CredentialEncryptionMode.DEVICE_LOCK)
+		const decryptedAccessToken = uint8ArrayToString(
+			"utf-8",
+			this._crypto.aesDecryptBytes(uint8ArrayToBitArray(credentialsKey), base64ToUint8Array(credentials.accessToken)),
+		)
 
-			log.debug(TAG, "downloading mail notification metadata")
-			const headers: Record<string, string> = {
-				userIds: ni.userId,
-				v: tutanotaModelInfo.version.toString(),
-				cv: this._app.getVersion(),
-				accessToken: decryptedAccessToken,
-			}
+		log.debug(TAG, "downloading mail notification metadata")
+		const headers: Record<string, string> = {
+			userIds: ni.userId,
+			v: tutanotaModelInfo.version.toString(),
+			cv: this._app.getVersion(),
+			accessToken: decryptedAccessToken,
+		}
 
-			try {
-				const response = await fetch(url, {
-					headers: headers,
-					dispatcher: new Agent({ connectTimeout: 20000 }),
-				})
-				if (
-					(response.status === ServiceUnavailableError.CODE || TooManyRequestsError.CODE) &&
-					(response.headers.get("retry-after") || response.headers.get("suspension-time"))
-				) {
-					// headers are lowercase, see https://nodejs.org/api/http.html#http_message_headers
-					const time = filterInt((response.headers.get("retry-after") ?? response.headers.get("suspension-time")) as string)
-					log.debug(TAG, `ServiceUnavailable when downloading missed notification, waiting ${time}s`)
+		try {
+			const response = await this.fetch(url, {
+				headers: headers,
+				dispatcher: new Agent({ connectTimeout: 20000 }),
+			})
+			if (
+				(response.status === ServiceUnavailableError.CODE || TooManyRequestsError.CODE) &&
+				(response.headers.get("retry-after") || response.headers.get("suspension-time"))
+			) {
+				// headers are lowercase, see https://nodejs.org/api/http.html#http_message_headers
+				const time = filterInt((response.headers.get("retry-after") ?? response.headers.get("suspension-time")) as string)
+				log.debug(TAG, `ServiceUnavailable when downloading mail, waiting ${time}s`)
 
+				return new Promise((resolve, reject) => {
 					this._delayHandler(() => {
-						this._downloadMailMetadata(ni).then(resolve, reject)
+						this.downloadMailMetadata(ni).then(resolve, reject)
 					}, time * 1000)
-
-					return
-				} else if (!response.ok) {
-					const tutanotaError = handleRestError(neverNull(response.status), url, response.headers.get("Error-Id"), null)
-					reject(tutanotaError)
-				}
-
-				resolve(await response.json())
-			} catch (e) {
-				log.debug(TAG, "Error fetching mail metadata, " + (e as Error).message)
+				})
+			} else if (!response.ok) {
+				const tutanotaError = handleRestError(neverNull(response.status), url.toString(), response.headers.get("Error-Id"), null)
+				throw tutanotaError
 			}
-		})
+
+			return await response.json()
+		} catch (e) {
+			log.debug(TAG, "Error fetching mail metadata, " + (e as Error).message)
+		}
 	}
 }

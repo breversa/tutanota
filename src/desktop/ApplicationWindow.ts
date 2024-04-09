@@ -54,7 +54,7 @@ export class ApplicationWindow {
 
 	_browserWindow!: BrowserWindow
 
-	/** User logged in this window. Reset from WindowManager. */
+	/** User logged in in this window. Reset from WindowManager. */
 	private userId: Id | null = null
 	private setBoundsTimeout: ReturnType<typeof setTimeout> | null = null
 	private findingInPage: boolean = false

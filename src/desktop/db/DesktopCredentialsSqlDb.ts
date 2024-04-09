@@ -20,7 +20,7 @@ const TableDefinitions = Object.freeze({
  * FIXME use worker
  * FIXME maybe a different interface
  */
-export class DesktopCredentialsSqlDb implements SqlCipherFacade {
+export class DesktopCredentialsSqlDb {
 	private _db: Database | null = null
 	private get db(): Database {
 		if (this._db == null) {
@@ -118,12 +118,5 @@ export class DesktopCredentialsSqlDb implements SqlCipherFacade {
 	async all(query: string, params: TaggedSqlValue[]): Promise<Array<Record<string, TaggedSqlValue>>> {
 		const result = this.db.prepare(query).all(params.map(untagSqlValue))
 		return result.map(tagSqlObject)
-	}
-
-	lockRangesDbAccess(): Promise<void> {
-		throw new Error("Method not implemented.")
-	}
-	unlockRangesDbAccess(): Promise<void> {
-		throw new Error("Method not implemented.")
 	}
 }

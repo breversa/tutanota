@@ -6,7 +6,7 @@ import type { LoginController } from "../api/main/LoginController"
 import stream from "mithril/stream"
 import Stream from "mithril/stream"
 import { ProgrammingError } from "../api/common/error/ProgrammingError"
-import type { CredentialsAndDatabaseKey, CredentialsProvider } from "../misc/credentials/CredentialsProvider.js"
+import type { CredentialsProvider } from "../misc/credentials/CredentialsProvider.js"
 import { CredentialAuthenticationError } from "../api/common/error/CredentialAuthenticationError"
 import { first, noOp } from "@tutao/tutanota-utils"
 import { KeyPermanentlyInvalidatedError } from "../api/common/error/KeyPermanentlyInvalidatedError"
@@ -21,6 +21,8 @@ import { CredentialRemovalHandler } from "./CredentialRemovalHandler.js"
 import { NativePushServiceApp } from "../native/main/NativePushServiceApp.js"
 import { CredentialsInfo } from "../native/common/generatedipc/CredentialsInfo.js"
 import { PersistedCredentials } from "../native/common/generatedipc/PersistedCredentials.js"
+import { credentialsToUnencrypted } from "../misc/credentials/Credentials.js"
+import { UnencryptedCredentials } from "../native/common/generatedipc/UnencryptedCredentials.js"
 
 assertMainOrNode()
 
@@ -239,8 +241,8 @@ export class LoginViewModel implements ILoginViewModel {
 		}
 
 		if (credentials) {
-			await this.loginController.deleteOldSession(credentials.credentials, (await this.pushServiceApp?.loadPushIdentifierFromNative()) ?? null)
-			await this.credentialsProvider.deleteByUserId(credentials.credentials.userId)
+			await this.loginController.deleteOldSession(credentials, (await this.pushServiceApp?.loadPushIdentifierFromNative()) ?? null)
+			await this.credentialsProvider.deleteByUserId(credentials.credentialsInfo.userId)
 			await this.credentialRemovalHandler.onCredentialsRemoved(credentials)
 			await this.updateCachedCredentials()
 		}
@@ -334,7 +336,7 @@ export class LoginViewModel implements ILoginViewModel {
 	}
 
 	private async autologin(): Promise<void> {
-		let credentials: CredentialsAndDatabaseKey | null = null
+		let credentials: UnencryptedCredentials | null = null
 		try {
 			if (this.autoLoginCredentials == null) {
 				const allCredentials = await this.credentialsProvider.getInternalCredentialsInfos()
@@ -412,18 +414,15 @@ export class LoginViewModel implements ILoginViewModel {
 				const credentials = await this.credentialsProvider.getCredentialsByUserId(credentialToDelete.userId)
 
 				if (credentials) {
-					await this.loginController.deleteOldSession(credentials.credentials)
+					await this.loginController.deleteOldSession(credentials)
 					// we handled the deletion of the offlineDb in createSession already
-					await this.credentialsProvider.deleteByUserId(credentials.credentials.userId, { deleteOfflineDb: false })
+					await this.credentialsProvider.deleteByUserId(credentials.credentialsInfo.userId, { deleteOfflineDb: false })
 				}
 			}
 
 			if (savePassword) {
 				try {
-					await this.credentialsProvider.store({
-						credentials,
-						databaseKey,
-					})
+					await this.credentialsProvider.store(credentialsToUnencrypted(credentials, databaseKey))
 				} catch (e) {
 					if (e instanceof KeyPermanentlyInvalidatedError) {
 						await this.credentialsProvider.clearCredentials(e)

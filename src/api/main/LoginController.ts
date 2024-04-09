@@ -7,12 +7,12 @@ import { NotFoundError } from "../common/error/RestError"
 import { client } from "../../misc/ClientDetector"
 import type { LoginFacade, NewSessionData } from "../worker/facades/LoginFacade"
 import { ResumeSessionErrorReason } from "../worker/facades/LoginFacade"
-import type { Credentials } from "../../misc/credentials/Credentials"
+import { Credentials, unencryptedToCredentials } from "../../misc/credentials/Credentials"
 import { FeatureType, KdfType } from "../common/TutanotaConstants"
-import { CredentialsAndDatabaseKey } from "../../misc/credentials/CredentialsProvider.js"
 import { SessionType } from "../common/SessionType"
 import { IMainLocator, locator } from "./MainLocator"
 import { ExternalUserKeyDeriver } from "../../misc/LoginUtils.js"
+import { UnencryptedCredentials } from "../../native/common/generatedipc/UnencryptedCredentials.js"
 
 assertMainOrNodeBoot()
 
@@ -153,12 +153,18 @@ export class LoginController {
 	 * @param offlineTimeRangeDays the user configured time range for their offline storage, used to initialize the offline db
 	 */
 	async resumeSession(
-		{ credentials, databaseKey }: CredentialsAndDatabaseKey,
+		unencryptedCredentials: UnencryptedCredentials,
 		externalUserKeyDeriver?: ExternalUserKeyDeriver | null,
 		offlineTimeRangeDays?: number | null,
 	): Promise<ResumeSessionResult> {
 		const loginFacade = await this.getLoginFacade()
-		const resumeResult = await loginFacade.resumeSession(credentials, externalUserKeyDeriver ?? null, databaseKey ?? null, offlineTimeRangeDays ?? null)
+		const credentials = unencryptedToCredentials(unencryptedCredentials)
+		const resumeResult = await loginFacade.resumeSession(
+			credentials,
+			externalUserKeyDeriver ?? null,
+			unencryptedCredentials.databaseKey ?? null,
+			offlineTimeRangeDays ?? null,
+		)
 		if (resumeResult.type === "error") {
 			return resumeResult
 		} else {
@@ -257,7 +263,7 @@ export class LoginController {
 	 * @param credentials
 	 * @param pushIdentifier identifier associated with this device, if any, to delete PushIdentifier on the server
 	 */
-	async deleteOldSession(credentials: Credentials, pushIdentifier: string | null = null): Promise<void> {
+	async deleteOldSession(credentials: UnencryptedCredentials, pushIdentifier: string | null = null): Promise<void> {
 		const loginFacade = await this.getLoginFacade()
 
 		try {

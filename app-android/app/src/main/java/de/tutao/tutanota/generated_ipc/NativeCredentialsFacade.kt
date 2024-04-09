@@ -10,24 +10,19 @@ import kotlinx.serialization.json.*
  * Operations for credential encryption operations using OS keychain.
  */
 interface NativeCredentialsFacade {
-	 suspend fun encryptUsingKeychain(
-		data: DataWrapper,
-		encryptionMode: CredentialEncryptionMode,
-	): DataWrapper
-	 suspend fun decryptUsingKeychain(
-		encryptedData: DataWrapper,
-		encryptionMode: CredentialEncryptionMode,
-	): DataWrapper
 	 suspend fun getSupportedEncryptionModes(
 	): List<CredentialEncryptionMode>
 	 suspend fun loadAll(
 	): List<PersistedCredentials>
+	/**
+	 * Encrypt and store credentials
+	 */
 	 suspend fun store(
-		credentials: PersistedCredentials,
+		credentials: UnencryptedCredentials,
 	): Unit
 	 suspend fun loadByUserId(
 		id: String,
-	): PersistedCredentials?
+	): UnencryptedCredentials?
 	 suspend fun deleteByUserId(
 		id: String,
 	): Unit
@@ -36,9 +31,6 @@ interface NativeCredentialsFacade {
 	 suspend fun setCredentialEncryptionMode(
 		encryptionMode: CredentialEncryptionMode?,
 	): Unit
-	 suspend fun getCredentialsEncryptionKey(
-	): DataWrapper?
-	 suspend fun setCredentialsEncryptionKey(
-		credentialsEncryptionKey: DataWrapper?,
+	 suspend fun clear(
 	): Unit
 }

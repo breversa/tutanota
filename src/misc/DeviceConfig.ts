@@ -10,7 +10,6 @@ import { client } from "./ClientDetector"
 import { NewsItemStorage } from "./news/NewsModel.js"
 import { CalendarViewType } from "../calendar/gui/CalendarGuiUtils.js"
 import { PersistedCredentials } from "../native/common/generatedipc/PersistedCredentials.js"
-import { NativeCredentialsFacade } from "../native/common/generatedipc/NativeCredentialsFacade"
 
 assertMainOrNodeBoot()
 export const defaultThemePreference: ThemePreference = "auto:light|dark"
@@ -59,7 +58,7 @@ interface ConfigObject {
 /**
  * Device config for internal user auto login. Only one config per device is stored.
  */
-export class DeviceConfig implements NativeCredentialsFacade, UsageTestStorage, NewsItemStorage {
+export class DeviceConfig implements UsageTestStorage, NewsItemStorage {
 	public static Version = 4
 	public static LocalStorageKey = "tutanotaConfig"
 
@@ -165,16 +164,6 @@ export class DeviceConfig implements NativeCredentialsFacade, UsageTestStorage, 
 		this.config._credentials.delete(userId)
 
 		this.writeToStorage()
-	}
-
-	async encryptUsingKeychain(data: Uint8Array, encryptionMode: CredentialEncryptionMode): Promise<Uint8Array> {
-		throw new Error("Method not implemented.")
-	}
-	async decryptUsingKeychain(encryptedData: Uint8Array, encryptionMode: CredentialEncryptionMode): Promise<Uint8Array> {
-		throw new Error("Method not implemented.")
-	}
-	async getSupportedEncryptionModes(): Promise<readonly CredentialEncryptionMode[]> {
-		throw new Error("Method not implemented.")
 	}
 
 	getSignupToken(): string {

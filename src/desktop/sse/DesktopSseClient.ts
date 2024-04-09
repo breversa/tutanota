@@ -2,7 +2,6 @@ import type { App } from "electron"
 import {
 	assertNotNull,
 	base64ToBase64Url,
-	base64ToUint8Array,
 	filterInt,
 	neverNull,
 	randomIntFromInterval,
@@ -10,7 +9,6 @@ import {
 	stringToUtf8Uint8Array,
 	TimeoutSetter,
 	uint8ArrayToBase64,
-	uint8ArrayToString,
 } from "@tutao/tutanota-utils"
 import type { DesktopNotifier } from "../DesktopNotifier"
 import { NotificationResult } from "../DesktopNotifier"
@@ -23,7 +21,7 @@ import { DesktopNativeCryptoFacade } from "../DesktopNativeCryptoFacade"
 import { typeModels } from "../../api/entities/sys/TypeModels"
 import type { DesktopAlarmStorage } from "./DesktopAlarmStorage"
 import type { LanguageViewModelType } from "../../misc/LanguageViewModel"
-import type { NotificationInfo } from "../../api/entities/sys/TypeRefs.js"
+import { IdTupleWrapper, NotificationInfo } from "../../api/entities/sys/TypeRefs.js"
 import { handleRestError, NotAuthenticatedError, NotAuthorizedError, ServiceUnavailableError, TooManyRequestsError } from "../../api/common/error/RestError"
 import { TutanotaError } from "@tutao/tutanota-error"
 import { log } from "../DesktopLog"
@@ -32,15 +30,20 @@ import http from "node:http"
 import { EncryptedAlarmNotification } from "../../native/common/EncryptedAlarmNotification.js"
 import tutanotaModelInfo from "../../api/entities/tutanota/ModelInfo.js"
 import { DesktopNativeCredentialsFacade } from "../credentials/DesktopNativeCredentialsFacade.js"
-import { CredentialEncryptionMode } from "../../misc/credentials/CredentialEncryptionMode.js"
-import { uint8ArrayToBitArray } from "@tutao/tutanota-crypto"
 import { Agent, fetch as undiciFetch } from "undici"
+import { Mail } from "../../api/entities/tutanota/TypeRefs.js"
 
 export type SseInfo = {
 	identifier: string
 	sseOrigin: string
 	userIds: Array<string>
 }
+
+type MailMetadata = {
+	sender: Mail["sender"]
+	firstRecipient: Mail["firstRecipient"]
+}
+
 const MISSED_NOTIFICATION_TTL = 30 * 24 * 60 * 60 * 1000 // 30 days
 
 const TAG = "[DesktopSseClient]"
@@ -437,9 +440,10 @@ export class DesktopSseClient {
 		}
 
 		this.downloadMailMetadata(ni).then((meta) => {
+			if (meta == null) return
 			this._notifier.submitGroupedNotification(
 				title,
-				`sender: ${meta.sender.address} first recipient: ${meta.firstRecipient.address}`,
+				`sender: ${meta.sender.address} first recipient: ${meta.firstRecipient?.address}`,
 				ni.userId,
 				(res) => {
 					if (res === NotificationResult.Click) {
@@ -598,25 +602,22 @@ export class DesktopSseClient {
 		return url.toString()
 	}
 
-	private async downloadMailMetadata(ni: NotificationInfo): Promise<any> {
+	private async downloadMailMetadata(ni: NotificationInfo): Promise<MailMetadata | null> {
 		const url = this.makeMailMetadataUrl(assertNotNull(this._connectedSseInfo), assertNotNull(ni.mailId))
 
 		// decrypt access token
 		const credentials = await this._nativeCredentialFacade.loadByUserId(ni.userId)
-		const encryptedCredentialsKey = await this._nativeCredentialFacade.getCredentialsEncryptionKey()
-		if (!encryptedCredentialsKey || !credentials) return
-		const credentialsKey = await this._nativeCredentialFacade.decryptUsingKeychain(encryptedCredentialsKey, CredentialEncryptionMode.DEVICE_LOCK)
-		const decryptedAccessToken = uint8ArrayToString(
-			"utf-8",
-			this._crypto.aesDecryptBytes(uint8ArrayToBitArray(credentialsKey), base64ToUint8Array(credentials.accessToken)),
-		)
+		if (credentials == null) {
+			log.warn(`Not found credentials to download notification, userId ${ni.userId}`)
+			return null
+		}
 
 		log.debug(TAG, "downloading mail notification metadata")
 		const headers: Record<string, string> = {
 			userIds: ni.userId,
 			v: tutanotaModelInfo.version.toString(),
 			cv: this._app.getVersion(),
-			accessToken: decryptedAccessToken,
+			accessToken: credentials.accessToken,
 		}
 
 		try {
@@ -642,9 +643,11 @@ export class DesktopSseClient {
 				throw tutanotaError
 			}
 
-			return await response.json()
+			const parsedResponse = await response.json()
+			return parsedResponse as MailMetadata
 		} catch (e) {
 			log.debug(TAG, "Error fetching mail metadata, " + (e as Error).message)
+			return null
 		}
 	}
 }

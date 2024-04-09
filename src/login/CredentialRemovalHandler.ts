@@ -1,17 +1,17 @@
 import { Indexer } from "../api/worker/search/Indexer.js"
-import { CredentialsAndDatabaseKey } from "../misc/credentials/CredentialsProvider.js"
 import { NativePushServiceApp } from "../native/main/NativePushServiceApp.js"
 import { ConfigurationDatabase } from "../api/worker/facades/lazy/ConfigurationDatabase.js"
 import { MobileContactsFacade } from "../native/common/generatedipc/MobileContactsFacade.js"
 import { ofClass } from "@tutao/tutanota-utils"
 import { PermissionError } from "../api/common/error/PermissionError.js"
+import { UnencryptedCredentials } from "../native/common/generatedipc/UnencryptedCredentials.js"
 
 export interface CredentialRemovalHandler {
-	onCredentialsRemoved(credentialsAndDbKey: CredentialsAndDatabaseKey): Promise<void>
+	onCredentialsRemoved(credentials: UnencryptedCredentials): Promise<void>
 }
 
 export class NoopCredentialRemovalHandler implements CredentialRemovalHandler {
-	async onCredentialsRemoved(credentialsAndDbKey: CredentialsAndDatabaseKey): Promise<void> {}
+	async onCredentialsRemoved(_: UnencryptedCredentials): Promise<void> {}
 }
 
 export class AppsCredentialRemovalHandler implements CredentialRemovalHandler {
@@ -22,9 +22,9 @@ export class AppsCredentialRemovalHandler implements CredentialRemovalHandler {
 		private readonly mobileContactsFacade: MobileContactsFacade | null,
 	) {}
 
-	async onCredentialsRemoved(credentialsAndDbKey: CredentialsAndDatabaseKey) {
-		if (credentialsAndDbKey.databaseKey != null) {
-			const { userId } = credentialsAndDbKey.credentials
+	async onCredentialsRemoved(credentials: UnencryptedCredentials) {
+		if (credentials.databaseKey != null) {
+			const { userId } = credentials.credentialsInfo
 			await this.indexer.deleteIndex(userId)
 			await this.pushApp.invalidateAlarmsForUser(userId)
 			await this.pushApp.removeUserFromNotifications(userId)
@@ -32,7 +32,7 @@ export class AppsCredentialRemovalHandler implements CredentialRemovalHandler {
 		}
 
 		await this.mobileContactsFacade
-			?.deleteContacts(credentialsAndDbKey.credentials.login, null)
+			?.deleteContacts(credentials.credentialsInfo.login, null)
 			.catch(ofClass(PermissionError, (e) => console.log("No permission to clear contacts", e)))
 	}
 }

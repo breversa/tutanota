@@ -1,5 +1,6 @@
-import type { Base64, Base64Url } from "@tutao/tutanota-utils"
+import { assertNotNull, Base64, Base64Url } from "@tutao/tutanota-utils"
 import { CredentialType } from "./CredentialType.js"
+import { UnencryptedCredentials } from "../../native/common/generatedipc/UnencryptedCredentials.js"
 
 /** Data obtained after logging in. */
 export interface Credentials {
@@ -14,4 +15,27 @@ export interface Credentials {
 	accessToken: Base64Url
 	userId: Id
 	type: CredentialType
+}
+
+export function credentialsToUnencrypted(credentials: Credentials, databaseKey: Uint8Array | null): UnencryptedCredentials {
+	return {
+		credentialsInfo: {
+			login: credentials.login,
+			type: credentials.type,
+			userId: credentials.userId,
+		},
+		encryptedPassword: assertNotNull(credentials.encryptedPassword),
+		accessToken: credentials.accessToken,
+		databaseKey: databaseKey,
+	}
+}
+
+export function unencryptedToCredentials(unencryptedCredentials: UnencryptedCredentials): Credentials {
+	return {
+		login: unencryptedCredentials.credentialsInfo.login,
+		userId: unencryptedCredentials.credentialsInfo.userId,
+		type: unencryptedCredentials.credentialsInfo.type,
+		accessToken: unencryptedCredentials.accessToken,
+		encryptedPassword: unencryptedCredentials.encryptedPassword,
+	}
 }

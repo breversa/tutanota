@@ -62,6 +62,7 @@ import { WorkerSqlCipher } from "./db/WorkerSqlCipher.js"
 import { TempFs } from "./files/TempFs.js"
 import { makeDbPath } from "./db/DbUtils.js"
 import { DesktopCredentialsSqlDb } from "./db/DesktopCredentialsSqlDb.js"
+import { fetch as undiciFetch } from "undici"
 
 /**
  * Should be injected during build time.
@@ -214,7 +215,19 @@ async function createComponents(): Promise<Components> {
 	})
 
 	tray.setWindowManager(wm)
-	const sse = new DesktopSseClient(app, conf, notifier, wm, desktopAlarmScheduler, desktopNet, desktopCrypto, nativeCredentialsFacade, alarmStorage, lang)
+	const sse = new DesktopSseClient(
+		app,
+		conf,
+		notifier,
+		wm,
+		desktopAlarmScheduler,
+		desktopNet,
+		desktopCrypto,
+		nativeCredentialsFacade,
+		alarmStorage,
+		lang,
+		undiciFetch,
+	)
 	// It should be ok to await this, all we are waiting for is dynamic imports
 	const integrator = await getDesktopIntegratorForPlatform(electron, fs, child_process, () => import("winreg"))
 

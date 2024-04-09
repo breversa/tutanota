@@ -709,9 +709,9 @@ class MainLocator {
 		)
 		this.loginListener = new PageContextLoginListener(this.secondFactorHandler)
 		this.credentialsProvider = await createCredentialsProvider(
-			deviceEncryptionFacade,
 			this.nativeInterfaces?.native ?? null,
 			sqlCipherFacade,
+			deviceConfig,
 			isDesktop() ? this.interWindowEventSender : null,
 		)
 		this.random = random

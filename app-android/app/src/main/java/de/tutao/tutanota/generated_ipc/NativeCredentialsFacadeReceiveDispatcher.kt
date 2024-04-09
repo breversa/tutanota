@@ -14,24 +14,6 @@ class NativeCredentialsFacadeReceiveDispatcher(
 	
 	suspend fun dispatch(method: String, arg: List<String>): String {
 		when (method) {
-			"encryptUsingKeychain" -> {
-				val data: DataWrapper = json.decodeFromString(arg[0])
-				val encryptionMode: CredentialEncryptionMode = json.decodeFromString(arg[1])
-				val result: DataWrapper = this.facade.encryptUsingKeychain(
-					data,
-					encryptionMode,
-				)
-				return json.encodeToString(result)
-			}
-			"decryptUsingKeychain" -> {
-				val encryptedData: DataWrapper = json.decodeFromString(arg[0])
-				val encryptionMode: CredentialEncryptionMode = json.decodeFromString(arg[1])
-				val result: DataWrapper = this.facade.decryptUsingKeychain(
-					encryptedData,
-					encryptionMode,
-				)
-				return json.encodeToString(result)
-			}
 			"getSupportedEncryptionModes" -> {
 				val result: List<CredentialEncryptionMode> = this.facade.getSupportedEncryptionModes(
 				)
@@ -43,7 +25,7 @@ class NativeCredentialsFacadeReceiveDispatcher(
 				return json.encodeToString(result)
 			}
 			"store" -> {
-				val credentials: PersistedCredentials = json.decodeFromString(arg[0])
+				val credentials: UnencryptedCredentials = json.decodeFromString(arg[0])
 				val result: Unit = this.facade.store(
 					credentials,
 				)
@@ -51,7 +33,7 @@ class NativeCredentialsFacadeReceiveDispatcher(
 			}
 			"loadByUserId" -> {
 				val id: String = json.decodeFromString(arg[0])
-				val result: PersistedCredentials? = this.facade.loadByUserId(
+				val result: UnencryptedCredentials? = this.facade.loadByUserId(
 					id,
 				)
 				return json.encodeToString(result)
@@ -75,15 +57,8 @@ class NativeCredentialsFacadeReceiveDispatcher(
 				)
 				return json.encodeToString(result)
 			}
-			"getCredentialsEncryptionKey" -> {
-				val result: DataWrapper? = this.facade.getCredentialsEncryptionKey(
-				)
-				return json.encodeToString(result)
-			}
-			"setCredentialsEncryptionKey" -> {
-				val credentialsEncryptionKey: DataWrapper? = json.decodeFromString(arg[0])
-				val result: Unit = this.facade.setCredentialsEncryptionKey(
-					credentialsEncryptionKey,
+			"clear" -> {
+				val result: Unit = this.facade.clear(
 				)
 				return json.encodeToString(result)
 			}

@@ -7,24 +7,19 @@ import Foundation
  * Operations for credential encryption operations using OS keychain.
  */
 public protocol NativeCredentialsFacade {
-	func encryptUsingKeychain(
-		_ data: DataWrapper,
-		_ encryptionMode: CredentialEncryptionMode
-	) async throws -> DataWrapper
-	func decryptUsingKeychain(
-		_ encryptedData: DataWrapper,
-		_ encryptionMode: CredentialEncryptionMode
-	) async throws -> DataWrapper
 	func getSupportedEncryptionModes(
 	) async throws -> [CredentialEncryptionMode]
 	func loadAll(
 	) async throws -> [PersistedCredentials]
+	/**
+	 * Encrypt and store credentials
+	 */
 	func store(
-		_ credentials: PersistedCredentials
+		_ credentials: UnencryptedCredentials
 	) async throws -> Void
 	func loadByUserId(
 		_ id: String
-	) async throws -> PersistedCredentials?
+	) async throws -> UnencryptedCredentials?
 	func deleteByUserId(
 		_ id: String
 	) async throws -> Void
@@ -33,9 +28,6 @@ public protocol NativeCredentialsFacade {
 	func setCredentialEncryptionMode(
 		_ encryptionMode: CredentialEncryptionMode?
 	) async throws -> Void
-	func getCredentialsEncryptionKey(
-	) async throws -> DataWrapper?
-	func setCredentialsEncryptionKey(
-		_ credentialsEncryptionKey: DataWrapper?
+	func clear(
 	) async throws -> Void
 }

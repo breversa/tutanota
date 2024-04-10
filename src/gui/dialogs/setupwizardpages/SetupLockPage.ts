@@ -56,7 +56,9 @@ export class SetupLockPageAttrs implements WizardPageAttrs<null> {
 				m.redraw()
 				return false
 			} else if (e instanceof CancelledError) {
-				// ignore. this can happen if we switch app pin -> device lock and the user cancels the pin prompt.
+				// if the user cancels, is unrecognized by Face ID, enters an incorrect device password, etc., we should not close the dialog
+				// and instead let them try again or choose a different encryption mode
+				return false
 			} else {
 				throw e
 			}

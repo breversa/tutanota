@@ -26,9 +26,9 @@ export async function createCredentialsProvider(
 	if (usingKeychainAuthenticationWithOptions()) {
 		const { NativeCredentialsFacadeSendDispatcher } = await import("../../native/common/generatedipc/NativeCredentialsFacadeSendDispatcher.js")
 		const credentialsFacade = new NativeCredentialsFacadeSendDispatcher(assertNotNull(nativeApp))
-		return new CredentialsProvider(credentialsFacade, sqlCipherFacade, isDesktop() ? interWindowEventSender : null)
+		return new CredentialsProvider(credentialsFacade, sqlCipherFacade, isDesktop() ? interWindowEventSender : null, true)
 	} else {
-		return new CredentialsProvider(new WebCredentialsFacade(deviceConfig), null, null)
+		return new CredentialsProvider(new WebCredentialsFacade(deviceConfig), null, null, true)
 	}
 }
 
@@ -40,6 +40,7 @@ export async function createCredentialsProvider(
 
 class WebCredentialsFacade implements NativeCredentialsFacade {
 	constructor(private readonly deviceConfig: DeviceConfig) {}
+
 	async clear(): Promise<void> {
 		const allCredentials = await this.deviceConfig.loadAll()
 		for (const credentials of allCredentials) {
@@ -55,8 +56,13 @@ class WebCredentialsFacade implements NativeCredentialsFacade {
 		return null
 	}
 
-	loadAll(): Promise<ReadonlyArray<PersistedCredentials>> {
-		return this.deviceConfig.loadAll()
+	async loadAll(): Promise<ReadonlyArray<UnencryptedCredentials>> {
+		return (await this.deviceConfig.loadAll()).map((credential) => ({
+			credentialsInfo: credential.credentialsInfo,
+			encryptedPassword: credential.encryptedPassword,
+			accessToken: credential.accessToken,
+			databaseKey: null,
+		}))
 	}
 
 	async loadByUserId(id: string): Promise<UnencryptedCredentials | null> {
@@ -83,5 +89,13 @@ class WebCredentialsFacade implements NativeCredentialsFacade {
 	}
 	async getSupportedEncryptionModes() {
 		return []
+	}
+
+	migrateToNativeCredentials(
+		credentials: ReadonlyArray<PersistedCredentials>,
+		encryptionMode: CredentialEncryptionMode | null,
+		credentialsKey: Uint8Array | null,
+	): Promise<void> {
+		throw new Error("Method not implemented.")
 	}
 }

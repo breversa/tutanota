@@ -7,6 +7,7 @@ import { CredentialType } from "./CredentialType.js"
 import { PersistedCredentials } from "../../native/common/generatedipc/PersistedCredentials.js"
 import { NativeCredentialsFacade } from "../../native/common/generatedipc/NativeCredentialsFacade"
 import { UnencryptedCredentials } from "../../native/common/generatedipc/UnencryptedCredentials.js"
+import { deviceConfig } from "../DeviceConfig.js"
 
 export type CredentialsAndDatabaseKey = {
 	credentials: Credentials
@@ -21,11 +22,28 @@ export class CredentialsProvider {
 		private readonly credentialsFacade: NativeCredentialsFacade,
 		private readonly sqliteCipherFacade: SqlCipherFacade | null,
 		private readonly interWindowEventSender: InterWindowEventFacadeSendDispatcher | null,
-	) {}
+		private readonly doMigrationToNative: boolean,
+	) {
+		// Do migration to native as soon as possible, before any attempts to read mode or keys
+		if (this.doMigrationToNative && !deviceConfig.getIsCredentialsMigratedToNative()) this.migrateToNativeCredentials()
+	}
+
+	/**
+	 * Migrate existing credentials to native db if the migration haven't happened once. Also generate database key if missing.
+	 */
+	async migrateToNativeCredentials() {
+		const allPersistedCredentials = await deviceConfig.loadAll()
+		await this.credentialsFacade.migrateToNativeCredentials(
+			allPersistedCredentials,
+			await deviceConfig.getCredentialEncryptionMode(),
+			await deviceConfig.getCredentialsEncryptionKey(),
+		)
+		await deviceConfig.clear()
+		deviceConfig.setIsCredentialsMigratedToNative(true)
+	}
 
 	/**
 	 * Stores credentials. If credentials already exist for login, they will be overwritten.
-	 * Also creates a database key
 	 */
 	async store(credentials: UnencryptedCredentials): Promise<void> {
 		return this.credentialsFacade.store(credentials)
@@ -51,8 +69,8 @@ export class CredentialsProvider {
 	}
 
 	async getCredentialsInfoByUserId(userId: Id): Promise<CredentialsInfo | null> {
-		const allCredentials = await this.credentialsFacade.loadAll()
-		return allCredentials.find((c) => c.credentialsInfo.userId === userId)?.credentialsInfo ?? null
+		const credential = await this.getCredentialsByUserId(userId)
+		return credential?.credentialsInfo ?? null
 	}
 
 	/**
@@ -61,18 +79,6 @@ export class CredentialsProvider {
 	 */
 	async getCredentialsByUserId(userId: Id): Promise<UnencryptedCredentials | null> {
 		return this.credentialsFacade.loadByUserId(userId)
-		// FIXME add database key if needed when migrating credentials
-		// if (decrypted.databaseKey == null) {
-		// 	// When offline mode is first released, there will be users who have saved credentials but no database key.
-		// 	// In the future, we will never save credentials without it, but we need to create one here
-		//
-		// 	decrypted.databaseKey = await this.databaseKeyFactory.generateKey()
-		//
-		// 	if (decrypted.databaseKey != null) {
-		// 		const reEncrypted = await this.credentialsEncryption.encrypt(decrypted)
-		// 		this.storage.store(reEncrypted)
-		// 	}
-		// }
 	}
 
 	/**
@@ -80,7 +86,7 @@ export class CredentialsProvider {
 	 * have a secure external mailbox.
 	 */
 	async getInternalCredentialsInfos(): Promise<ReadonlyArray<CredentialsInfo>> {
-		const allCredentials = (await this.credentialsFacade.loadAll()).map((persistedCredentials) => persistedCredentials.credentialsInfo)
+		const allCredentials = (await this.credentialsFacade.loadAll()).map((credentials) => credentials.credentialsInfo)
 		return allCredentials.filter((credential) => credential.type === CredentialType.internal)
 	}
 
@@ -103,7 +109,7 @@ export class CredentialsProvider {
 	 * @throws KeyPermanentlyInvalidatedError
 	 * @throws CredentialAuthenticationError
 	 */
-	async setCredentialsEncryptionMode(encryptionMode: CredentialEncryptionMode): Promise<void> {
+	async setCredentialEncryptionMode(encryptionMode: CredentialEncryptionMode): Promise<void> {
 		await this.credentialsFacade.setCredentialEncryptionMode(encryptionMode)
 		this.interWindowEventSender?.reloadDeviceConfig()
 	}
@@ -111,7 +117,7 @@ export class CredentialsProvider {
 	/**
 	 * Returns the credentials encryption mode, i.e. how the intermediate key used for encrypting credentials is protected.
 	 */
-	getCredentialsEncryptionMode(): Promise<CredentialEncryptionMode | null> {
+	getCredentialEncryptionMode(): Promise<CredentialEncryptionMode | null> {
 		return this.credentialsFacade.getCredentialEncryptionMode()
 	}
 

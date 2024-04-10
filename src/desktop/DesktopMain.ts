@@ -185,7 +185,7 @@ async function createComponents(): Promise<Components> {
 		},
 		async delete(userId: string): Promise<void> {
 			log.debug("deleting db for", userId)
-			const dbPath = makeDbPath(userId)
+			const dbPath = makeDbPath(`offline_${userId}`)
 			// force to suppress ENOENT which is not a problem.
 			// maxRetries should reduce EBUSY
 			await fs.promises.rm(dbPath, { maxRetries: 3, force: true })

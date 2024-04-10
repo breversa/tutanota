@@ -132,14 +132,7 @@ o.spec("CredentialsProvider", function () {
 		databaseKeyFactoryMock = instance(DatabaseKeyFactory)
 		sqlCipherFacadeMock = object()
 		interWindowEventSenderMock = object()
-		credentialsProvider = new CredentialsProvider(
-			encryption,
-			storageMock,
-			keyMigratorMock,
-			databaseKeyFactoryMock,
-			sqlCipherFacadeMock,
-			interWindowEventSenderMock,
-		)
+		credentialsProvider = new CredentialsProvider(encryption, storageMock, keyMigratorMock, false)
 	})
 
 	o.spec("Storing credentials", function () {
@@ -203,7 +196,7 @@ o.spec("CredentialsProvider", function () {
 		o("Enrolling", async function () {
 			when(storageMock.getCredentialEncryptionMode()).thenReturn(null)
 			const newEncryptionMode = CredentialEncryptionMode.DEVICE_LOCK
-			await credentialsProvider.setCredentialsEncryptionMode(newEncryptionMode)
+			await credentialsProvider.setCredentialEncryptionMode(newEncryptionMode)
 			verify(storageMock.setCredentialEncryptionMode(newEncryptionMode), { times: 1 })
 		})
 	})
@@ -218,7 +211,7 @@ o.spec("CredentialsProvider", function () {
 			when(storageMock.getCredentialsEncryptionKey()).thenReturn(encryptionKey)
 			when(keyMigratorMock.migrateCredentialsKey(encryptionKey, oldEncryptionMode, newEncryptionMode)).thenResolve(migratedKey)
 
-			await credentialsProvider.setCredentialsEncryptionMode(newEncryptionMode)
+			await credentialsProvider.setCredentialEncryptionMode(newEncryptionMode)
 
 			verify(storageMock.setCredentialEncryptionMode(newEncryptionMode))
 			verify(storageMock.setCredentialsEncryptionKey(migratedKey))

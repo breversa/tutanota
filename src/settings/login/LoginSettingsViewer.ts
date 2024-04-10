@@ -51,7 +51,7 @@ export class LoginSettingsViewer implements UpdatableSettingsViewer {
 
 	constructor(private readonly credentialsProvider: CredentialsProvider) {
 		this.credentialsEncryptionModeHelpLabel =
-			this.credentialsProvider.getCredentialsEncryptionMode() === null ? () => lang.get("deviceEncryptionSaveCredentialsHelpText_msg") : null
+			this.credentialsProvider.getCredentialEncryptionMode() === null ? () => lang.get("deviceEncryptionSaveCredentialsHelpText_msg") : null
 		this._usageTestModel = locator.usageTestModel
 
 		this._updateSessions()
@@ -59,7 +59,7 @@ export class LoginSettingsViewer implements UpdatableSettingsViewer {
 	}
 
 	private async loadCredentialEncryptionMode() {
-		this.credentialEncryptionMode = await this.credentialsProvider.getCredentialsEncryptionMode()
+		this.credentialEncryptionMode = await this.credentialsProvider.getCredentialEncryptionMode()
 		m.redraw()
 	}
 

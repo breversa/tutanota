@@ -28,7 +28,6 @@ import type { Indexer } from "../worker/search/Indexer"
 import type { SearchFacade } from "../worker/search/SearchFacade"
 import type { BookingFacade } from "../worker/facades/lazy/BookingFacade.js"
 import type { MailAddressFacade } from "../worker/facades/lazy/MailAddressFacade.js"
-import type { DeviceEncryptionFacade } from "../worker/facades/DeviceEncryptionFacade"
 import { FileController, guiDownload } from "../../file/FileController"
 import type { NativeFileApp } from "../../native/common/FileApp"
 import type { NativePushServiceApp } from "../../native/main/NativePushServiceApp"
@@ -144,7 +143,6 @@ class MainLocator {
 	mailAddressFacade!: MailAddressFacade
 	blobFacade!: BlobFacade
 	userManagementFacade!: UserManagementFacade
-	deviceEncryptionFacade!: DeviceEncryptionFacade
 	contactFacade!: ContactFacade
 	usageTestController!: UsageTestController
 	usageTestModel!: UsageTestModel
@@ -605,7 +603,6 @@ class MainLocator {
 			mailAddressFacade,
 			blobFacade,
 			userManagementFacade,
-			deviceEncryptionFacade,
 			restInterface,
 			serviceExecutor,
 			cryptoFacade,
@@ -632,7 +629,6 @@ class MainLocator {
 		this.mailAddressFacade = mailAddressFacade
 		this.blobFacade = blobFacade
 		this.userManagementFacade = userManagementFacade
-		this.deviceEncryptionFacade = deviceEncryptionFacade
 		this.contactFacade = contactFacade
 		this.serviceExecutor = serviceExecutor
 		this.logins = new LoginController()

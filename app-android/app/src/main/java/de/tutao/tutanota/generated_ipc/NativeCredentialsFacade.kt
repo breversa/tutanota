@@ -13,7 +13,7 @@ interface NativeCredentialsFacade {
 	 suspend fun getSupportedEncryptionModes(
 	): List<CredentialEncryptionMode>
 	 suspend fun loadAll(
-	): List<PersistedCredentials>
+	): List<UnencryptedCredentials>
 	/**
 	 * Encrypt and store credentials
 	 */
@@ -32,5 +32,13 @@ interface NativeCredentialsFacade {
 		encryptionMode: CredentialEncryptionMode?,
 	): Unit
 	 suspend fun clear(
+	): Unit
+	/**
+	 * Migrate existing credentials to native db
+	 */
+	 suspend fun migrateToNativeCredentials(
+		credentials: List<PersistedCredentials>,
+		encryptionMode: CredentialEncryptionMode?,
+		credentialsKey: DataWrapper?,
 	): Unit
 }

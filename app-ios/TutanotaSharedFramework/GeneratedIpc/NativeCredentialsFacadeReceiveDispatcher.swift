@@ -50,6 +50,16 @@ public class NativeCredentialsFacadeReceiveDispatcher {
 			try await self.facade.clear(
 			)
 			return "null"
+		case "migrateToNativeCredentials":
+			let credentials = try! JSONDecoder().decode([PersistedCredentials].self, from: arg[0].data(using: .utf8)!)
+			let encryptionMode = try! JSONDecoder().decode(CredentialEncryptionMode?.self, from: arg[1].data(using: .utf8)!)
+			let credentialsKey = try! JSONDecoder().decode(DataWrapper?.self, from: arg[2].data(using: .utf8)!)
+			try await self.facade.migrateToNativeCredentials(
+				credentials,
+				encryptionMode,
+				credentialsKey
+			)
+			return "null"
 		default:
 			fatalError("licc messed up! \(method)")
 		}

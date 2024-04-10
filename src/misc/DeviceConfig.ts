@@ -53,6 +53,8 @@ interface ConfigObject {
 	mailAutoSelectBehavior: ListAutoSelectBehavior
 	// True if the app has already been run after install
 	isSetupComplete: boolean
+	// True if the credentials have been migrated to native
+	isCredentialsMigratedToNative: boolean
 }
 
 /**
@@ -110,6 +112,7 @@ export class DeviceConfig implements UsageTestStorage, NewsItemStorage {
 			isCalendarDaySelectorExpanded: loadedConfig.isCalendarDaySelectorExpanded ?? false,
 			mailAutoSelectBehavior: loadedConfig.mailAutoSelectBehavior ?? (isApp() ? ListAutoSelectBehavior.NONE : ListAutoSelectBehavior.OLDER),
 			isSetupComplete: loadedConfig.isSetupComplete ?? false,
+			isCredentialsMigratedToNative: loadedConfig.isCredentialsMigratedToNative ?? false,
 		}
 
 		// We need to write the config if there was a migration and if we generate the signup token and if.
@@ -166,6 +169,12 @@ export class DeviceConfig implements UsageTestStorage, NewsItemStorage {
 		this.writeToStorage()
 	}
 
+	async clear(): Promise<void> {
+		this.config._credentials.clear()
+
+		this.writeToStorage()
+	}
+
 	getSignupToken(): string {
 		return this.config._signupToken
 	}
@@ -190,6 +199,15 @@ export class DeviceConfig implements UsageTestStorage, NewsItemStorage {
 
 	setIsSetupComplete(value: boolean): void {
 		this.config.isSetupComplete = value
+		this.writeToStorage()
+	}
+
+	getIsCredentialsMigratedToNative(): boolean {
+		return this.config.isCredentialsMigratedToNative ?? false
+	}
+
+	setIsCredentialsMigratedToNative(value: boolean): void {
+		this.config.isCredentialsMigratedToNative = value
 		this.writeToStorage()
 	}
 
@@ -286,24 +304,8 @@ export class DeviceConfig implements UsageTestStorage, NewsItemStorage {
 		return this.config._credentialEncryptionMode
 	}
 
-	async setCredentialEncryptionMode(encryptionMode: CredentialEncryptionMode | null) {
-		this.config._credentialEncryptionMode = encryptionMode
-
-		this.writeToStorage()
-	}
-
 	async getCredentialsEncryptionKey(): Promise<Uint8Array | null> {
 		return this.config._encryptedCredentialsKey ? base64ToUint8Array(this.config._encryptedCredentialsKey) : null
-	}
-
-	async setCredentialsEncryptionKey(value: Uint8Array | null) {
-		if (value != null) {
-			this.config._encryptedCredentialsKey = uint8ArrayToBase64(value)
-		} else {
-			this.config._encryptedCredentialsKey = null
-		}
-
-		this.writeToStorage()
 	}
 
 	async getTestDeviceId(): Promise<string | null> {

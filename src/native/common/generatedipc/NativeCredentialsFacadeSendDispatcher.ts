@@ -31,4 +31,7 @@ export class NativeCredentialsFacadeSendDispatcher implements NativeCredentialsF
 	async clear(...args: Parameters<NativeCredentialsFacade["clear"]>) {
 		return this.transport.invokeNative("ipc", ["NativeCredentialsFacade", "clear", ...args])
 	}
+	async migrateToNativeCredentials(...args: Parameters<NativeCredentialsFacade["migrateToNativeCredentials"]>) {
+		return this.transport.invokeNative("ipc", ["NativeCredentialsFacade", "migrateToNativeCredentials", ...args])
+	}
 }

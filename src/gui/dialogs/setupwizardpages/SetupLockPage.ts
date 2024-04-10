@@ -39,7 +39,7 @@ export class SetupLockPageAttrs implements WizardPageAttrs<null> {
 			this.supportedModes = supportedModes
 			m.redraw
 		})
-		this.credentialsProvider.getCredentialsEncryptionMode().then((encryptionMode) => {
+		this.credentialsProvider.getCredentialEncryptionMode().then((encryptionMode) => {
 			this.currentMode = encryptionMode ?? DEFAULT_CREDENTIAL_ENCRYPTION_MODE
 		})
 	}
@@ -50,7 +50,7 @@ export class SetupLockPageAttrs implements WizardPageAttrs<null> {
 
 	async nextAction(showDialogs: boolean): Promise<boolean> {
 		try {
-			await this.credentialsProvider.setCredentialsEncryptionMode(this.currentMode)
+			await this.credentialsProvider.setCredentialEncryptionMode(this.currentMode)
 		} catch (e) {
 			if (e instanceof CredentialAuthenticationError) {
 				this.error = e.message

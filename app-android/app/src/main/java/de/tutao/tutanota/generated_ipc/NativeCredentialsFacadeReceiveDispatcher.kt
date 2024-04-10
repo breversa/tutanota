@@ -20,7 +20,7 @@ class NativeCredentialsFacadeReceiveDispatcher(
 				return json.encodeToString(result)
 			}
 			"loadAll" -> {
-				val result: List<PersistedCredentials> = this.facade.loadAll(
+				val result: List<UnencryptedCredentials> = this.facade.loadAll(
 				)
 				return json.encodeToString(result)
 			}
@@ -59,6 +59,17 @@ class NativeCredentialsFacadeReceiveDispatcher(
 			}
 			"clear" -> {
 				val result: Unit = this.facade.clear(
+				)
+				return json.encodeToString(result)
+			}
+			"migrateToNativeCredentials" -> {
+				val credentials: List<PersistedCredentials> = json.decodeFromString(arg[0])
+				val encryptionMode: CredentialEncryptionMode? = json.decodeFromString(arg[1])
+				val credentialsKey: DataWrapper? = json.decodeFromString(arg[2])
+				val result: Unit = this.facade.migrateToNativeCredentials(
+					credentials,
+					encryptionMode,
+					credentialsKey,
 				)
 				return json.encodeToString(result)
 			}

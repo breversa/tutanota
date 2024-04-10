@@ -83,7 +83,7 @@ class CredentialEncryptionMethodDialog {
 
 	static async showAndWaitForSelection(credentialsProvider: CredentialsProvider) {
 		const supportedModes = await credentialsProvider.getSupportedEncryptionModes()
-		const previousSelection = await credentialsProvider.getCredentialsEncryptionMode()
+		const previousSelection = await credentialsProvider.getCredentialEncryptionMode()
 		const credentialsDialog = new CredentialEncryptionMethodDialog(credentialsProvider, supportedModes, previousSelection)
 
 		credentialsDialog._dialog.show()
@@ -93,7 +93,7 @@ class CredentialEncryptionMethodDialog {
 
 	async _onModeSelected(mode: CredentialEncryptionMode) {
 		try {
-			await this._credentialsProvider.setCredentialsEncryptionMode(mode)
+			await this._credentialsProvider.setCredentialEncryptionMode(mode)
 
 			this._dialog.close()
 

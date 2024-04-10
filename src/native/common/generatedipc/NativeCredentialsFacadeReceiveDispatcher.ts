@@ -2,6 +2,7 @@
 
 import { UnencryptedCredentials } from "./UnencryptedCredentials.js"
 import { CredentialEncryptionMode } from "./CredentialEncryptionMode.js"
+import { PersistedCredentials } from "./PersistedCredentials.js"
 import { NativeCredentialsFacade } from "./NativeCredentialsFacade.js"
 
 export class NativeCredentialsFacadeReceiveDispatcher {
@@ -35,6 +36,12 @@ export class NativeCredentialsFacadeReceiveDispatcher {
 			}
 			case "clear": {
 				return this.facade.clear()
+			}
+			case "migrateToNativeCredentials": {
+				const credentials: ReadonlyArray<PersistedCredentials> = arg[0]
+				const encryptionMode: CredentialEncryptionMode | null = arg[1]
+				const credentialsKey: Uint8Array | null = arg[2]
+				return this.facade.migrateToNativeCredentials(credentials, encryptionMode, credentialsKey)
 			}
 		}
 	}

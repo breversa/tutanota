@@ -21,9 +21,8 @@ import { DesktopNativeCryptoFacade } from "../DesktopNativeCryptoFacade"
 import { typeModels } from "../../api/entities/sys/TypeModels"
 import type { DesktopAlarmStorage } from "./DesktopAlarmStorage"
 import type { LanguageViewModelType } from "../../misc/LanguageViewModel"
-import { IdTupleWrapper, NotificationInfo } from "../../api/entities/sys/TypeRefs.js"
+import { IdTupleWrapper, MissedNotification, NotificationInfo } from "../../api/entities/sys/TypeRefs.js"
 import { handleRestError, NotAuthenticatedError, NotAuthorizedError, ServiceUnavailableError, TooManyRequestsError } from "../../api/common/error/RestError"
-import { TutanotaError } from "@tutao/tutanota-error"
 import { log } from "../DesktopLog"
 import { BuildConfigKey, DesktopConfigEncKey, DesktopConfigKey } from "../config/ConfigKeys"
 import http from "node:http"
@@ -32,6 +31,7 @@ import tutanotaModelInfo from "../../api/entities/tutanota/ModelInfo.js"
 import { DesktopNativeCredentialsFacade } from "../credentials/DesktopNativeCredentialsFacade.js"
 import { Agent, fetch as undiciFetch } from "undici"
 import { Mail } from "../../api/entities/tutanota/TypeRefs.js"
+import { CredentialEncryptionMode } from "../../misc/credentials/CredentialEncryptionMode.js"
 
 export type SseInfo = {
 	identifier: string
@@ -39,14 +39,13 @@ export type SseInfo = {
 	userIds: Array<string>
 }
 
-type MailMetadata = {
-	sender: Mail["sender"]
-	firstRecipient: Mail["firstRecipient"]
-}
+type MailMetadata = Pick<Mail, "sender" | "firstRecipient" | "_id">
 
 const MISSED_NOTIFICATION_TTL = 30 * 24 * 60 * 60 * 1000 // 30 days
 
 const TAG = "[DesktopSseClient]"
+
+type EncryptedMissedNotification = MissedNotification & { alarmNotifications: readonly EncryptedAlarmNotification[] }
 
 export class DesktopSseClient {
 	private readonly _app: App
@@ -65,7 +64,6 @@ export class DesktopSseClient {
 	_readTimeoutInSeconds!: number
 	_nextReconnect: TimeoutID | null
 	private _tryToReconnect: boolean
-	private _lastProcessedChangeTime: number
 	private _reconnectAttempts: number
 	// We use this promise for queueing processing of notifications. There could be a smarter queue which clears all downloads older than
 	// the response.
@@ -98,7 +96,6 @@ export class DesktopSseClient {
 		this._delayHandler = delayHandler
 		this._reconnectAttempts = 1
 		this._tryToReconnect = false
-		this._lastProcessedChangeTime = 0
 		app.on("will-quit", () => {
 			this._disconnect()
 
@@ -393,32 +390,32 @@ export class DesktopSseClient {
 	}
 
 	_handlePushMessage(userId: string): Promise<void> {
-		const process = () =>
-			this._downloadMissedNotification(userId)
-				.then((mn) => {
-					this._conf.setVar(DesktopConfigKey.lastProcessedNotificationId, mn.lastProcessedNotificationId)
+		const process = async () => {
+			try {
+				const mn = await this.downloadMissedNotification(userId)
+				await this._conf.setVar(DesktopConfigKey.lastProcessedNotificationId, mn.lastProcessedNotificationId)
 
-					this._conf.setVar(DesktopConfigKey.lastMissedNotificationCheckTime, Date.now())
+				await this._conf.setVar(DesktopConfigKey.lastMissedNotificationCheckTime, Date.now())
 
-					if (mn.notificationInfos && mn.notificationInfos.length === 0 && mn.alarmNotifications && mn.alarmNotifications.length === 0) {
-						log.debug(TAG, "MissedNotification is empty")
-					} else {
-						for (const ni of mn.notificationInfos as Array<NotificationInfo>) {
-							this._handleNotificationInfo(this._lang.get("pushNewMail_msg"), ni)
-						}
-						for (const an of mn.alarmNotifications as Array<EncryptedAlarmNotification>) {
-							this._alarmScheduler.handleAlarmNotification(an)
-						}
+				if (mn.notificationInfos && mn.notificationInfos.length === 0 && mn.alarmNotifications && mn.alarmNotifications.length === 0) {
+					log.debug(TAG, "MissedNotification is empty")
+				} else {
+					for (const ni of mn.notificationInfos as Array<NotificationInfo>) {
+						await this._handleNotificationInfo(ni)
 					}
-				})
-				.catch((e) => {
-					if (e instanceof FileNotFoundError) {
-						log.debug(TAG, "MissedNotification 404:", e)
-					} else if (e instanceof ServiceUnavailableError) {
-					} else {
-						throw e
+					for (const an of mn.alarmNotifications) {
+						await this._alarmScheduler.handleAlarmNotification(an)
 					}
-				})
+				}
+			} catch (e) {
+				if (e instanceof FileNotFoundError) {
+					log.debug(TAG, "MissedNotification 404:", e)
+				} else if (e instanceof ServiceUnavailableError) {
+				} else {
+					throw e
+				}
+			}
+		}
 
 		this._handlingPushMessage = this._handlingPushMessage.then(process, (e) => {
 			if (e instanceof NotAuthenticatedError) {
@@ -431,7 +428,7 @@ export class DesktopSseClient {
 		return this._handlingPushMessage
 	}
 
-	_handleNotificationInfo(title: string, ni: NotificationInfo): void {
+	async _handleNotificationInfo(ni: NotificationInfo) {
 		const w = this._wm.getAll().find((w) => w.getUserId() === ni.userId)
 
 		if (w && w.isFocused()) {
@@ -439,109 +436,52 @@ export class DesktopSseClient {
 			return
 		}
 
-		this.downloadMailMetadata(ni).then((meta) => {
-			if (meta == null) return
-			this._notifier.submitGroupedNotification(
-				title,
-				`sender: ${meta.sender.address} first recipient: ${meta.firstRecipient?.address}`,
-				ni.userId,
-				(res) => {
-					if (res === NotificationResult.Click) {
-						this._wm.openMailBox({
-							userId: ni.userId,
-							mailAddress: ni.mailAddress,
-						})
-					}
-				},
-			)
+		const mailMetadata = await this.downloadMailMetadata(ni)
+		if (mailMetadata == null) return
+		this._notifier.submitGroupedNotification(mailMetadata.sender.address, mailMetadata.firstRecipient?.address ?? "", mailMetadata._id.join(","), (res) => {
+			if (res === NotificationResult.Click) {
+				this._wm.openMailBox({
+					userId: ni.userId,
+					mailAddress: ni.mailAddress,
+				})
+			}
 		})
 	}
 
-	_downloadMissedNotification(userId: string): Promise<any> {
-		return new Promise(async (resolve, reject) => {
-			const fail = (req: http.ClientRequest, res: http.IncomingMessage | null, e: TutanotaError | null) => {
-				if (res) {
-					res.destroy()
-				}
+	private async downloadMissedNotification(userId: string): Promise<EncryptedMissedNotification> {
+		const url = this.makeAlarmNotificationUrl(assertNotNull(this._connectedSseInfo))
 
-				req.destroy()
-				reject(e)
-			}
+		log.debug(TAG, "downloading missed notification")
+		const headers: Record<string, string> = {
+			userIds: userId,
+			v: typeModels.MissedNotification.version,
+			cv: this._app.getVersion(),
+		}
+		const lastProcessedId = await this._conf.getVar(DesktopConfigKey.lastProcessedNotificationId)
 
-			const url = this.makeAlarmNotificationUrl(assertNotNull(this._connectedSseInfo))
+		if (lastProcessedId) {
+			headers["lastProcessedNotificationId"] = lastProcessedId
+		}
 
-			log.debug(TAG, "downloading missed notification")
-			const headers: Record<string, string> = {
-				userIds: userId,
-				v: typeModels.MissedNotification.version,
-				cv: this._app.getVersion(),
-			}
-			const lastProcessedId = await this._conf.getVar(DesktopConfigKey.lastProcessedNotificationId)
+		const res = await this.fetch(url, { headers, dispatcher: new Agent({ connectTimeout: 20000 }) })
 
-			if (lastProcessedId) {
-				headers["lastProcessedNotificationId"] = lastProcessedId
-			}
+		if (
+			(res.status === ServiceUnavailableError.CODE || TooManyRequestsError.CODE) &&
+			(res.headers.get("retry-after") || res.headers.get("suspension-time"))
+		) {
+			// headers are lowercased, see https://nodejs.org/api/http.html#http_message_headers
+			const time = filterInt((res.headers.get("retry-after") ?? res.headers.get("suspension-time")) as string)
+			log.debug(TAG, `ServiceUnavailable when downloading missed notification, waiting ${time}s`)
 
-			const req: http.ClientRequest = this._net
-				.request(url, {
-					method: "GET",
-					headers,
-					// this defines the timeout for the connection attempt, not for waiting for the servers response after a connection was made
-					timeout: 20000,
-				})
-				.on("timeout", () => {
-					log.debug(TAG, "Missed notification download timeout")
-					req.destroy()
-				})
-				.on("socket", (s) => {
-					// We add this listener purely as a workaround for some problem with net module.
-					// The problem is that sometimes request gets stuck after handshake - does not process unless some event
-					// handler is called (and it works more reliably with console.log()).
-					// This makes the request magically unstuck, probably console.log does some I/O and/or socket things.
-					s.on("lookup", () => log.debug(TAG, "lookup"))
-				})
-				.on("response", (res) => {
-					log.debug(TAG, "missed notification response", res.statusCode)
-
-					if (
-						(res.statusCode === ServiceUnavailableError.CODE || TooManyRequestsError.CODE) &&
-						(res.headers["retry-after"] || res.headers["suspension-time"])
-					) {
-						// headers are lowercased, see https://nodejs.org/api/http.html#http_message_headers
-						const time = filterInt((res.headers["retry-after"] ?? res.headers["suspension-time"]) as string)
-						log.debug(TAG, `ServiceUnavailable when downloading missed notification, waiting ${time}s`)
-						res.destroy()
-						req.destroy()
-
-						this._delayHandler(() => {
-							this._downloadMissedNotification(userId).then(resolve, reject)
-						}, time * 1000)
-
-						return
-					} else if (res.statusCode !== 200) {
-						const tutanotaError = handleRestError(neverNull(res.statusCode), url, res.headers["Error-Id"] as string, null)
-						fail(req, res, tutanotaError)
-						return
-					}
-
-					res.setEncoding("utf8")
-					let resData = ""
-					res.on("data", (chunk) => {
-						resData += chunk
-					})
-						.on("end", () => {
-							try {
-								resolve(JSON.parse(resData))
-							} catch (e) {
-								fail(req, res, e)
-							}
-						})
-						.on("close", () => log.debug(TAG, "dl missed notification response closed"))
-						.on("error", (e) => fail(req, res, e))
-				})
-				.on("error", (e) => fail(req, null, e))
-			req.end()
-		})
+			return new Promise((resolve, reject) => {
+				this._delayHandler(() => this.downloadMissedNotification(userId).then(resolve, reject), time * 1000)
+			})
+		} else if (!res.ok) {
+			throw handleRestError(neverNull(res.status), url, res.headers.get("error-id") as string, null)
+		} else {
+			const json = await res.json()
+			return json as EncryptedMissedNotification
+		}
 	}
 
 	/** public for testing */
@@ -603,6 +543,10 @@ export class DesktopSseClient {
 	}
 
 	private async downloadMailMetadata(ni: NotificationInfo): Promise<MailMetadata | null> {
+		// we can't download the email if we don't have access to credentials
+		if ((await this._nativeCredentialFacade.getCredentialEncryptionMode()) !== CredentialEncryptionMode.DEVICE_LOCK) {
+			return null
+		}
 		const url = this.makeMailMetadataUrl(assertNotNull(this._connectedSseInfo), assertNotNull(ni.mailId))
 
 		// decrypt access token

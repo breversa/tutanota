@@ -12,10 +12,8 @@ import { CryptoError } from "@tutao/tutanota-crypto/error.js"
 import { CancelledError } from "../../api/common/error/CancelledError.js"
 import { KeyPermanentlyInvalidatedError } from "../../api/common/error/KeyPermanentlyInvalidatedError.js"
 import { PersistedCredentials } from "../../native/common/generatedipc/PersistedCredentials.js"
-import { DesktopCredentialsSqlDb } from "../db/DesktopCredentialsSqlDb.js"
-import { CredentialType } from "../../misc/credentials/CredentialType.js"
+import { DesktopCredentialsStorage } from "../db/DesktopCredentialsStorage.js"
 import { UnencryptedCredentials } from "../../native/common/generatedipc/UnencryptedCredentials.js"
-import { sql } from "../../api/worker/offline/Sql.js"
 
 /** the single source of truth for this configuration */
 const SUPPORTED_MODES = Object.freeze([CredentialEncryptionMode.DEVICE_LOCK, CredentialEncryptionMode.APP_PASSWORD] as const)
@@ -40,7 +38,7 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 		private readonly argon2idFacade: Promise<WebAssembly.Exports>,
 		private readonly lang: LanguageViewModel,
 		private readonly conf: DesktopConfig,
-		private readonly credentialDb: DesktopCredentialsSqlDb,
+		private readonly credentialDb: DesktopCredentialsStorage,
 		private readonly getCurrentCommonNativeFacade: () => Promise<CommonNativeFacade>,
 	) {}
 
@@ -117,9 +115,8 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 		return SUPPORTED_MODES
 	}
 
-	deleteByUserId(id: string): Promise<void> {
-		const formattedQuery = sql`DELETE FROM credentials WHERE userId = ${id}`
-		return this.credentialDb.run(formattedQuery.query, formattedQuery.params)
+	async deleteByUserId(id: string): Promise<void> {
+		this.credentialDb.deleteByUserId(id)
 	}
 
 	async getCredentialEncryptionMode(): Promise<CredentialEncryptionMode | null> {
@@ -138,44 +135,13 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 	}
 
 	async loadAll(): Promise<ReadonlyArray<PersistedCredentials>> {
-		const credentialsKey = await this.getOrCreateCredentialEncryptionKey()
-		const formattedQuery = sql`SELECT * FROM credentials`
-		const records = await this.credentialDb.all(formattedQuery.query, formattedQuery.params)
-		return records.map((row) => {
-			const credentialType = CredentialType[row.type.value as keyof typeof CredentialType]
-			if (!credentialType) throw Error() // FIXME
-			const persistedCredential: PersistedCredentials = {
-				credentialInfo: {
-					login: row.login.value as string,
-					userId: row.userId.value as string,
-					type: credentialType,
-				},
-				encryptedPassword: row.encryptedPassword.value as string,
-				accessToken: row.accessToken.value as string,
-				databaseKey: row.databaseKey.value as string,
-			}
-			return persistedCredential
-		})
+		return this.credentialDb.getAllCredentials()
 	}
 
 	async loadByUserId(id: string): Promise<UnencryptedCredentials | null> {
 		const credentialsKey = await this.getOrCreateCredentialEncryptionKey()
-		const formattedQuery = sql`SELECT * FROM credentials WHERE userId = ${id}`
-		const row = await this.credentialDb.get(formattedQuery.query, formattedQuery.params)
-		if (!row) return null
-		const credentialType = CredentialType[row.type.value as keyof typeof CredentialType]
-		if (!credentialType) throw Error() // FIXME
-		const persistedCredentials = {
-			credentialInfo: {
-				login: row.login.value as string,
-				userId: row.userId.value as string,
-				type: credentialType,
-			},
-			encryptedPassword: row.encryptedPassword.value as string,
-			accessToken: row.accessToken.value as string,
-			databaseKey: row.databaseKey.value as string,
-		}
-		return this.decryptCredentials(persistedCredentials, credentialsKey)
+		const encryptedCredentials = this.credentialDb.getCredentialsByUserId(id)
+		return encryptedCredentials ? this.decryptCredentials(encryptedCredentials, credentialsKey) : null
 	}
 
 	private decryptCredentials(persistedCredentials: PersistedCredentials, credentialsKey: BitArray): UnencryptedCredentials {
@@ -215,8 +181,7 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 	}
 
 	async clear(): Promise<void> {
-		const formattedQuery = sql`DELETE FROM credentials`
-		await this.credentialDb.run(formattedQuery.query, formattedQuery.params)
+		this.credentialDb.deleteAllCredentials()
 		await this.setCredentialsEncryptionKey(null)
 		await this.conf.setVar(DesktopConfigKey.credentialEncryptionMode, null)
 	}
@@ -232,10 +197,7 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 	}
 
 	async storeEncrypted(credentials: PersistedCredentials): Promise<void> {
-		const formattedQuery = sql`INSERT INTO credentials (login, userId, type, accessToken, databaseKey, encryptedPassword) VALUES (
-${credentials.credentialInfo.login}, ${credentials.credentialInfo.userId}, ${credentials.credentialInfo.type},
-${credentials.accessToken}, ${credentials.databaseKey}, ${credentials.encryptedPassword})`
-		return this.credentialDb.run(formattedQuery.query, formattedQuery.params)
+		this.credentialDb.store(credentials)
 	}
 
 	private assertSupportedEncryptionMode(encryptionMode: DesktopCredentialsMode) {

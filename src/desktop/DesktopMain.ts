@@ -61,7 +61,7 @@ import { OfflineDbRefCounter } from "./db/OfflineDbRefCounter.js"
 import { WorkerSqlCipher } from "./db/WorkerSqlCipher.js"
 import { TempFs } from "./files/TempFs.js"
 import { makeDbPath } from "./db/DbUtils.js"
-import { DesktopCredentialsSqlDb } from "./db/DesktopCredentialsSqlDb.js"
+import { DesktopCredentialsStorage } from "./db/DesktopCredentialsStorage.js"
 import { fetch as undiciFetch } from "undici"
 
 /**
@@ -157,7 +157,7 @@ async function createComponents(): Promise<Components> {
 	const alarmStorage = new DesktopAlarmStorage(conf, desktopCrypto, keyStoreFacade)
 	const updater = new ElectronUpdater(conf, notifier, desktopCrypto, app, appIcon, new UpdaterWrapper(), fs)
 	const shortcutManager = new LocalShortcutManager()
-	const credentialsDb = new DesktopCredentialsSqlDb(buildOptions.sqliteNativePath)
+	const credentialsDb = new DesktopCredentialsStorage(buildOptions.sqliteNativePath)
 	const nativeCredentialsFacade = new DesktopNativeCredentialsFacade(keyStoreFacade, desktopCrypto, wasmLoader(), lang, conf, credentialsDb, async () => {
 		const last = await wm.getLastFocused(true)
 		return last.commonNativeFacade

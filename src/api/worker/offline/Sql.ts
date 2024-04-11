@@ -48,6 +48,30 @@ export function sql(queryParts: TemplateStringsArray, ...paramInstances: (SqlVal
 	return { query, params }
 }
 
+export type UntaggedQuery = { query: string; params: readonly SqlValue[] }
+
+/**
+ * Like {@link sql} but without tagging the values
+ */
+export function usql(queryParts: TemplateStringsArray, ...paramInstances: (SqlValue | SqlFragment)[]): UntaggedQuery {
+	let query = ""
+	let params: SqlValue[] = []
+	let i: number
+	for (i = 0; i < paramInstances.length; i++) {
+		query += queryParts[i]
+		const param = paramInstances[i]
+		if (param instanceof SqlFragment) {
+			query += param.text
+			params.push(...param.params)
+		} else {
+			query += "?"
+			params.push(param)
+		}
+	}
+	query += queryParts[i]
+	return { query, params }
+}
+
 export class SqlFragment {
 	constructor(readonly text: string, readonly params: SqlValue[]) {}
 }

@@ -15,7 +15,6 @@ import { ProgressTracker } from "./ProgressTracker"
 import { MinimizedMailEditorViewModel } from "../../mail/model/MinimizedMailEditorViewModel"
 import { SchedulerImpl } from "../common/utils/Scheduler.js"
 import type { CredentialsProvider } from "../../misc/credentials/CredentialsProvider.js"
-import { createCredentialsProvider } from "../../misc/credentials/CredentialsProviderFactory"
 import type { LoginFacade } from "../worker/facades/LoginFacade"
 import type { CustomerFacade } from "../worker/facades/lazy/CustomerFacade.js"
 import type { GiftCardFacade } from "../worker/facades/lazy/GiftCardFacade.js"
@@ -39,7 +38,6 @@ import { WebauthnClient } from "../../misc/2fa/webauthn/WebauthnClient"
 import type { UserManagementFacade } from "../worker/facades/lazy/UserManagementFacade.js"
 import type { GroupManagementFacade } from "../worker/facades/lazy/GroupManagementFacade.js"
 import { WorkerRandomizer } from "../worker/WorkerImpl"
-import { ExposedNativeInterface } from "../../native/common/NativeInterface"
 import { BrowserWebauthn } from "../../misc/2fa/webauthn/BrowserWebauthn.js"
 import { UsageTestController } from "@tutao/tutanota-usagetests"
 import { EphemeralUsageTestStorage, StorageBehavior, UsageTestModel } from "../../misc/UsageTestModel"
@@ -110,6 +108,9 @@ import { ContactImporter } from "../../contacts/ContactImporter.js"
 import { MobileContactsFacade } from "../../native/common/generatedipc/MobileContactsFacade.js"
 import { PermissionError } from "../common/error/PermissionError.js"
 import { WebMobileFacade } from "../../native/main/WebMobileFacade.js"
+import { CredentialFormatMigrator } from "../../misc/credentials/CredentialFormatMigrator.js"
+import { NativeCredentialsFacade } from "../../native/common/generatedipc/NativeCredentialsFacade.js"
+import { SqlCipherFacade } from "../../native/common/generatedipc/SqlCipherFacade.js"
 
 assertMainOrNode()
 
@@ -164,8 +165,8 @@ class MainLocator {
 	Const!: Record<string, any>
 
 	private nativeInterfaces: NativeInterfaces | null = null
-	private exposedNativeInterfaces: ExposedNativeInterface | null = null
 	private entropyFacade!: EntropyFacade
+	private sqlCipherFacade!: SqlCipherFacade
 
 	readonly recipientsModel: lazyAsync<RecipientsModel> = lazyMemoized(async () => {
 		const { RecipientsModel } = await import("./RecipientsModel.js")
@@ -474,6 +475,10 @@ class MainLocator {
 		return this.getNativeInterface("mobileContactsFacade")
 	}
 
+	get nativeCredentialsFacade(): NativeCredentialsFacade {
+		return this.getNativeInterface("nativeCredentialsFacade")
+	}
+
 	async mailAddressTableModelForOwnMailbox(): Promise<MailAddressTableModel> {
 		const { MailAddressTableModel } = await import("../../settings/mailaddress/MailAddressTableModel.js")
 		const nameChanger = await this.ownMailAddressNameChanger()
@@ -631,6 +636,7 @@ class MainLocator {
 		this.userManagementFacade = userManagementFacade
 		this.contactFacade = contactFacade
 		this.serviceExecutor = serviceExecutor
+		this.sqlCipherFacade = sqlCipherFacade
 		this.logins = new LoginController()
 		// Should be called elsewhere later e.g. in mainLocator
 		this.logins.init()
@@ -704,12 +710,7 @@ class MainLocator {
 			this.domainConfigProvider(),
 		)
 		this.loginListener = new PageContextLoginListener(this.secondFactorHandler)
-		this.credentialsProvider = await createCredentialsProvider(
-			this.nativeInterfaces?.native ?? null,
-			sqlCipherFacade,
-			deviceConfig,
-			isDesktop() ? this.interWindowEventSender : null,
-		)
+		this.credentialsProvider = await this.createCredentialsProvider()
 		this.random = random
 
 		this.usageTestModel = new UsageTestModel(
@@ -842,9 +843,18 @@ class MainLocator {
 		return popupModel
 	}
 
-	nativeContactsSyncManager = lazyMemoized(() => {
+	readonly nativeContactsSyncManager = lazyMemoized(() => {
 		assert(isApp(), "isApp")
 		return new NativeContactsSyncManager(this.logins, this.mobileContactsFacade, this.entityClient, this.eventController, this.contactModel, deviceConfig)
+	})
+
+	readonly credentialFormatMigrator: () => Promise<CredentialFormatMigrator> = lazyMemoized(async () => {
+		const { CredentialFormatMigrator } = await import("../../misc/credentials/CredentialFormatMigrator.js")
+		if (isDesktop() || isApp()) {
+			return new CredentialFormatMigrator(deviceConfig, this.nativeCredentialsFacade)
+		} else {
+			return new CredentialFormatMigrator(deviceConfig, null)
+		}
 	})
 
 	// For testing argon2 migration after login. The production server will reject this request.
@@ -852,6 +862,19 @@ class MainLocator {
 	async changeToBycrypt(passphrase: string): Promise<unknown> {
 		const currentUser = this.logins.getUserController().user
 		return this.loginFacade.migrateKdfType(KdfType.Bcrypt, passphrase, currentUser)
+	}
+
+	/**
+	 * Factory method for credentials provider that will return an instance injected with the implementations appropriate for the platform.
+	 */
+	private async createCredentialsProvider(): Promise<CredentialsProvider> {
+		const { CredentialsProvider } = await import("../../misc/credentials/CredentialsProvider.js")
+		if (isDesktop() || isApp()) {
+			return new CredentialsProvider(this.nativeCredentialsFacade, this.sqlCipherFacade, isDesktop() ? this.interWindowEventSender : null)
+		} else {
+			const { WebCredentialsFacade } = await import("../../misc/credentials/WebCredentialsFacade.js")
+			return new CredentialsProvider(new WebCredentialsFacade(deviceConfig), null, null)
+		}
 	}
 }
 

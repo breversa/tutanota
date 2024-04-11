@@ -65,7 +65,7 @@ export class ExternalLoginViewModel {
 
 		this.password = ""
 
-		const storedCredentials = await this.credentialsProvider.getCredentialsByUserId(userId)
+		const storedCredentials = await this.credentialsProvider.getDecryptedCredentialsByUserId(userId)
 
 		// For external users userId is used instead of email address
 		if (persistentSession) {
@@ -105,7 +105,7 @@ export class ExternalLoginViewModel {
 
 	async loginWithStoredCredentials() {
 		try {
-			const credentials = await this.credentialsProvider.getCredentialsByUserId(this.urlData.userId)
+			const credentials = await this.credentialsProvider.getDecryptedCredentialsByUserId(this.urlData.userId)
 			if (credentials) {
 				await this.autologin(credentials)
 			}
@@ -158,7 +158,7 @@ export class ExternalLoginViewModel {
 				kdfType: kdfType,
 			}
 
-			const credentials = await this.credentialsProvider.getCredentialsByUserId(this.urlData.userId)
+			const credentials = await this.credentialsProvider.getDecryptedCredentialsByUserId(this.urlData.userId)
 
 			if (credentials && args.noAutoLogin !== true) {
 				await this.autologin(credentials)

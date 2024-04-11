@@ -6,17 +6,17 @@
  */
 public struct UnencryptedCredentials : Codable {
 	public init(
-		credentialsInfo: CredentialsInfo,
+		credentialInfo: CredentialsInfo,
 		accessToken: String,
 		databaseKey: DataWrapper?,
 		encryptedPassword: String
 	) {
-		self.credentialsInfo = credentialsInfo
+		self.credentialInfo = credentialInfo
 		self.accessToken = accessToken
 		self.databaseKey = databaseKey
 		self.encryptedPassword = encryptedPassword
 	}
-	public let credentialsInfo: CredentialsInfo
+	public let credentialInfo: CredentialsInfo
 	public let accessToken: String
 	public let databaseKey: DataWrapper?
 	public let encryptedPassword: String

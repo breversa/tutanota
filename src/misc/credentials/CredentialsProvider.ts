@@ -7,7 +7,7 @@ import { CredentialType } from "./CredentialType.js"
 import { PersistedCredentials } from "../../native/common/generatedipc/PersistedCredentials.js"
 import { NativeCredentialsFacade } from "../../native/common/generatedipc/NativeCredentialsFacade"
 import { UnencryptedCredentials } from "../../native/common/generatedipc/UnencryptedCredentials.js"
-import { deviceConfig } from "../DeviceConfig.js"
+import { isAdminClient, isBrowser } from "../../api/common/Env.js"
 
 export type CredentialsAndDatabaseKey = {
 	credentials: Credentials
@@ -22,25 +22,7 @@ export class CredentialsProvider {
 		private readonly credentialsFacade: NativeCredentialsFacade,
 		private readonly sqliteCipherFacade: SqlCipherFacade | null,
 		private readonly interWindowEventSender: InterWindowEventFacadeSendDispatcher | null,
-		private readonly doMigrationToNative: boolean,
-	) {
-		// Do migration to native as soon as possible, before any attempts to read mode or keys
-		if (this.doMigrationToNative && !deviceConfig.getIsCredentialsMigratedToNative()) this.migrateToNativeCredentials()
-	}
-
-	/**
-	 * Migrate existing credentials to native db if the migration haven't happened once. Also generate database key if missing.
-	 */
-	async migrateToNativeCredentials() {
-		const allPersistedCredentials = await deviceConfig.loadAll()
-		await this.credentialsFacade.migrateToNativeCredentials(
-			allPersistedCredentials,
-			await deviceConfig.getCredentialEncryptionMode(),
-			await deviceConfig.getCredentialsEncryptionKey(),
-		)
-		await deviceConfig.clear()
-		deviceConfig.setIsCredentialsMigratedToNative(true)
-	}
+	) {}
 
 	/**
 	 * Stores credentials. If credentials already exist for login, they will be overwritten.
@@ -53,31 +35,33 @@ export class CredentialsProvider {
 	 * Change the encrypted password for the stored credentials.
 	 */
 	async replacePassword(credentials: CredentialsInfo, encryptedPassword: string): Promise<void> {
-		// FIXME reimplement?
-		// const encryptedCredentials = await this.storage.loadByUserId(credentials.userId)
-		// if (encryptedCredentials == null) {
-		// 	throw new Error(`Trying to replace password for credentials but credentials are not persisted: ${credentials.userId}`)
-		// }
-		// // Encrypted password is encrypted with the session key and is the same for encrypted and decrypted credentials, no additional logic is needed.
-		// const newEncryptedCredentials = { ...encryptedCredentials, encryptedPassword }
-		// await this.storage.store(newEncryptedCredentials)
+		const encryptedCredentials = await this.getCredentialsByUserId(credentials.userId)
+		if (encryptedCredentials == null) {
+			throw new Error(`Trying to replace password for credentials but credentials are not persisted: ${credentials.userId}`)
+		}
+		// Encrypted password is encrypted with the session key and is the same for encrypted and decrypted credentials, no additional logic is needed.
+		const newEncryptedCredentials: PersistedCredentials = { ...encryptedCredentials, encryptedPassword }
+		await this.credentialsFacade.storeEncrypted(newEncryptedCredentials)
 	}
 
-	async storeRaw(PersistedCredentials: PersistedCredentials) {
-		// await this.storage.store(PersistedCredentials)
-		// FIXME reimplement?
+	async storeRaw(credentials: PersistedCredentials) {
+		await this.credentialsFacade.storeEncrypted(credentials)
 	}
 
 	async getCredentialsInfoByUserId(userId: Id): Promise<CredentialsInfo | null> {
-		const credential = await this.getCredentialsByUserId(userId)
-		return credential?.credentialsInfo ?? null
+		return (await this.getDecryptedCredentialsByUserId(userId))?.credentialInfo ?? null
+	}
+
+	private async getCredentialsByUserId(userId: Id): Promise<PersistedCredentials | null> {
+		const allCredentials = await this.credentialsFacade.loadAll()
+		return allCredentials.find((credential) => credential.credentialInfo.userId === userId) ?? null
 	}
 
 	/**
 	 * Returns the full credentials for the userId passed in.
 	 * @param userId
 	 */
-	async getCredentialsByUserId(userId: Id): Promise<UnencryptedCredentials | null> {
+	async getDecryptedCredentialsByUserId(userId: Id): Promise<UnencryptedCredentials | null> {
 		return this.credentialsFacade.loadByUserId(userId)
 	}
 
@@ -86,8 +70,8 @@ export class CredentialsProvider {
 	 * have a secure external mailbox.
 	 */
 	async getInternalCredentialsInfos(): Promise<ReadonlyArray<CredentialsInfo>> {
-		const allCredentials = (await this.credentialsFacade.loadAll()).map((credentials) => credentials.credentialsInfo)
-		return allCredentials.filter((credential) => credential.type === CredentialType.internal)
+		const allCredentials = await this.credentialsFacade.loadAll()
+		return allCredentials.filter((credential) => credential.credentialInfo.type === CredentialType.internal).map((credential) => credential.credentialInfo)
 	}
 
 	/**
@@ -135,4 +119,8 @@ export class CredentialsProvider {
 		console.warn("clearing all stored credentials:", reason)
 		await this.credentialsFacade.clear()
 	}
+}
+
+export function usingKeychainAuthenticationWithOptions(): boolean {
+	return !isBrowser() && !isAdminClient()
 }

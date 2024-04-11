@@ -13,12 +13,18 @@ interface NativeCredentialsFacade {
 	 suspend fun getSupportedEncryptionModes(
 	): List<CredentialEncryptionMode>
 	 suspend fun loadAll(
-	): List<UnencryptedCredentials>
+	): List<PersistedCredentials>
 	/**
 	 * Encrypt and store credentials
 	 */
 	 suspend fun store(
 		credentials: UnencryptedCredentials,
+	): Unit
+	/**
+	 * Store already encrypted credentials
+	 */
+	 suspend fun storeEncrypted(
+		credentials: PersistedCredentials,
 	): Unit
 	 suspend fun loadByUserId(
 		id: String,
@@ -38,7 +44,7 @@ interface NativeCredentialsFacade {
 	 */
 	 suspend fun migrateToNativeCredentials(
 		credentials: List<PersistedCredentials>,
-		encryptionMode: CredentialEncryptionMode?,
-		credentialsKey: DataWrapper?,
+		encryptionMode: CredentialEncryptionMode,
+		credentialsKey: DataWrapper,
 	): Unit
 }

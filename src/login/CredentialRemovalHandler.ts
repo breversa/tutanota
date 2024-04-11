@@ -24,7 +24,7 @@ export class AppsCredentialRemovalHandler implements CredentialRemovalHandler {
 
 	async onCredentialsRemoved(credentials: UnencryptedCredentials) {
 		if (credentials.databaseKey != null) {
-			const { userId } = credentials.credentialsInfo
+			const { userId } = credentials.credentialInfo
 			await this.indexer.deleteIndex(userId)
 			await this.pushApp.invalidateAlarmsForUser(userId)
 			await this.pushApp.removeUserFromNotifications(userId)
@@ -32,7 +32,7 @@ export class AppsCredentialRemovalHandler implements CredentialRemovalHandler {
 		}
 
 		await this.mobileContactsFacade
-			?.deleteContacts(credentials.credentialsInfo.login, null)
+			?.deleteContacts(credentials.credentialInfo.login, null)
 			.catch(ofClass(PermissionError, (e) => console.log("No permission to clear contacts", e)))
 	}
 }

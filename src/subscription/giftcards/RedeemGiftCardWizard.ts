@@ -99,7 +99,7 @@ class RedeemGiftCardModel {
 			await this.postLogin()
 		} else {
 			await this.logins.logout(false)
-			const credentials = await this.credentialsProvider.getCredentialsByUserId(encryptedCredentials.userId)
+			const credentials = await this.credentialsProvider.getDecryptedCredentialsByUserId(encryptedCredentials.userId)
 
 			if (credentials) {
 				await this.logins.resumeSession(credentials, null, null)

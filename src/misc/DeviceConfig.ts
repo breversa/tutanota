@@ -140,8 +140,8 @@ export class DeviceConfig implements UsageTestStorage, NewsItemStorage {
 		}
 	}
 
-	async store(persistentCredentials: PersistedCredentials): Promise<void> {
-		const existing = this.config._credentials.get(persistentCredentials.credentialsInfo.userId)
+	storeCredentials(persistentCredentials: PersistedCredentials) {
+		const existing = this.config._credentials.get(persistentCredentials.credentialInfo.userId)
 
 		let credentialsWithKey
 		if (existing?.databaseKey) {
@@ -150,16 +150,16 @@ export class DeviceConfig implements UsageTestStorage, NewsItemStorage {
 			credentialsWithKey = { ...persistentCredentials }
 		}
 
-		this.config._credentials.set(persistentCredentials.credentialsInfo.userId, persistentCredentials)
+		this.config._credentials.set(persistentCredentials.credentialInfo.userId, persistentCredentials)
 
 		this.writeToStorage()
 	}
 
-	async loadByUserId(userId: Id): Promise<PersistedCredentials | null> {
+	getCredentialsByUserId(userId: Id): PersistedCredentials | null {
 		return this.config._credentials.get(userId) ?? null
 	}
 
-	async loadAll(): Promise<Array<PersistedCredentials>> {
+	getCredentials(): Array<PersistedCredentials> {
 		return Array.from(this.config._credentials.values())
 	}
 
@@ -169,8 +169,10 @@ export class DeviceConfig implements UsageTestStorage, NewsItemStorage {
 		this.writeToStorage()
 	}
 
-	async clear(): Promise<void> {
+	async clearCredentialsData(): Promise<void> {
 		this.config._credentials.clear()
+		this.config._encryptedCredentialsKey = null
+		this.config._credentialEncryptionMode = null
 
 		this.writeToStorage()
 	}
@@ -417,7 +419,7 @@ export function migrateConfigV2to3(loadedConfig: any) {
 		}
 
 		loadedConfig._credentials[credential.userId] = {
-			credentialsInfo: {
+			credentialInfo: {
 				login,
 				userId: credential.userId,
 				type,

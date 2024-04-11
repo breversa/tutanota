@@ -188,7 +188,7 @@ export async function reloginForExpiredSession() {
 	const userId = logins.getUserController().user._id
 	const mailAddress = assertNotNull(logins.getUserController().userGroupInfo.mailAddress, "could not get mailAddress from userGroupInfo")
 	// Fetch old credentials to preserve database key if it's there
-	const oldCredentials = await credentialsProvider.getCredentialsByUserId(userId)
+	const oldCredentials = await credentialsProvider.getDecryptedCredentialsByUserId(userId)
 	// we're deleting the outdated user here because before resetSession() the cache is still open and can be modified.
 	await cacheStorage?.deleteIfExists(UserTypeRef, null, userId)
 	const sessionReset = loginFacade.resetSession()

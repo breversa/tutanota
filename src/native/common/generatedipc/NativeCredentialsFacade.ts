@@ -1,20 +1,25 @@
 /* generated file, don't edit. */
 
 import { CredentialEncryptionMode } from "./CredentialEncryptionMode.js"
-import { UnencryptedCredentials } from "./UnencryptedCredentials.js"
 import { PersistedCredentials } from "./PersistedCredentials.js"
+import { UnencryptedCredentials } from "./UnencryptedCredentials.js"
 /**
  * Operations for credential encryption operations using OS keychain.
  */
 export interface NativeCredentialsFacade {
 	getSupportedEncryptionModes(): Promise<ReadonlyArray<CredentialEncryptionMode>>
 
-	loadAll(): Promise<ReadonlyArray<UnencryptedCredentials>>
+	loadAll(): Promise<ReadonlyArray<PersistedCredentials>>
 
 	/**
 	 * Encrypt and store credentials
 	 */
 	store(credentials: UnencryptedCredentials): Promise<void>
+
+	/**
+	 * Store already encrypted credentials
+	 */
+	storeEncrypted(credentials: PersistedCredentials): Promise<void>
 
 	loadByUserId(id: string): Promise<UnencryptedCredentials | null>
 
@@ -31,7 +36,7 @@ export interface NativeCredentialsFacade {
 	 */
 	migrateToNativeCredentials(
 		credentials: ReadonlyArray<PersistedCredentials>,
-		encryptionMode: CredentialEncryptionMode | null,
-		credentialsKey: Uint8Array | null,
+		encryptionMode: CredentialEncryptionMode,
+		credentialsKey: Uint8Array,
 	): Promise<void>
 }

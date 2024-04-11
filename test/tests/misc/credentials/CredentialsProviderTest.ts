@@ -151,7 +151,7 @@ o.spec("CredentialsProvider", function () {
 			when(storageMock.loadAll()).thenReturn([encryptedInternalCredentials, encryptedExternalCredentials])
 		})
 		o("Should return internal Credentials", async function () {
-			const retrievedCredentials = await credentialsProvider.getCredentialsByUserId(internalCredentials.userId)
+			const retrievedCredentials = await credentialsProvider.getDecryptedCredentialsByUserId(internalCredentials.userId)
 
 			o(retrievedCredentials?.credentials ?? {}).deepEquals(internalCredentials)
 		})
@@ -168,7 +168,7 @@ o.spec("CredentialsProvider", function () {
 			when(databaseKeyFactoryMock.generateKey()).thenResolve(newDatabaseKey)
 			when(storageMock.loadByUserId(internalCredentials2.userId)).thenReturn(encryptedInternalCredentialsWithoutDatabaseKey)
 
-			const retrievedCredentials = await credentialsProvider.getCredentialsByUserId(internalCredentials2.userId)
+			const retrievedCredentials = await credentialsProvider.getDecryptedCredentialsByUserId(internalCredentials2.userId)
 
 			o(retrievedCredentials?.databaseKey).equals(newDatabaseKey)
 

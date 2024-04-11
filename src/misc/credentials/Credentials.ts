@@ -19,7 +19,7 @@ export interface Credentials {
 
 export function credentialsToUnencrypted(credentials: Credentials, databaseKey: Uint8Array | null): UnencryptedCredentials {
 	return {
-		credentialsInfo: {
+		credentialInfo: {
 			login: credentials.login,
 			type: credentials.type,
 			userId: credentials.userId,
@@ -32,9 +32,9 @@ export function credentialsToUnencrypted(credentials: Credentials, databaseKey: 
 
 export function unencryptedToCredentials(unencryptedCredentials: UnencryptedCredentials): Credentials {
 	return {
-		login: unencryptedCredentials.credentialsInfo.login,
-		userId: unencryptedCredentials.credentialsInfo.userId,
-		type: unencryptedCredentials.credentialsInfo.type,
+		login: unencryptedCredentials.credentialInfo.login,
+		userId: unencryptedCredentials.credentialInfo.userId,
+		type: unencryptedCredentials.credentialInfo.type,
 		accessToken: unencryptedCredentials.accessToken,
 		encryptedPassword: unencryptedCredentials.encryptedPassword,
 	}

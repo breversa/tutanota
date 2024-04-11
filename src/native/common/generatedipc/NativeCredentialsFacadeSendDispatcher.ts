@@ -16,6 +16,9 @@ export class NativeCredentialsFacadeSendDispatcher implements NativeCredentialsF
 	async store(...args: Parameters<NativeCredentialsFacade["store"]>) {
 		return this.transport.invokeNative("ipc", ["NativeCredentialsFacade", "store", ...args])
 	}
+	async storeEncrypted(...args: Parameters<NativeCredentialsFacade["storeEncrypted"]>) {
+		return this.transport.invokeNative("ipc", ["NativeCredentialsFacade", "storeEncrypted", ...args])
+	}
 	async loadByUserId(...args: Parameters<NativeCredentialsFacade["loadByUserId"]>) {
 		return this.transport.invokeNative("ipc", ["NativeCredentialsFacade", "loadByUserId", ...args])
 	}

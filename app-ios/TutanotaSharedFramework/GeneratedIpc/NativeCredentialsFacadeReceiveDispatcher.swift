@@ -24,6 +24,12 @@ public class NativeCredentialsFacadeReceiveDispatcher {
 				credentials
 			)
 			return "null"
+		case "storeEncrypted":
+			let credentials = try! JSONDecoder().decode(PersistedCredentials.self, from: arg[0].data(using: .utf8)!)
+			try await self.facade.storeEncrypted(
+				credentials
+			)
+			return "null"
 		case "loadByUserId":
 			let id = try! JSONDecoder().decode(String.self, from: arg[0].data(using: .utf8)!)
 			let result = try await self.facade.loadByUserId(
@@ -52,8 +58,8 @@ public class NativeCredentialsFacadeReceiveDispatcher {
 			return "null"
 		case "migrateToNativeCredentials":
 			let credentials = try! JSONDecoder().decode([PersistedCredentials].self, from: arg[0].data(using: .utf8)!)
-			let encryptionMode = try! JSONDecoder().decode(CredentialEncryptionMode?.self, from: arg[1].data(using: .utf8)!)
-			let credentialsKey = try! JSONDecoder().decode(DataWrapper?.self, from: arg[2].data(using: .utf8)!)
+			let encryptionMode = try! JSONDecoder().decode(CredentialEncryptionMode.self, from: arg[1].data(using: .utf8)!)
+			let credentialsKey = try! JSONDecoder().decode(DataWrapper.self, from: arg[2].data(using: .utf8)!)
 			try await self.facade.migrateToNativeCredentials(
 				credentials,
 				encryptionMode,

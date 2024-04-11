@@ -221,7 +221,7 @@ export class LoginViewModel implements ILoginViewModel {
 			 * 2. It is used as a session ID
 			 * Since we want to also delete the session from the server, we need the (decrypted) accessToken in its function as a session id.
 			 */
-			credentials = await this.credentialsProvider.getCredentialsByUserId(encryptedCredentials.userId)
+			credentials = await this.credentialsProvider.getDecryptedCredentialsByUserId(encryptedCredentials.userId)
 		} catch (e) {
 			if (e instanceof KeyPermanentlyInvalidatedError) {
 				await this.credentialsProvider.clearCredentials(e)
@@ -242,7 +242,7 @@ export class LoginViewModel implements ILoginViewModel {
 
 		if (credentials) {
 			await this.loginController.deleteOldSession(credentials, (await this.pushServiceApp?.loadPushIdentifierFromNative()) ?? null)
-			await this.credentialsProvider.deleteByUserId(credentials.credentialsInfo.userId)
+			await this.credentialsProvider.deleteByUserId(credentials.credentialInfo.userId)
 			await this.credentialRemovalHandler.onCredentialsRemoved(credentials)
 			await this.updateCachedCredentials()
 		}
@@ -266,8 +266,8 @@ export class LoginViewModel implements ILoginViewModel {
 	}
 
 	async deleteAllCredentials(): Promise<void> {
-		for (const creds of await this.deviceConfig.loadAll()) {
-			await this.deviceConfig.deleteByUserId(creds.credentialsInfo.userId)
+		for (const creds of await this.deviceConfig.getCredentials()) {
+			await this.deviceConfig.deleteByUserId(creds.credentialInfo.userId)
 		}
 		this.setHasAttemptedCredentialsFlag()
 	}
@@ -346,7 +346,7 @@ export class LoginViewModel implements ILoginViewModel {
 			// we don't want to auto-login on the legacy domain, there's a banner
 			// there to move people to the new domain.
 			if (this.autoLoginCredentials) {
-				credentials = await this.credentialsProvider.getCredentialsByUserId(this.autoLoginCredentials.userId)
+				credentials = await this.credentialsProvider.getDecryptedCredentialsByUserId(this.autoLoginCredentials.userId)
 
 				if (credentials) {
 					const offlineTimeRange = this.deviceConfig.getOfflineTimeRangeDays(this.autoLoginCredentials.userId)
@@ -411,12 +411,12 @@ export class LoginViewModel implements ILoginViewModel {
 			const storedCredentialsToDelete = this.savedInternalCredentials.filter((c) => c.login === mailAddress || c.userId === credentials.userId)
 
 			for (const credentialToDelete of storedCredentialsToDelete) {
-				const credentials = await this.credentialsProvider.getCredentialsByUserId(credentialToDelete.userId)
+				const credentials = await this.credentialsProvider.getDecryptedCredentialsByUserId(credentialToDelete.userId)
 
 				if (credentials) {
 					await this.loginController.deleteOldSession(credentials)
 					// we handled the deletion of the offlineDb in createSession already
-					await this.credentialsProvider.deleteByUserId(credentials.credentialsInfo.userId, { deleteOfflineDb: false })
+					await this.credentialsProvider.deleteByUserId(credentials.credentialInfo.userId, { deleteOfflineDb: false })
 				}
 			}
 

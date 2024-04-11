@@ -41,7 +41,7 @@ function getCredentialsProviderStub(): CredentialsProvider {
 		return persistentCredentials?.credentialInfo ?? null
 	})
 
-	when(provider.getCredentialsByUserId(anything())).thenDo((userId) => {
+	when(provider.getDecryptedCredentialsByUserId(anything())).thenDo((userId) => {
 		const storedCredentials = credentials.get(userId)
 		if (!storedCredentials) return null
 		return {
@@ -217,7 +217,7 @@ o.spec("LoginViewModelTest", () => {
 		})
 		o("Should handle CredentialAuthenticationError", async function () {
 			await credentialsProviderMock.store({ credentials: testCredentials, databaseKey: null })
-			when(credentialsProviderMock.getCredentialsByUserId(testCredentials.userId)).thenReject(new CredentialAuthenticationError("test"))
+			when(credentialsProviderMock.getDecryptedCredentialsByUserId(testCredentials.userId)).thenReject(new CredentialAuthenticationError("test"))
 			const viewModel = await getViewModel()
 
 			viewModel.displayMode = DisplayMode.DeleteCredentials
@@ -229,7 +229,7 @@ o.spec("LoginViewModelTest", () => {
 		})
 		o("Should handle KeyPermanentlyInvalidatedError", async function () {
 			await credentialsProviderMock.store({ credentials: testCredentials, databaseKey: null })
-			when(credentialsProviderMock.getCredentialsByUserId(testCredentials.userId)).thenReject(new KeyPermanentlyInvalidatedError("test"))
+			when(credentialsProviderMock.getDecryptedCredentialsByUserId(testCredentials.userId)).thenReject(new KeyPermanentlyInvalidatedError("test"))
 			const viewModel = await getViewModel()
 
 			viewModel.displayMode = DisplayMode.DeleteCredentials
@@ -323,7 +323,7 @@ o.spec("LoginViewModelTest", () => {
 		})
 		o("should handle KeyPermanentlyInvalidatedError and clear credentials", async function () {
 			await credentialsProviderMock.store({ credentials: testCredentials, databaseKey: null })
-			when(credentialsProviderMock.getCredentialsByUserId(testCredentials.userId)).thenReject(new KeyPermanentlyInvalidatedError("oh no"))
+			when(credentialsProviderMock.getDecryptedCredentialsByUserId(testCredentials.userId)).thenReject(new KeyPermanentlyInvalidatedError("oh no"))
 			const viewModel = await getViewModel()
 
 			await viewModel.useCredentials(encryptedTestCredentials.credentialInfo)

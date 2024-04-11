@@ -12,7 +12,7 @@ import kotlinx.serialization.json.*
  */
 @Serializable
 data class UnencryptedCredentials(
-	val credentialsInfo: CredentialsInfo,
+	val credentialInfo: CredentialsInfo,
 	val accessToken: String,
 	val databaseKey: DataWrapper?,
 	val encryptedPassword: String,

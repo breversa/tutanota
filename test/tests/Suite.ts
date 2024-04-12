@@ -101,8 +101,6 @@ import "./calendar/EventDragHandlerTest.js"
 import "./calendar/CalendarGuiUtilsTest.js"
 import "./calendar/CalendarViewModelTest.js"
 import "./calendar/eventeditor/CalendarNotificationModelTest.js"
-import "./misc/credentials/NativeCredentialsEncryptionTest.js"
-import "./misc/credentials/CredentialsKeyProviderTest.js"
 import "./misc/webauthn/WebauthnClientTest.js"
 import "./translations/TranslationKeysTest.js"
 import "./misc/UsageTestModelTest.js"
@@ -175,6 +173,7 @@ async function setupSuite({ integration }: { integration?: boolean }) {
 		await import("./desktop/config/ConfigFileTest.js")
 		await import("./desktop/db/OfflineDbFacadeTest.js")
 		await import("./desktop/credentials/DesktopCredentialsFacadeTest.js")
+		await import("./desktop/credentials/AppPassHandlerTest.js")
 		await import("./api/worker/offline/OfflineStorageMigratorTest.js")
 		await import("./api/worker/offline/OfflineStorageMigrationsTest.js")
 		await import("./api/worker/offline/OfflineStorageTest.js")

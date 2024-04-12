@@ -1,33 +1,15 @@
 import o from "@tutao/otest"
-
-import path from "node:path"
-import { DesktopNativeCredentialsFacade, resolveChecked } from "../../../../src/desktop/credentials/DesktopNativeCredentialsFacade.js"
+import { DesktopNativeCredentialsFacade } from "../../../../src/desktop/credentials/DesktopNativeCredentialsFacade.js"
 import { DesktopNativeCryptoFacade } from "../../../../src/desktop/DesktopNativeCryptoFacade.js"
 import { CredentialEncryptionMode } from "../../../../src/misc/credentials/CredentialEncryptionMode.js"
 import { makeKeyStoreFacade } from "../../TestUtils.js"
 import { assertThrows } from "@tutao/tutanota-test-utils"
 import { function as fn, matchers, object, verify, when } from "testdouble"
-import { LanguageViewModel } from "../../../../src/misc/LanguageViewModel.js"
 import { DesktopConfig } from "../../../../src/desktop/config/DesktopConfig.js"
-import { defer, delay, stringToBase64 } from "@tutao/tutanota-utils"
+import { defer, stringToBase64 } from "@tutao/tutanota-utils"
 import { DesktopConfigKey } from "../../../../src/desktop/config/ConfigKeys.js"
-import { CommonNativeFacade } from "../../../../src/native/common/generatedipc/CommonNativeFacade.js"
-import { CancelledError } from "../../../../src/api/common/error/CancelledError.js"
-import { KeyPermanentlyInvalidatedError } from "../../../../src/api/common/error/KeyPermanentlyInvalidatedError.js"
-
-async function loadArgon2ModuleFromFile(path: string): Promise<WebAssembly.Exports> {
-	if (typeof process !== "undefined") {
-		try {
-			const { readFile } = await import("node:fs/promises")
-			const wasmBuffer = await readFile(path)
-			return (await WebAssembly.instantiate(wasmBuffer)).instance.exports
-		} catch (e) {
-			throw new Error(`Can't load argon2 module: ${e}`)
-		}
-	} else {
-		return (await WebAssembly.instantiateStreaming(await fetch(path))).instance.exports
-	}
-}
+import { DesktopCredentialsStorage } from "../../../../src/desktop/db/DesktopCredentialsStorage.js"
+import { AppPassHandler, resolveChecked } from "../../../../src/desktop/credentials/AppPassHandler.js"
 
 o.spec("DesktopNativeCredentialsFacade", () => {
 	const key = new Uint8Array([1, 2, 3])
@@ -35,20 +17,17 @@ o.spec("DesktopNativeCredentialsFacade", () => {
 
 	const getSubject = async () => {
 		const crypto: DesktopNativeCryptoFacade = object()
-		// too hard to mock
-		const wasmPath = path.resolve("../packages/tutanota-crypto/lib/hashes/Argon2id/argon2.wasm")
-		const argon2 = await loadArgon2ModuleFromFile(wasmPath)
-		const lang: LanguageViewModel = object()
 		const conf: DesktopConfig = object()
-		const commonNativeFacade: CommonNativeFacade = object()
+		const credentialsDb: DesktopCredentialsStorage = object()
+		const appPassHandler: AppPassHandler = object()
 
 		return {
-			subject: new DesktopNativeCredentialsFacade(keyStoreFacade, crypto, Promise.resolve(argon2), lang, conf, () => Promise.resolve(commonNativeFacade)),
+			subject: new DesktopNativeCredentialsFacade(keyStoreFacade, crypto, conf, credentialsDb, appPassHandler),
 			mocks: {
 				crypto,
-				lang,
 				conf,
-				commonNativeFacade,
+				credentialsDb,
+				appPassHandler,
 			},
 		}
 	}
@@ -68,53 +47,14 @@ o.spec("DesktopNativeCredentialsFacade", () => {
 	o("does not throw when using right encryption mode, app pw", async function () {
 		const { subject, mocks } = await getSubject()
 		when(mocks.conf.getVar(DesktopConfigKey.appPassSalt)).thenResolve(stringToBase64("saltsalt"))
-		when(mocks.commonNativeFacade.promptForPassword(matchers.anything())).thenResolve("password!")
+		when(mocks.appPassHandler.removeAppPassWrapper(matchers.anything(), matchers.anything())).thenResolve(new Uint8Array([0]))
 
-		// @ts-ignore
-		await subject.decryptUsingKeychain("base64", CredentialEncryptionMode.APP_PASSWORD)
-	})
-
-	o("throws a CancelledError for all pending requests if the salt changes", async function () {
-		const { subject, mocks } = await getSubject()
-		when(mocks.conf.getVar(DesktopConfigKey.appPassSalt)).thenResolve(stringToBase64("saltsalt"))
-		const pwPromise = defer<string>()
-		when(mocks.commonNativeFacade.promptForPassword(matchers.anything())).thenReturn(pwPromise.promise)
-
-		// matchers.captor() did not give me the values array :(
-		const cbs: Array<any> = []
-		mocks.conf.once = (key, cb) => {
-			o(key).equals(DesktopConfigKey.appPassSalt)
-			cb("saltsalt2")
-			return mocks.conf
-		}
-		const promise1 = subject.decryptUsingKeychain(Uint8Array.from([1, 2, 3, 4]), CredentialEncryptionMode.APP_PASSWORD)
-		const promise2 = subject.decryptUsingKeychain(Uint8Array.from([1, 2, 3, 4]), CredentialEncryptionMode.APP_PASSWORD)
-
-		verify(mocks.commonNativeFacade.showAlertDialog(matchers.anything()), { times: 0 })
-
-		await assertThrows(CancelledError, () => promise1)
-		await assertThrows(CancelledError, () => promise2)
-
-		pwPromise.resolve("make it call the alternative")
-		await delay(0)
-		verify(mocks.commonNativeFacade.showAlertDialog(matchers.anything()), { times: 2 })
-	})
-
-	o("throws a KeyPermanentlyInvalidatedError if there is no salt", async function () {
-		const { subject, mocks } = await getSubject()
-		when(mocks.conf.getVar(DesktopConfigKey.appPassSalt)).thenResolve(null)
-		const pwPromise = defer<string>()
-		when(mocks.commonNativeFacade.promptForPassword(matchers.anything())).thenReturn(pwPromise.promise)
-
-		await assertThrows(KeyPermanentlyInvalidatedError, () =>
-			subject.decryptUsingKeychain(Uint8Array.from([1, 2, 3, 4]), CredentialEncryptionMode.APP_PASSWORD),
-		)
+		await subject.decryptUsingKeychain(new Uint8Array([1]), CredentialEncryptionMode.APP_PASSWORD)
 	})
 
 	o("does not throw when using right encryption mode, device lock", async function () {
 		const { subject, mocks } = await getSubject()
-		// @ts-ignore
-		await subject.decryptUsingKeychain("base64", CredentialEncryptionMode.DEVICE_LOCK)
+		await subject.decryptUsingKeychain(Uint8Array.from([1, 2, 3]), CredentialEncryptionMode.DEVICE_LOCK)
 	})
 })
 

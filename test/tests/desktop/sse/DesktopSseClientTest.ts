@@ -6,7 +6,7 @@ import type { TimeoutMock } from "@tutao/tutanota-test-utils"
 import { makeTimeoutMock, spy } from "@tutao/tutanota-test-utils"
 import * as url from "node:url"
 import * as querystring from "node:querystring"
-import { createMissedNotification, MissedNotificationTypeRef } from "../../../../src/api/entities/sys/TypeRefs.js"
+import { MissedNotificationTypeRef } from "../../../../src/api/entities/sys/TypeRefs.js"
 import { DesktopSseClient } from "../../../../src/desktop/sse/DesktopSseClient.js"
 import { DesktopConfigEncKey, DesktopConfigKey } from "../../../../src/desktop/config/ConfigKeys.js"
 import type { DesktopConfig } from "../../../../src/desktop/config/DesktopConfig.js"
@@ -21,6 +21,9 @@ import { ServiceUnavailableError, TooManyRequestsError } from "../../../../src/a
 import modelInfo from "../../../../src/api/entities/sys/ModelInfo.js"
 import { StandardAlarmInterval } from "../../../../src/calendar/date/CalendarUtils.js"
 import { createTestEntity } from "../../TestUtils.js"
+import { DesktopNativeCredentialsFacade } from "../../../../src/desktop/credentials/DesktopNativeCredentialsFacade.js"
+import { fetch } from "undici"
+import { func, object } from "testdouble"
 
 o.spec("DesktopSseClient Test", function () {
 	const identifier = "identifier"
@@ -38,6 +41,8 @@ o.spec("DesktopSseClient Test", function () {
 	let alarmStorageMock: DesktopAlarmStorage
 	let timeoutMock: TimeoutMock
 	let langMock: LanguageViewModel
+	let credentialsFacade: DesktopNativeCredentialsFacade
+	let fetchMock: typeof fetch
 
 	o.beforeEach(function () {
 		conf = {
@@ -186,6 +191,9 @@ o.spec("DesktopSseClient Test", function () {
 		alarmSchedulerMock = n.mock<DesktopAlarmScheduler>("__alarmScheduler", alarmScheduler).set()
 		timeoutMock = makeTimeoutMock()
 		langMock = n.mock<LanguageViewModel>("__lang", lang).set()
+
+		credentialsFacade = object()
+		fetchMock = func<typeof fetch>()
 	})
 
 	o("start, connect, shutdown", async function () {
@@ -197,8 +205,10 @@ o.spec("DesktopSseClient Test", function () {
 			alarmSchedulerMock,
 			netMock,
 			cryptoMock,
+			credentialsFacade,
 			alarmStorageMock,
 			langMock,
+			fetchMock,
 			timeoutMock,
 		)
 
@@ -261,8 +271,10 @@ o.spec("DesktopSseClient Test", function () {
 			alarmSchedulerMock,
 			netMock,
 			cryptoMock,
+			credentialsFacade,
 			alarmStorageMock,
 			langMock,
+			fetchMock,
 			timeoutMock,
 		)
 		let res = new net.Response(200)
@@ -295,8 +307,10 @@ o.spec("DesktopSseClient Test", function () {
 			alarmSchedulerMock,
 			netMock,
 			cryptoMock,
+			credentialsFacade,
 			alarmStorageMock,
 			langMock,
+			fetchMock,
 			timeoutMock,
 		)
 		const res = new net.Response(403)
@@ -328,8 +342,10 @@ o.spec("DesktopSseClient Test", function () {
 			alarmSchedulerMock,
 			netMock,
 			cryptoMock,
+			credentialsFacade,
 			alarmStorageMock,
 			langMock,
+			fetchMock,
 			timeoutMock,
 		)
 		let res = new net.Response(200)
@@ -360,8 +376,10 @@ o.spec("DesktopSseClient Test", function () {
 			alarmSchedulerMock,
 			netMock,
 			cryptoMock,
+			credentialsFacade,
 			alarmStorageMock,
 			langMock,
+			fetchMock,
 			timeoutSpy,
 		)
 		let res = new net.Response(200)
@@ -388,8 +406,10 @@ o.spec("DesktopSseClient Test", function () {
 			alarmSchedulerMock,
 			netMock,
 			cryptoMock,
+			credentialsFacade,
 			alarmStorageMock,
 			langMock,
+			fetchMock,
 			timeoutMock,
 		)
 		let res = new net.Response(200)
@@ -440,8 +460,10 @@ o.spec("DesktopSseClient Test", function () {
 			alarmSchedulerMock,
 			netMock,
 			cryptoMock,
+			credentialsFacade,
 			alarmStorageMock,
 			langMock,
+			fetchMock,
 			timeoutSpy,
 		)
 		await sse.start()
@@ -487,8 +509,10 @@ o.spec("DesktopSseClient Test", function () {
 			alarmSchedulerMock,
 			netMock,
 			cryptoMock,
+			credentialsFacade,
 			alarmStorageMock,
 			langMock,
+			fetchMock,
 			timeoutMock,
 		)
 		const lastProcessedId = "ab2c"
@@ -546,8 +570,10 @@ o.spec("DesktopSseClient Test", function () {
 			alarmSchedulerMock,
 			netMock,
 			cryptoMock,
+			credentialsFacade,
 			alarmStorageMock,
 			langMock,
+			fetchMock,
 			timeoutMock,
 		)
 		let res = new net.Response(200)
@@ -590,8 +616,10 @@ o.spec("DesktopSseClient Test", function () {
 			alarmSchedulerMock,
 			netMock,
 			cryptoMock,
+			credentialsFacade,
 			alarmStorageMock,
 			langMock,
+			fetchMock,
 			timeoutMock,
 		)
 		let sseResponse = new net.Response(200)
@@ -694,8 +722,10 @@ o.spec("DesktopSseClient Test", function () {
 			alarmSchedulerMock,
 			netMock,
 			cryptoMock,
+			credentialsFacade,
 			alarmStorageMock,
 			langMock,
+			fetchMock,
 			timeoutMock,
 		)
 		let res = new net.Response(200)
@@ -727,8 +757,10 @@ o.spec("DesktopSseClient Test", function () {
 			alarmSchedulerMock,
 			netMock,
 			cryptoMock,
+			credentialsFacade,
 			alarmStorageMock,
 			langMock,
+			fetchMock,
 			timeoutMock,
 		)
 		let res = new net.Response(200)
@@ -773,8 +805,10 @@ o.spec("DesktopSseClient Test", function () {
 			alarmSchedulerMock,
 			netMock,
 			cryptoMock,
+			credentialsFacade,
 			alarmStorageMock,
 			langMock,
+			fetchMock,
 			timeoutMock,
 		)
 		const sseResponse = new net.Response(200)
@@ -811,8 +845,10 @@ o.spec("DesktopSseClient Test", function () {
 			alarmSchedulerMock,
 			netMock,
 			cryptoMock,
+			credentialsFacade,
 			alarmStorageMock,
 			langMock,
+			fetchMock,
 			timeoutMock,
 		)
 		const sseResponse = new net.Response(200)
@@ -856,8 +892,10 @@ o.spec("DesktopSseClient Test", function () {
 			alarmSchedulerMock,
 			netMock,
 			cryptoMock,
+			credentialsFacade,
 			alarmStorageMock,
 			langMock,
+			fetchMock,
 			timeoutMock,
 		)
 		const sseResponse = new net.Response(200)
@@ -921,8 +959,10 @@ o.spec("DesktopSseClient Test", function () {
 			alarmSchedulerMock,
 			netMock,
 			cryptoMock,
+			credentialsFacade,
 			alarmStorageMock,
 			langMock,
+			fetchMock,
 			timeoutSpy,
 		)
 		await sse.start()
@@ -966,8 +1006,10 @@ o.spec("DesktopSseClient Test", function () {
 			alarmSchedulerMock,
 			netMock,
 			cryptoMock,
+			credentialsFacade,
 			alarmStorageMock,
 			langMock,
+			fetchMock,
 			timeoutSpy,
 		)
 

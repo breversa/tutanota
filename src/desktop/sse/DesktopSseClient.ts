@@ -32,6 +32,7 @@ import { DesktopNativeCredentialsFacade } from "../credentials/DesktopNativeCred
 import { Agent, fetch as undiciFetch } from "undici"
 import { Mail } from "../../api/entities/tutanota/TypeRefs.js"
 import { CredentialEncryptionMode } from "../../misc/credentials/CredentialEncryptionMode.js"
+import { ExtendedNotificationMode } from "../../native/common/generatedipc/ExtendedNotificationMode.js"
 
 export type SseInfo = {
 	identifier: string
@@ -436,16 +437,32 @@ export class DesktopSseClient {
 			return
 		}
 
+		// we can't download the email if we don't have access to credentials
+		if ((await this._nativeCredentialFacade.getCredentialEncryptionMode()) !== CredentialEncryptionMode.DEVICE_LOCK) {
+			return
+		}
+
+		if ((await this._conf.getVar(DesktopConfigKey.extendedNotificationMode)) === ExtendedNotificationMode.NoSenderOrSubject) {
+			const notificationId = ni.mailId ? `${ni.mailId.listId},${ni.mailId?.listElementId}` : ni.userId
+			this._notifier.submitGroupedNotification(this._lang.get("pushNewMail_msg"), `${ni.mailAddress}`, notificationId, (res) =>
+				this.onMailNotificationClick(res, ni),
+			)
+			return
+		}
 		const mailMetadata = await this.downloadMailMetadata(ni)
 		if (mailMetadata == null) return
-		this._notifier.submitGroupedNotification(mailMetadata.sender.address, mailMetadata.firstRecipient?.address ?? "", mailMetadata._id.join(","), (res) => {
-			if (res === NotificationResult.Click) {
-				this._wm.openMailBox({
-					userId: ni.userId,
-					mailAddress: ni.mailAddress,
-				})
-			}
-		})
+		this._notifier.submitGroupedNotification(mailMetadata.sender.address, mailMetadata.firstRecipient?.address ?? "", mailMetadata._id.join(","), (res) =>
+			this.onMailNotificationClick(res, ni),
+		)
+	}
+
+	private onMailNotificationClick(res: NotificationResult, ni: NotificationInfo) {
+		if (res === NotificationResult.Click) {
+			this._wm.openMailBox({
+				userId: ni.userId,
+				mailAddress: ni.mailAddress,
+			})
+		}
 	}
 
 	private async downloadMissedNotification(userId: string): Promise<EncryptedMissedNotification> {
@@ -543,10 +560,6 @@ export class DesktopSseClient {
 	}
 
 	private async downloadMailMetadata(ni: NotificationInfo): Promise<MailMetadata | null> {
-		// we can't download the email if we don't have access to credentials
-		if ((await this._nativeCredentialFacade.getCredentialEncryptionMode()) !== CredentialEncryptionMode.DEVICE_LOCK) {
-			return null
-		}
 		const url = this.makeMailMetadataUrl(assertNotNull(this._connectedSseInfo), assertNotNull(ni.mailId))
 
 		// decrypt access token

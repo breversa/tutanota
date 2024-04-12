@@ -39,4 +39,9 @@ interface NativePushFacade {
 	 suspend fun invalidateAlarmsForUser(
 		userId: String,
 	): Unit
+	 suspend fun setExtendedNotificationConfig(
+		type: ExtendedNotificationMode,
+	): Unit
+	 suspend fun getExtendedNotificationConfig(
+	): ExtendedNotificationMode
 }

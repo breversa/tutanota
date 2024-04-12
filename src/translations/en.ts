@@ -975,6 +975,7 @@ export default {
 		"notAvailableInApp_msg": "This function is not available in the mobile app.",
 		"notFound404_msg": "Sorry, but the page you are looking for has not been found. Try checking the URL for errors and hit the refresh button of your browser.",
 		"noThanks_action": "No thanks",
+		"noSenderOrSubject_action": "No sender or subject",
 		"nothingFound_label": "No templates found",
 		"notificationMailLanguage_label": "Language of notification email",
 		"notificationMailTemplateTooLarge_msg": "The notification mail template is too large.",
@@ -999,6 +1000,7 @@ export default {
 		"onlyAccountAdminFeature_msg": "Only the account administrator may do that",
 		"onlyPrivateAccountFeature_msg": "Gift cards may only be redeemed by personal accounts.",
 		"onlyPrivateComputer_msg": "Only choose this option if you are using a private device.",
+		"onlySender_action": "Only sender",
 		"openCamera_action": "Camera",
 		"openKnowledgebase_action": "Open the knowledge base window",
 		"openNewWindow_action": "New Window",
@@ -1388,6 +1390,7 @@ export default {
 		"selectPreviousTemplate_action": "Select the previous template in the list",
 		"selectPrevious_action": "Select previous",
 		"selectTemplate_action": "Select",
+		"senderAndSubject_action": "Sender and subject",
 		"sendErrorReport_action": "Send error report",
 		"sender_label": "Sender",
 		"sendingUnencrypted_msg": "Your message is being sent.",
@@ -1688,6 +1691,9 @@ export default {
 		"yourCalendars_label": "Your calendars",
 		"yourFolders_action": "YOUR FOLDERS",
 		"yourMessage_label": "Your message",
-		"you_label": "You"
+		"you_label": "You",
+		// FIXME: add to Phrase
+		"notificationSettings_placeholder": "<Push Identifier Something>",
+		"extendedNotification_label": "Notification content",
 	}
 }

@@ -3,13 +3,25 @@ import { DesktopSseClient } from "./DesktopSseClient.js"
 import { EncryptedAlarmNotification } from "../../native/common/EncryptedAlarmNotification.js"
 import { NativeAlarmScheduler } from "./DesktopAlarmScheduler.js"
 import { DesktopAlarmStorage } from "./DesktopAlarmStorage.js"
+import { ExtendedNotificationMode } from "../../native/common/generatedipc/ExtendedNotificationMode.js"
+import { DesktopConfig } from "../config/DesktopConfig.js"
+import { DesktopConfigKey } from "../config/ConfigKeys.js"
 
 export class DesktopNativePushFacade implements NativePushFacade {
 	constructor(
 		private readonly sse: DesktopSseClient,
 		private readonly alarmScheduler: NativeAlarmScheduler,
 		private readonly alarmStorage: DesktopAlarmStorage,
+		private readonly desktopConfig: DesktopConfig,
 	) {}
+
+	getExtendedNotificationConfig(): Promise<ExtendedNotificationMode> {
+		return this.desktopConfig.getVar(DesktopConfigKey.extendedNotificationMode)
+	}
+
+	setExtendedNotificationConfig(type: ExtendedNotificationMode): Promise<void> {
+		return this.desktopConfig.setVar(DesktopConfigKey.extendedNotificationMode, type)
+	}
 
 	async closePushNotifications(addressesArray: ReadonlyArray<string>): Promise<void> {
 		// only gets called in the app

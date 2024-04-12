@@ -56,6 +56,16 @@ public class NativePushFacadeReceiveDispatcher {
 				userId
 			)
 			return "null"
+		case "setExtendedNotificationConfig":
+			let type = try! JSONDecoder().decode(ExtendedNotificationMode.self, from: arg[0].data(using: .utf8)!)
+			try await self.facade.setExtendedNotificationConfig(
+				type
+			)
+			return "null"
+		case "getExtendedNotificationConfig":
+			let result = try await self.facade.getExtendedNotificationConfig(
+			)
+			return toJson(result)
 		default:
 			fatalError("licc messed up! \(method)")
 		}

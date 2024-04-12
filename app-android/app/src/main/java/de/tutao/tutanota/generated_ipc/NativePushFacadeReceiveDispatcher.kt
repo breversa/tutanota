@@ -67,6 +67,18 @@ class NativePushFacadeReceiveDispatcher(
 				)
 				return json.encodeToString(result)
 			}
+			"setExtendedNotificationConfig" -> {
+				val type: ExtendedNotificationMode = json.decodeFromString(arg[0])
+				val result: Unit = this.facade.setExtendedNotificationConfig(
+					type,
+				)
+				return json.encodeToString(result)
+			}
+			"getExtendedNotificationConfig" -> {
+				val result: ExtendedNotificationMode = this.facade.getExtendedNotificationConfig(
+				)
+				return json.encodeToString(result)
+			}
 			else -> throw Error("unknown method for NativePushFacade: $method")
 		}
 	}

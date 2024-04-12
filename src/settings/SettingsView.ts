@@ -67,6 +67,7 @@ import { TemplateListView } from "./TemplateListView.js"
 import { TextField } from "../gui/base/TextField.js"
 import { ContactsSettingsViewer } from "./ContactsSettingsViewer.js"
 import { showSetupWizard } from "../gui/dialogs/SetupWizard.js"
+import { NotificationSettingsViewer } from "./NotificationSettingsViewer.js"
 
 assertMainOrNode()
 
@@ -139,6 +140,13 @@ export class SettingsView extends BaseTopLevelView implements TopLevelView<Setti
 				() => Icons.Palette,
 				"appearance",
 				() => new AppearanceSettingsViewer(),
+				undefined,
+			),
+			new SettingsFolder(
+				"notificationSettings_action",
+				() => Icons.Bell,
+				"notifications",
+				() => new NotificationSettingsViewer(),
 				undefined,
 			),
 		]

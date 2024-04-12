@@ -36,4 +36,9 @@ public protocol NativePushFacade {
 	func invalidateAlarmsForUser(
 		_ userId: String
 	) async throws -> Void
+	func setExtendedNotificationConfig(
+		_ type: ExtendedNotificationMode
+	) async throws -> Void
+	func getExtendedNotificationConfig(
+	) async throws -> ExtendedNotificationMode
 }

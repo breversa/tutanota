@@ -1674,3 +1674,9 @@ export type TranslationKeyType =
 	| "yourMessage_label"
 	| "you_label"
 	| "emptyString_msg"
+	// FIXME add to phrase
+	| "noSenderOrSubject_action"
+	| "onlySender_action"
+	| "senderAndSubject_action"
+	| "extendedNotification_label"
+	| "notificationSettings_placeholder"

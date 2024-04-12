@@ -111,6 +111,7 @@ import { WebMobileFacade } from "../../native/main/WebMobileFacade.js"
 import { CredentialFormatMigrator } from "../../misc/credentials/CredentialFormatMigrator.js"
 import { NativeCredentialsFacade } from "../../native/common/generatedipc/NativeCredentialsFacade.js"
 import { SqlCipherFacade } from "../../native/common/generatedipc/SqlCipherFacade.js"
+import { AddNotificationEmailDialog } from "../../settings/AddNotificationEmailDialog.js"
 
 assertMainOrNode()
 
@@ -856,6 +857,11 @@ class MainLocator {
 			return new CredentialFormatMigrator(deviceConfig, null)
 		}
 	})
+
+	async addNotificationEmailDialog(): Promise<AddNotificationEmailDialog> {
+		const { AddNotificationEmailDialog } = await import("../../settings/AddNotificationEmailDialog.js")
+		return new AddNotificationEmailDialog(this.logins, this.entityClient)
+	}
 
 	// For testing argon2 migration after login. The production server will reject this request.
 	// This can be removed when we enable the migration.

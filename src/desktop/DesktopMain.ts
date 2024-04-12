@@ -235,7 +235,7 @@ async function createComponents(): Promise<Components> {
 		eml: desktopUtils.getIconByName("eml.png"),
 		msg: desktopUtils.getIconByName("msg.png"),
 	}
-	const pushFacade = new DesktopNativePushFacade(sse, desktopAlarmScheduler, alarmStorage)
+	const pushFacade = new DesktopNativePushFacade(sse, desktopAlarmScheduler, alarmStorage, conf)
 	const settingsFacade = new DesktopSettingsFacade(conf, desktopUtils, integrator, updater, lang)
 
 	const dispatcherFactory = (window: ApplicationWindow) => {

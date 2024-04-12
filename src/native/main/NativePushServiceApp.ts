@@ -15,6 +15,7 @@ import { CryptoFacade } from "../../api/worker/crypto/CryptoFacade.js"
 import { EntityClient } from "../../api/common/EntityClient.js"
 import { CalendarFacade } from "../../api/worker/facades/lazy/CalendarFacade.js"
 import modelInfo from "../../api/entities/sys/ModelInfo.js"
+import { ExtendedNotificationMode } from "../common/generatedipc/ExtendedNotificationMode.js"
 
 // keep in sync with SYS_MODEL_VERSION in app-android/app/build.gradle
 // keep in sync with app-ios/TutanotaSharedFramework/Utils/Utils.swift
@@ -137,6 +138,13 @@ export class NativePushServiceApp {
 
 	getLoadedPushIdentifier(): string | null {
 		return this._currentIdentifier
+	}
+
+	getExtendedNotificationMode(): Promise<ExtendedNotificationMode> {
+		return this.nativePushFacade.getExtendedNotificationConfig()
+	}
+	async setExtendedNotificationMode(type: ExtendedNotificationMode) {
+		await this.nativePushFacade.setExtendedNotificationConfig(type)
 	}
 
 	private initPushNotifications(): Promise<void> {

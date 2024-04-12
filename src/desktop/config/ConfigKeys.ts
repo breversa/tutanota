@@ -21,6 +21,7 @@ export enum DesktopConfigKey {
 	webConfigLocation = "webConfigLocation",
 	credentialEncryptionMode = "credentialEncryptionMode",
 	credentialsEncryptionKey = "credentialsEncryptionKey",
+	extendedNotificationMode = "extendedNotificationMode",
 }
 
 export enum DesktopConfigEncKey {

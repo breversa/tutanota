@@ -20,7 +20,7 @@ import type { DesktopNetworkClient } from "../net/DesktopNetworkClient.js"
 import { DesktopNativeCryptoFacade } from "../DesktopNativeCryptoFacade"
 import { typeModels } from "../../api/entities/sys/TypeModels"
 import type { DesktopAlarmStorage } from "./DesktopAlarmStorage"
-import type { LanguageViewModelType } from "../../misc/LanguageViewModel"
+import { LanguageViewModelType } from "../../misc/LanguageViewModel"
 import { IdTupleWrapper, MissedNotification, NotificationInfo } from "../../api/entities/sys/TypeRefs.js"
 import { handleRestError, NotAuthenticatedError, NotAuthorizedError, ServiceUnavailableError, TooManyRequestsError } from "../../api/common/error/RestError"
 import { log } from "../DesktopLog"
@@ -33,6 +33,8 @@ import { Agent, fetch as undiciFetch } from "undici"
 import { Mail } from "../../api/entities/tutanota/TypeRefs.js"
 import { CredentialEncryptionMode } from "../../misc/credentials/CredentialEncryptionMode.js"
 import { ExtendedNotificationMode } from "../../native/common/generatedipc/ExtendedNotificationMode.js"
+import { SseClient, SseEventHandler } from "./SseClient.js"
+import { TutaNotificationHandler } from "./TutaNotificationHandler.js"
 
 export type SseInfo = {
 	identifier: string
@@ -438,11 +440,10 @@ export class DesktopSseClient {
 		}
 
 		// we can't download the email if we don't have access to credentials
-		if ((await this._nativeCredentialFacade.getCredentialEncryptionMode()) !== CredentialEncryptionMode.DEVICE_LOCK) {
-			return
-		}
-
-		if ((await this._conf.getVar(DesktopConfigKey.extendedNotificationMode)) === ExtendedNotificationMode.NoSenderOrSubject) {
+		const canShowExtendedNotification =
+			(await this._nativeCredentialFacade.getCredentialEncryptionMode()) === CredentialEncryptionMode.DEVICE_LOCK &&
+			(await this._conf.getVar(DesktopConfigKey.extendedNotificationMode)) !== ExtendedNotificationMode.NoSenderOrSubject
+		if (!canShowExtendedNotification) {
 			const notificationId = ni.mailId ? `${ni.mailId.listId},${ni.mailId?.listElementId}` : ni.userId
 			this._notifier.submitGroupedNotification(this._lang.get("pushNewMail_msg"), `${ni.mailAddress}`, notificationId, (res) =>
 				this.onMailNotificationClick(res, ni),
@@ -466,7 +467,7 @@ export class DesktopSseClient {
 	}
 
 	private async downloadMissedNotification(userId: string): Promise<EncryptedMissedNotification> {
-		const url = this.makeAlarmNotificationUrl(assertNotNull(this._connectedSseInfo))
+		const url = this.makeMissedNotificationUrl(assertNotNull(this._connectedSseInfo))
 
 		log.debug(TAG, "downloading missed notification")
 		const headers: Record<string, string> = {
@@ -502,7 +503,7 @@ export class DesktopSseClient {
 	}
 
 	/** public for testing */
-	makeAlarmNotificationUrl(sseInfo: SseInfo): string {
+	makeMissedNotificationUrl(sseInfo: SseInfo): string {
 		const { identifier, sseOrigin } = sseInfo
 		const customId = uint8ArrayToBase64(stringToUtf8Uint8Array(identifier))
 		const url = new URL(sseOrigin)
@@ -538,7 +539,7 @@ export class DesktopSseClient {
 		this._nextReconnect = this._delayHandler(() => this.connect(), delaySeconds * 1000)
 	}
 
-	_requestJson(identifier: string, userId: string): string {
+	requestJson(identifier: string, userId: string): string {
 		return JSON.stringify({
 			_format: "0",
 			identifier: identifier,
@@ -552,11 +553,11 @@ export class DesktopSseClient {
 	}
 
 	/** public for testing */
-	getSseUrl(sseInfo: SseInfo, userId: string): string {
+	getSseUrl(sseInfo: SseInfo, userId: string): URL {
 		const url = new URL(sseInfo.sseOrigin)
 		url.pathname = "sse"
-		url.searchParams.append("_body", this._requestJson(sseInfo.identifier, userId))
-		return url.toString()
+		url.searchParams.append("_body", this.requestJson(sseInfo.identifier, userId))
+		return url
 	}
 
 	private async downloadMailMetadata(ni: NotificationInfo): Promise<MailMetadata | null> {
@@ -606,5 +607,219 @@ export class DesktopSseClient {
 			log.debug(TAG, "Error fetching mail metadata, " + (e as Error).message)
 			return null
 		}
+	}
+}
+
+export class TutaSseFacade implements SseEventHandler {
+	private currentSseInfo: SseInfo | null = null
+	constructor(
+		private readonly conf: DesktopConfig,
+		private readonly notificationHandler: TutaNotificationHandler,
+		private readonly sseClient: SseClient,
+		private readonly crypto: DesktopNativeCryptoFacade,
+		private readonly appVersion: string,
+		private readonly fetch: typeof undiciFetch,
+	) {
+		sseClient.setEventListener(this)
+	}
+
+	async connect() {
+		if (this.currentSseInfo != null) {
+			// FIXME we already started the connection, we should reconnect
+		} else {
+			const sseInfo = await this.getSseInfo()
+			if (sseInfo == null) {
+				log.debug(TAG, "No SSE info")
+				return
+			}
+			const url = this.getSseUrl(sseInfo, sseInfo.userIds[0])
+			const headers = {
+				v: typeModels.MissedNotification.version,
+				cv: this.appVersion,
+			}
+			const timeout = await this.conf.getVar(DesktopConfigKey.heartbeatTimeoutInSeconds)
+			if (timeout != null) {
+				this.sseClient.setReadTimeout(timeout)
+			}
+
+			this.sseClient.connect({ url, headers })
+			this.currentSseInfo = sseInfo
+		}
+	}
+
+	private getSseUrl(sseInfo: SseInfo, userId: string): URL {
+		const url = new URL(sseInfo.sseOrigin)
+		url.pathname = "sse"
+		url.searchParams.append("_body", this.requestJson(sseInfo.identifier, userId))
+		return url
+	}
+
+	private requestJson(identifier: string, userId: string): string {
+		return JSON.stringify({
+			_format: "0",
+			identifier: identifier,
+			userIds: [
+				{
+					_id: this.crypto.generateId(4),
+					value: userId,
+				},
+			],
+		})
+	}
+
+	private async getSseInfo(): Promise<SseInfo | null> {
+		return (await this.conf.getVar(DesktopConfigEncKey.sseInfo)) as SseInfo | null
+	}
+
+	private async onNotification() {
+		if ((await this.conf.getVar(DesktopConfigKey.lastMissedNotificationCheckTime)) == null) {
+			// We set default value for  the case when Push identifier was added but no notifications were received. Then more than
+			// MISSED_NOTIFICATION_TTL has passed and notifications has expired
+			await this.conf.setVar(DesktopConfigKey.lastMissedNotificationCheckTime, Date.now())
+		}
+		// FIXME check expired TTL
+		const missedNotification = await this.downloadMissedNotification()
+		await this.conf.setVar(DesktopConfigKey.lastProcessedNotificationId, missedNotification.lastProcessedNotificationId)
+		await this.conf.setVar(DesktopConfigKey.lastMissedNotificationCheckTime, Date.now())
+		for (const notificationInfo of missedNotification.notificationInfos) {
+			this.notificationHandler.onMailNotification(notificationInfo)
+		}
+		for (const alarmNotification of missedNotification.alarmNotifications) {
+			this.notificationHandler.onAlarmNotification(alarmNotification)
+		}
+	}
+
+	private async downloadMissedNotification(): Promise<EncryptedMissedNotification> {
+		const sseInfo = assertNotNull(this.currentSseInfo)
+		const url = this.makeMissedNotificationUrl(sseInfo)
+
+		log.debug(TAG, "downloading missed notification")
+		const headers: Record<string, string> = {
+			userIds: sseInfo.userIds[0],
+			v: typeModels.MissedNotification.version,
+			cv: this.appVersion,
+		}
+		const lastProcessedId = await this.conf.getVar(DesktopConfigKey.lastProcessedNotificationId)
+
+		if (lastProcessedId) {
+			headers["lastProcessedNotificationId"] = lastProcessedId
+		}
+
+		const res = await this.fetch(url, { headers, dispatcher: new Agent({ connectTimeout: 20000 }) })
+
+		if (!res.ok) {
+			throw handleRestError(neverNull(res.status), url, res.headers.get("error-id") as string, null)
+		} else {
+			const json = await res.json()
+			log.debug(TAG, "downloaded missed notification")
+			return json as EncryptedMissedNotification
+		}
+	}
+
+	private makeMissedNotificationUrl(sseInfo: SseInfo): string {
+		const { identifier, sseOrigin } = sseInfo
+		const customId = uint8ArrayToBase64(stringToUtf8Uint8Array(identifier))
+		const url = new URL(sseOrigin)
+		url.pathname = "rest/sys/missednotification/" + base64ToBase64Url(customId)
+		return url.toString()
+	}
+
+	onNewMessage(message: string) {
+		if (message === "data: notification") {
+			this.onNotification()
+			// deal with it
+		} else if (message.startsWith("data: heartbeatTimeout:")) {
+			const timeoutString = message.split(":").at(2)
+			const timeout = timeoutString == null ? null : filterInt(timeoutString)
+			if (timeout != null && !isNaN(timeout)) {
+				this.conf.setVar(DesktopConfigKey.heartbeatTimeoutInSeconds, timeout)
+				this.sseClient.setReadTimeout(timeout)
+			}
+		}
+	}
+
+	async onNotAuthenticated() {
+		// invalid userids
+		log.debug("sse: got NotAuthenticated, deleting userId")
+		const lastSseInfo = this.currentSseInfo
+		this.currentSseInfo = null
+		if (lastSseInfo == null) {
+			log.warn("NotAuthorized while not connected?")
+			return
+		}
+		const userId = await this.removeFirstUser(lastSseInfo)
+		if (userId != null) {
+			this.notificationHandler.onUserInvalidated(userId)
+		}
+
+		// If we don't remove _connectedSseInfo then timeout loop will restart connection automatiicaly
+		if (lastSseInfo && lastSseInfo.userIds.length === 0) {
+			log.debug(TAG, "No user ids, skipping reconnect")
+			await this.conf.setVar(DesktopConfigEncKey.sseInfo, null)
+		} else {
+			this.connect()
+		}
+	}
+
+	async removeUser(userId: Id) {
+		const previousSseInfo = await this.getSseInfo()
+		let newSseInfo: SseInfo
+		if (!previousSseInfo) {
+			return
+		} else {
+			newSseInfo = previousSseInfo
+			remove(newSseInfo.userIds, userId)
+			// FIXME probably need to wait somehow
+			this.sseClient.disconnect()
+			this.connect()
+		}
+	}
+
+	async storePushIdentifier(identifier: string, userId: string, sseOrigin: string) {
+		const previousSseInfo = await this.getSseInfo()
+		let newSseInfo: SseInfo
+		if (!previousSseInfo) {
+			newSseInfo = {
+				identifier,
+				userIds: [userId],
+				sseOrigin,
+			}
+		} else {
+			newSseInfo = previousSseInfo
+			newSseInfo.userIds.push(userId)
+		}
+		await this.conf.setVar(DesktopConfigEncKey.sseInfo, newSseInfo)
+		if (this.currentSseInfo && !this.currentSseInfo.userIds.includes(userId)) {
+			// FIXME probably need to wait somehow
+			this.sseClient.disconnect()
+		}
+		this.connect()
+	}
+
+	// FIXME maybe I don't belong here
+	async resetStoredState() {
+		log.debug(TAG, "Resetting stored state")
+
+		await Promise.all([
+			// FIXME
+			// this._alarmScheduler.unscheduleAllAlarms(),
+			this.conf.setVar(DesktopConfigKey.lastMissedNotificationCheckTime, null),
+			this.conf.setVar(DesktopConfigKey.lastProcessedNotificationId, null),
+		])
+		// FIXME
+		// await this._alarmStorage.removePushIdentifierKeys()
+		await this.conf.setVar(DesktopConfigEncKey.sseInfo, null)
+
+		// FIXME
+		// await this._wm.invalidateAlarms()
+
+		this.currentSseInfo = null
+		this.sseClient.disconnect()
+	}
+
+	private async removeFirstUser(sseInfo: SseInfo): Promise<Id | null> {
+		const userId = sseInfo.userIds.shift()
+		await this.conf.setVar(DesktopConfigEncKey.sseInfo, sseInfo)
+		return userId ?? null
 	}
 }

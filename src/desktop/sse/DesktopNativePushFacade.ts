@@ -1,15 +1,15 @@
 import { NativePushFacade } from "../../native/common/generatedipc/NativePushFacade.js"
-import { DesktopSseClient } from "./DesktopSseClient.js"
+import { SseInfo, TutaSseFacade } from "./DesktopSseClient.js"
 import { EncryptedAlarmNotification } from "../../native/common/EncryptedAlarmNotification.js"
 import { NativeAlarmScheduler } from "./DesktopAlarmScheduler.js"
 import { DesktopAlarmStorage } from "./DesktopAlarmStorage.js"
 import { ExtendedNotificationMode } from "../../native/common/generatedipc/ExtendedNotificationMode.js"
 import { DesktopConfig } from "../config/DesktopConfig.js"
-import { DesktopConfigKey } from "../config/ConfigKeys.js"
+import { DesktopConfigEncKey, DesktopConfigKey } from "../config/ConfigKeys.js"
 
 export class DesktopNativePushFacade implements NativePushFacade {
 	constructor(
-		private readonly sse: DesktopSseClient,
+		private readonly sse: TutaSseFacade,
 		private readonly alarmScheduler: NativeAlarmScheduler,
 		private readonly alarmStorage: DesktopAlarmStorage,
 		private readonly desktopConfig: DesktopConfig,
@@ -29,7 +29,7 @@ export class DesktopNativePushFacade implements NativePushFacade {
 	}
 
 	async getPushIdentifier(): Promise<string | null> {
-		const sseInfo = await this.sse.getSseInfo()
+		const sseInfo = (await this.desktopConfig.getVar(DesktopConfigEncKey.sseInfo)) as SseInfo | null
 		return sseInfo?.identifier ?? null
 	}
 

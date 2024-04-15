@@ -58,7 +58,7 @@ export class DesktopFileFacade implements FileFacade {
 
 	async download(sourceUrl: string, fileName: string, headers: Record<string, string>): Promise<DownloadTaskResponse> {
 		// Propagate error in initial request if it occurs (I/O errors and such)
-		const response = await this.net.executeRequest(sourceUrl, {
+		const response = await this.net.executeRequest(new URL(sourceUrl), {
 			method: "GET",
 			timeout: 20000,
 			headers,
@@ -221,7 +221,7 @@ export class DesktopFileFacade implements FileFacade {
 
 	async upload(fileUri: string, targetUrl: string, method: string, headers: Record<string, string>): Promise<UploadTaskResponse> {
 		const fileStream = this.fs.createReadStream(fileUri)
-		const response = await this.net.executeRequest(targetUrl, { method, headers, timeout: 20000 }, fileStream)
+		const response = await this.net.executeRequest(new URL(targetUrl), { method, headers, timeout: 20000 }, fileStream)
 
 		let responseBody: Uint8Array
 		if (response.statusCode == 200 || response.statusCode == 201) {

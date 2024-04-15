@@ -7,7 +7,7 @@ import { DesktopUtils } from "./DesktopUtils"
 import { setupAssetProtocol, WindowManager } from "./DesktopWindowManager"
 import { DesktopNotifier } from "./DesktopNotifier"
 import { ElectronUpdater } from "./ElectronUpdater.js"
-import { DesktopSseClient } from "./sse/DesktopSseClient"
+import { TutaSseFacade } from "./sse/DesktopSseClient"
 import { Socketeer } from "./Socketeer"
 import { DesktopAlarmStorage } from "./sse/DesktopAlarmStorage"
 import { DesktopAlarmScheduler } from "./sse/DesktopAlarmScheduler"
@@ -62,7 +62,10 @@ import { WorkerSqlCipher } from "./db/WorkerSqlCipher.js"
 import { TempFs } from "./files/TempFs.js"
 import { makeDbPath } from "./db/DbUtils.js"
 import { DesktopCredentialsStorage } from "./db/DesktopCredentialsStorage.js"
-import { fetch as undiciFetch } from "undici"
+import { AppPassHandler } from "./credentials/AppPassHandler.js"
+import { SseClient } from "./sse/SseClient.js"
+import { suspensionAwareFetch } from "./sse/SuspensionAwareFetch.js"
+import { TutaNotificationHandler } from "./sse/TutaNotificationHandler.js"
 
 /**
  * Should be injected during build time.
@@ -80,7 +83,7 @@ mp()
 type Components = {
 	readonly wm: WindowManager
 	readonly tfs: TempFs
-	readonly sse: DesktopSseClient
+	readonly sse: TutaSseFacade
 	readonly conf: DesktopConfig
 	readonly keyStoreFacade: DesktopKeyStoreFacade
 	readonly notifier: DesktopNotifier
@@ -158,10 +161,11 @@ async function createComponents(): Promise<Components> {
 	const updater = new ElectronUpdater(conf, notifier, desktopCrypto, app, appIcon, new UpdaterWrapper(), fs)
 	const shortcutManager = new LocalShortcutManager()
 	const credentialsDb = new DesktopCredentialsStorage(buildOptions.sqliteNativePath)
-	const nativeCredentialsFacade = new DesktopNativeCredentialsFacade(keyStoreFacade, desktopCrypto, wasmLoader(), lang, conf, credentialsDb, async () => {
+	const appPassHandler = new AppPassHandler(desktopCrypto, conf, wasmLoader(), lang, async () => {
 		const last = await wm.getLastFocused(true)
 		return last.commonNativeFacade
 	})
+	const nativeCredentialsFacade = new DesktopNativeCredentialsFacade(keyStoreFacade, desktopCrypto, conf, credentialsDb, appPassHandler)
 
 	updater.setUpdateDownloadedListener(() => {
 		for (let applicationWindow of wm.getAll()) {
@@ -215,19 +219,9 @@ async function createComponents(): Promise<Components> {
 	})
 
 	tray.setWindowManager(wm)
-	const sse = new DesktopSseClient(
-		app,
-		conf,
-		notifier,
-		wm,
-		desktopAlarmScheduler,
-		desktopNet,
-		desktopCrypto,
-		nativeCredentialsFacade,
-		alarmStorage,
-		lang,
-		undiciFetch,
-	)
+	const notificationHandler = new TutaNotificationHandler(wm, nativeCredentialsFacade, conf, notifier, lang, suspensionAwareFetch, app.getVersion())
+	const sseClient = new SseClient(desktopNet)
+	const sse = new TutaSseFacade(conf, notificationHandler, sseClient, desktopCrypto, app.getVersion(), suspensionAwareFetch)
 	// It should be ok to await this, all we are waiting for is dynamic imports
 	const integrator = await getDesktopIntegratorForPlatform(electron, fs, child_process, () => import("winreg"))
 
@@ -294,7 +288,7 @@ async function createComponents(): Promise<Components> {
 async function startupInstance(components: Components) {
 	const { wm, sse, tfs } = components
 	if (!(await desktopUtils.cleanupOldInstance())) return
-	sse.start().catch((e) => log.warn("unable to start sse client", e))
+	sse.connect().catch((e) => log.warn("unable to start sse client", e))
 	// The second-instance event fires when we call app.requestSingleInstanceLock inside of DesktopUtils.makeSingleInstance
 	app.on("second-instance", async (_ev, args) => desktopUtils.handleSecondInstance(wm, args))
 	app.on("open-url", (e, url) => {

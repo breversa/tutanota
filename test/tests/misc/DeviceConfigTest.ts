@@ -130,6 +130,7 @@ o.spec("DeviceConfig", function () {
 				},
 				hasParticipatedInCredentialsMigration: false,
 				isSetupComplete: true,
+				isCredentialsMigratedToNative: false,
 			})
 
 			// We can't just call verify on localStorageMock.setItem because the JSON string may not match perfectly

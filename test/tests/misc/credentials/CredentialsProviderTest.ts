@@ -68,9 +68,9 @@ o.spec("CredentialsProvider", function () {
 		}
 		encryptedExternalCredentials = {
 			credentialInfo: {
-				login: internalCredentials.credentialInfo.login,
-				userId: internalCredentials.credentialInfo.userId,
-				type: internalCredentials.credentialInfo.type,
+				login: externalCredentials.credentialInfo.login,
+				userId: externalCredentials.credentialInfo.userId,
+				type: externalCredentials.credentialInfo.type,
 			},
 			encryptedPassword: assertNotNull(externalCredentials.encryptedPassword),
 			accessToken: externalCredentials.accessToken,
@@ -160,18 +160,7 @@ o.spec("CredentialsProvider", function () {
 		o("deleted credentials, key and mode", async function () {
 			await credentialsProvider.clearCredentials("testing")
 
-			verify(nativeCredentialFacadeMock.deleteByUserId(internalCredentials.credentialInfo.userId))
-			verify(nativeCredentialFacadeMock.deleteByUserId(externalCredentials.credentialInfo.userId))
-		})
-		o("Clears offline databases", async function () {
-			await credentialsProvider.clearCredentials("testing")
-			verify(sqlCipherFacadeMock.deleteDb(internalCredentials.credentialInfo.userId))
-			verify(sqlCipherFacadeMock.deleteDb(externalCredentials.credentialInfo.userId))
-		})
-		o("Sends event over EventBus", async function () {
-			await credentialsProvider.clearCredentials("testing")
-			verify(interWindowEventSenderMock.localUserDataInvalidated(internalCredentials.credentialInfo.userId))
-			verify(interWindowEventSenderMock.localUserDataInvalidated(externalCredentials.credentialInfo.userId))
+			verify(nativeCredentialFacadeMock.clear())
 		})
 	})
 

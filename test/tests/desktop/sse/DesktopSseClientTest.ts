@@ -22,8 +22,11 @@ import modelInfo from "../../../../src/api/entities/sys/ModelInfo.js"
 import { StandardAlarmInterval } from "../../../../src/calendar/date/CalendarUtils.js"
 import { createTestEntity } from "../../TestUtils.js"
 import { DesktopNativeCredentialsFacade } from "../../../../src/desktop/credentials/DesktopNativeCredentialsFacade.js"
-import { fetch } from "undici"
-import { func, object } from "testdouble"
+import { fetch, Headers } from "undici"
+import { func, matchers, object, when } from "testdouble"
+import { RequestInit } from "undici/types/fetch.js"
+import { CredentialEncryptionMode } from "../../../../src/native/common/generatedipc/CredentialEncryptionMode.js"
+import { ExtendedNotificationMode } from "../../../../src/native/common/generatedipc/ExtendedNotificationMode.js"
 
 o.spec("DesktopSseClient Test", function () {
 	const identifier = "identifier"
@@ -151,7 +154,7 @@ o.spec("DesktopSseClient Test", function () {
 					end: function () {
 						return this
 					},
-					abort: function () {},
+					destroy: function () {},
 				},
 				statics: {},
 			}),
@@ -193,6 +196,7 @@ o.spec("DesktopSseClient Test", function () {
 		langMock = n.mock<LanguageViewModel>("__lang", lang).set()
 
 		credentialsFacade = object()
+		when(credentialsFacade.getCredentialEncryptionMode()).thenResolve(CredentialEncryptionMode.DEVICE_LOCK)
 		fetchMock = func<typeof fetch>()
 	})
 
@@ -259,7 +263,7 @@ o.spec("DesktopSseClient Test", function () {
 		//done
 		res.callbacks["data"]("data: heartbeatTimeout:1\n")
 		downcast(electronMock.app).callbacks["will-quit"]()
-		o(net.ClientRequest.mockedInstances[1].abort.callCount).equals(1)
+		o(net.ClientRequest.mockedInstances[1].destroy.callCount).equals(1)
 	})
 
 	o("reschedule on heartbeat timeout", async function () {
@@ -475,11 +479,18 @@ o.spec("DesktopSseClient Test", function () {
 
 	o("send notification for incoming pm", async function () {
 		let setVars = {}
+		const sseInfo = {
+			identifier: "identifier",
+			sseOrigin: "http://here.there",
+			userIds: ["id1", "id2"],
+		}
 		const confMock = n
 			.mock<DesktopConfig>("__conf", conf)
 			.with({
 				getVar: (key: string) => {
 					switch (key) {
+						case DesktopConfigKey.extendedNotificationMode:
+							return ExtendedNotificationMode.NoSenderOrSubject
 						case "heartbeatTimeoutInSeconds":
 							return 30
 						case DesktopConfigKey.lastProcessedNotificationId:
@@ -487,11 +498,7 @@ o.spec("DesktopSseClient Test", function () {
 						case DesktopConfigKey.lastMissedNotificationCheckTime:
 							return null
 						case DesktopConfigEncKey.sseInfo:
-							return {
-								identifier: "identifier",
-								sseOrigin: "http://here.there",
-								userIds: ["id1", "id2"],
-							}
+							return sseInfo
 						default:
 							throw new Error(`unexpected getVar key ${key}`)
 					}
@@ -530,8 +537,6 @@ o.spec("DesktopSseClient Test", function () {
 		o(setVars[DesktopConfigKey.heartbeatTimeoutInSeconds]).equals(3)
 
 		await delay(1)
-		const missedNotificationRequest = net.ClientRequest.mockedInstances[1]
-		o(missedNotificationRequest.requestParams.headers.lastProcessedNotificationId).equals(lastProcessedId)
 		const missedNotification = {
 			confirmationId: "confId",
 			changeTime: "2345678901234",
@@ -545,17 +550,33 @@ o.spec("DesktopSseClient Test", function () {
 			alarmNotifications: [],
 			lastProcessedNotificationId: "1",
 		}
-		const missedNotificationResponse = new net.Response(200)
-		await missedNotificationRequest.callbacks["response"](missedNotificationResponse)
-		missedNotificationResponse.callbacks["data"](JSON.stringify(missedNotification))
-		missedNotificationResponse.callbacks["end"]()
+		const jsonDefer = defer()
+		when(
+			fetchMock(
+				// new URL(sse.makeMissedNotificationUrl(sseInfo)),
+				matchers.anything(),
+				matchers.argThat((params: RequestInit) => {
+					console.log("I am CALLED")
+					return new Headers(params.headers).get("lastProcessedNotificationId") === lastProcessedId
+				}),
+			),
+		).thenResolve({
+			status: 200,
+			headers: new Headers(),
+			ok: true,
+			json: () => {
+				jsonDefer.resolve(undefined)
+				return Promise.resolve(missedNotification)
+			},
+		})
 		sseConnectResponse.callbacks["data"](`data: notification\n`)
 
+		await jsonDefer.promise
 		await delay(1)
 		o(confMock.setVar.calls[2]).deepEquals([DesktopConfigKey.lastProcessedNotificationId, "1"])
 		o(notifierMock.submitGroupedNotification.callCount).equals(1)
 		o(notifierMock.submitGroupedNotification.args[0]).equals("pushNewMail_msg")
-		o(notifierMock.submitGroupedNotification.args[1]).equals("me@here.com (2)")
+		o(notifierMock.submitGroupedNotification.args[1]).equals("me@here.com")
 		o(notifierMock.submitGroupedNotification.args[2]).equals("someId")
 
 		downcast(electronMock.app).callbacks["will-quit"]()
@@ -824,7 +845,7 @@ o.spec("DesktopSseClient Test", function () {
 		await delay(1)
 		let missedNotificationResponse = new net.Response(1234)
 		await net.ClientRequest.mockedInstances[1].callbacks["response"](missedNotificationResponse)
-		o(net.ClientRequest.mockedInstances[1].abort.callCount).equals(1)
+		o(net.ClientRequest.mockedInstances[1].destroy.callCount).equals(1)
 		o(missedNotificationResponse.destroy.callCount).equals(1)
 
 		await delay(1)
@@ -866,7 +887,7 @@ o.spec("DesktopSseClient Test", function () {
 		missedNotificationResponse.headers["suspension-time"] = 5
 
 		await net.ClientRequest.mockedInstances[1].callbacks["response"](missedNotificationResponse)
-		o(net.ClientRequest.mockedInstances[1].abort.callCount).equals(1)
+		o(net.ClientRequest.mockedInstances[1].destroy.callCount).equals(1)
 		o(missedNotificationResponse.destroy.callCount).equals(1)
 
 		o(downcast(timeoutMock).calls.some((c) => c[1] === 5000)).equals(true)
@@ -913,7 +934,7 @@ o.spec("DesktopSseClient Test", function () {
 		missedNotificationResponse.headers["retry-after"] = 5
 
 		await net.ClientRequest.mockedInstances[1].callbacks["response"](missedNotificationResponse)
-		o(net.ClientRequest.mockedInstances[1].abort.callCount).equals(1)
+		o(net.ClientRequest.mockedInstances[1].destroy.callCount).equals(1)
 		o(missedNotificationResponse.destroy.callCount).equals(1)
 
 		o(downcast(timeoutMock).calls.some((c) => c[1] === 5000)).equals(true)
@@ -1022,7 +1043,7 @@ o.spec("DesktopSseClient Test", function () {
 		const url = new URL(sseurl)
 		o(url.searchParams.get("_body")).notEquals(null)
 
-		const notifyUrl = sse.makeAlarmNotificationUrl(info)
+		const notifyUrl = sse.makeMissedNotificationUrl(info)
 		const url2 = new URL(notifyUrl)
 		// when we just take searchParams.size, its sometimes 0 and sometimes undefined depending on runtime
 		o(Array.from(url2.searchParams.keys()).length).equals(0)

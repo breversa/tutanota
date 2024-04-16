@@ -58,8 +58,7 @@ export class DesktopNativePushFacade implements NativePushFacade {
 	}
 
 	async removeUser(userId: string): Promise<void> {
-		await this.sseStorage.removeUser(userId)
-		await this.sse.reconnect()
+		await this.sse.removeUser(userId)
 	}
 
 	async invalidateAlarmsForUser(userId: string): Promise<void> {
@@ -67,7 +66,7 @@ export class DesktopNativePushFacade implements NativePushFacade {
 	}
 
 	async resetStoredState() {
-		this.sse.disconnect()
+		await this.sse.disconnect()
 		await this.sseStorage.clear()
 	}
 }

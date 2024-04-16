@@ -1,6 +1,6 @@
 import { DesktopConfig } from "../config/DesktopConfig.js"
 import { SseInfo } from "./DesktopSseClient.js"
-import { DesktopConfigEncKey, DesktopConfigKey } from "../config/ConfigKeys.js"
+import { BuildConfigKey, DesktopConfigEncKey, DesktopConfigKey } from "../config/ConfigKeys.js"
 import { remove } from "@tutao/tutanota-utils"
 
 export class SseStorage {
@@ -52,13 +52,23 @@ export class SseStorage {
 		await this.conf.setVar(DesktopConfigKey.lastProcessedNotificationId, id)
 	}
 
-	async getHeartbestTimeoutSec(): Promise<number | null> {
+	async getHeartbeatTimeoutSec(): Promise<number | null> {
 		const value = await this.conf.getVar(DesktopConfigKey.heartbeatTimeoutInSeconds)
 		return value ?? null
 	}
 
 	async setHeartbeatTimeoutSec(timeout: number) {
 		await this.conf.setVar(DesktopConfigKey.heartbeatTimeoutInSeconds, timeout)
+	}
+
+	async getInitialSseConnectTimeoutInSeconds(): Promise<number | null> {
+		const value = await this.conf.getConst(BuildConfigKey.initialSseConnectTimeoutInSeconds)
+		return value ?? null
+	}
+
+	async getMaxSseConnectTimeoutInSeconds(): Promise<number | null> {
+		const value = await this.conf.getConst(BuildConfigKey.maxSseConnectTimeoutInSeconds)
+		return value ?? null
 	}
 
 	async clear() {

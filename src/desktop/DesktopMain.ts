@@ -221,8 +221,8 @@ async function createComponents(): Promise<Components> {
 
 	tray.setWindowManager(wm)
 	const notificationHandler = new TutaNotificationHandler(wm, nativeCredentialsFacade, conf, notifier, lang, suspensionAwareFetch, app.getVersion())
-	const sseClient = new SseClient(desktopNet)
 	const sseStorage = new SseStorage(conf)
+	const sseClient = new SseClient(desktopNet, sseStorage)
 	const sse = new TutaSseFacade(sseStorage, notificationHandler, sseClient, desktopCrypto, app.getVersion(), suspensionAwareFetch)
 	// It should be ok to await this, all we are waiting for is dynamic imports
 	const integrator = await getDesktopIntegratorForPlatform(electron, fs, child_process, () => import("winreg"))

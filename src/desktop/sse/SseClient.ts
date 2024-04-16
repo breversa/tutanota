@@ -1,6 +1,7 @@
 import http from "node:http"
 import type { DesktopNetworkClient } from "../net/DesktopNetworkClient"
 import { log } from "../DesktopLog"
+import { SseStorage } from "./SseStorage.js"
 
 const TAG = "[SSE]"
 
@@ -14,16 +15,24 @@ export interface SseConnectOptions {
 	headers: Record<string, string | undefined>
 }
 
+export enum ConnectionState {
+	disconnected,
+	connecting,
+	connected,
+}
+
 type State =
-	| { state: "notconnected" }
-	| { state: "connecting"; options: SseConnectOptions; connection: http.ClientRequest; attempt: number }
-	| { state: "connected"; options: SseConnectOptions; connection: http.ClientRequest }
+	| { state: ConnectionState.disconnected }
+	| { state: ConnectionState.connecting; options: SseConnectOptions; connection: http.ClientRequest; attempt: number }
+	| { state: ConnectionState.connected; options: SseConnectOptions; connection: http.ClientRequest }
 
 export class SseClient {
 	private listener: SseEventHandler | null = null
-	private _state: State = { state: "notconnected" }
+	private _state: State = { state: ConnectionState.disconnected }
+	private readTimeout: number | null = null
+	private timeoutHandle: NodeJS.Timeout | null = null
 	private set state(newState: State) {
-		log.debug(TAG, "state:", newState.state)
+		log.debug(TAG, "state:", ConnectionState[newState.state])
 		this._state = newState
 	}
 
@@ -31,17 +40,17 @@ export class SseClient {
 		return this._state
 	}
 
-	constructor(private readonly net: DesktopNetworkClient) {}
+	constructor(private readonly net: DesktopNetworkClient, private readonly sseStorage: SseStorage) {}
 
-	connect(options: SseConnectOptions) {
+	async connect(options: SseConnectOptions) {
+		// FIXME split to handle different states
 		log.debug(TAG, "connect")
 		switch (this.state.state) {
-			case "connected":
-			case "connecting":
-				// FIXME maybe await for it
-				this.disconnect()
+			case ConnectionState.connecting:
+			case ConnectionState.connected:
+				await this.disconnect()
 				break
-			case "notconnected":
+			case ConnectionState.disconnected:
 			// go on with connection
 		}
 		const { url, headers } = options
@@ -66,11 +75,11 @@ export class SseClient {
 			})
 			.on("response", async (res) => {
 				log.debug("established SSE connection with code", res.statusCode)
-				this.state = { state: "connected", connection, options }
+				this.state = { state: ConnectionState.connected, connection, options }
 
 				if (res.statusCode === 403 || res.statusCode === 401) {
-					this.listener?.onNotAuthenticated()
-					this.disconnect()
+					await this.listener?.onNotAuthenticated()
+					await this.disconnect()
 					return
 				}
 
@@ -86,11 +95,12 @@ export class SseClient {
 						this.listener?.onNewMessage(l.trim())
 					}
 				})
-					.on("close", () => {
+					.on("close", async () => {
 						log.debug("sse response closed")
 
 						// FIXME reschedule if needed
-						// this.connection = null
+						const initialConnectTimeoutSeconds = (await this.sseStorage.getInitialSseConnectTimeoutInSeconds()) ?? 60
+						await this.scheduledReconnect(initialConnectTimeoutSeconds)
 						// this._reschedule(initialConnectTimeoutSeconds)
 					})
 					.on("error", (e) => {
@@ -100,27 +110,66 @@ export class SseClient {
 			})
 			.on("information", (e) => log.debug(TAG, "sse information"))
 			.on("connect", (e) => log.debug(TAG, "sse connect:"))
-			.on("error", (e) => {
+			.on("error", async (e) => {
 				console.error("sse error:", e.message)
-				// FIXME reconnect, taking attempt number into account
+				this.scheduledReconnect(await this.calcReconnectTimeoutInSeconds())
 			})
 			.end()
-		this.state = { state: "connecting", attempt: 1, connection, options }
 	}
 
-	disconnect() {
-		switch (this.state.state) {
-			case "connected":
-			case "connecting":
-				// FIXME is this right? await
-				this.state.connection.destroy()
-				this.state = { state: "notconnected" }
-		}
+	async disconnect() {
+		return new Promise<void>((resolve) => {
+			switch (this.state.state) {
+				case ConnectionState.connected:
+				case ConnectionState.connecting:
+					this.state.connection.once("close", () => {
+						this.state = { state: ConnectionState.disconnected }
+						resolve()
+					})
+					this.state.connection.destroy()
+			}
+		})
 	}
 
 	setEventListener(listener: SseEventHandler) {
 		this.listener = listener
 	}
 
-	setReadTimeout(timeout: number) {}
+	setReadTimeout(timeout: number) {
+		this.readTimeout = timeout
+	}
+
+	private async calcReconnectTimeoutInSeconds() {
+		if (this.state.state !== ConnectionState.connecting) return 0
+		// FIXME null may be unnecessary
+		const initialConnectTimeoutSeconds = (await this.sseStorage.getInitialSseConnectTimeoutInSeconds()) ?? 60
+		const maxConnectTimeoutSeconds = (await this.sseStorage.getMaxSseConnectTimeoutInSeconds()) ?? 2400
+		// double the connection timeout with each attempt to connect, capped by maxConnectTimeoutSeconds
+		return Math.min(initialConnectTimeoutSeconds * Math.pow(2, this.state.attempt), maxConnectTimeoutSeconds)
+	}
+
+	/**
+	 * Only use with clean disconnected state
+	 */
+	scheduledConnect(timeout: number, options: SseConnectOptions) {
+		if (this.state.state === ConnectionState.connecting) return
+		if (this.timeoutHandle != null) clearTimeout(this.timeoutHandle)
+		this.timeoutHandle = setTimeout(async () => {
+			await this.connect(options)
+		}, timeout)
+	}
+
+	/**
+	 * Only use with connecting state
+	 */
+	private scheduledReconnect(timeout: number) {
+		if (this.timeoutHandle != null) clearTimeout(this.timeoutHandle)
+		this.timeoutHandle = setTimeout(this.reconnect, timeout)
+	}
+
+	private async reconnect() {
+		if (this.state.state !== ConnectionState.connecting) return
+		this.state.attempt++
+		await this.connect(this.state.options)
+	}
 }

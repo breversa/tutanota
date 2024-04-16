@@ -115,7 +115,7 @@ export class TutaNotificationHandler {
 		// FIXME implement
 	}
 
-	onUserInvalidated(userId: Id) {
+	async onUserInvalidated(userId: Id) {
 		// FIXME implement
 	}
 

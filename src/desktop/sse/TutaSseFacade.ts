@@ -37,26 +37,25 @@ export class TutaSseFacade implements SseEventHandler {
 			return
 		}
 		if (this.currentSseInfo != null) {
-			// FIXME we already started the connection, we should reconnect
-		} else {
-			const sseInfo = await this.sseStorage.getSseInfo()
-			if (sseInfo == null) {
-				log.debug(TAG, "No SSE info")
-				return
-			}
-			const url = this.getSseUrl(sseInfo, sseInfo.userIds[0])
-			const headers = {
-				v: typeModels.MissedNotification.version,
-				cv: this.appVersion,
-			}
-			const timeout = await this.sseStorage.getHeartbestTimeoutSec()
-			if (timeout != null) {
-				this.sseClient.setReadTimeout(timeout)
-			}
-
-			this.sseClient.connect({ url, headers })
-			this.currentSseInfo = sseInfo
+			await this.disconnect()
 		}
+		const sseInfo = await this.sseStorage.getSseInfo()
+		if (sseInfo == null) {
+			log.debug(TAG, "No SSE info")
+			return
+		}
+		const url = this.getSseUrl(sseInfo, sseInfo.userIds[0])
+		const headers = {
+			v: typeModels.MissedNotification.version,
+			cv: this.appVersion,
+		}
+		const timeout = await this.sseStorage.getHeartbeatTimeoutSec()
+		if (timeout != null) {
+			this.sseClient.setReadTimeout(timeout)
+		}
+
+		await this.sseClient.connect({ url, headers })
+		this.currentSseInfo = sseInfo
 	}
 
 	/**
@@ -181,28 +180,28 @@ export class TutaSseFacade implements SseEventHandler {
 			await this.notificationHandler.onUserInvalidated(firstUser)
 		}
 
-		// If we don't remove _connectedSseInfo then timeout loop will restart connection automatiicaly
 		if (lastSseInfo && lastSseInfo.userIds.length === 0) {
 			log.debug(TAG, "No user ids, skipping reconnect")
 			await this.sseStorage.clear()
 		} else {
-			this.connect()
+			await this.connect()
 		}
 	}
 
 	async removeUser(userId: Id) {
 		await this.sseStorage.removeUser(userId)
+		// FIXME unschedule alarms?
 		await this.connect()
 	}
 
 	async reconnect() {
 		// FIXME probably need to wait somehow
-		this.sseClient.disconnect()
-		this.connect()
+		await this.disconnect()
+		await this.connect()
 	}
 
-	disconnect() {
+	async disconnect() {
 		this.currentSseInfo = null
-		this.sseClient.disconnect()
+		await this.sseClient.disconnect()
 	}
 }

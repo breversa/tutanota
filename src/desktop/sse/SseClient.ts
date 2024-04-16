@@ -3,6 +3,7 @@ import type { DesktopNetworkClient } from "../net/DesktopNetworkClient"
 import { log } from "../DesktopLog"
 
 const TAG = "[SSE]"
+
 export interface SseEventHandler {
 	onNewMessage: (message: string) => unknown
 	onNotAuthenticated: () => unknown
@@ -13,12 +14,22 @@ export interface SseConnectOptions {
 	headers: Record<string, string | undefined>
 }
 
+type State =
+	| { state: "notconnected" }
+	| { state: "connecting"; options: SseConnectOptions; connection: http.ClientRequest; attempt: number }
+	| { state: "connected"; options: SseConnectOptions; connection: http.ClientRequest }
+
 export class SseClient {
 	private listener: SseEventHandler | null = null
-	private state:
-		| { state: "notconnected" }
-		| { state: "connecting"; options: SseConnectOptions; connection: http.ClientRequest; attempt: number }
-		| { state: "connected"; options: SseConnectOptions; connection: http.ClientRequest } = { state: "notconnected" }
+	private _state: State = { state: "notconnected" }
+	private set state(newState: State) {
+		log.debug(TAG, "state:", newState.state)
+		this._state = newState
+	}
+
+	private get state(): State {
+		return this._state
+	}
 
 	constructor(private readonly net: DesktopNetworkClient) {}
 

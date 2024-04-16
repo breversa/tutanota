@@ -99,7 +99,14 @@ export class TutaSseFacade implements SseEventHandler {
 			await this.sseStorage.recordMissedNotificationCheckTime()
 		}
 		// FIXME check expired TTL
-		const missedNotification = await this.downloadMissedNotification()
+		let missedNotification
+		try {
+			missedNotification = await this.downloadMissedNotification()
+		} catch (e) {
+			log.warn(TAG, "Failed to download missed notification", e)
+			return
+		}
+
 		await this.sseStorage.setLastProcessedNotificationId(assertNotNull(missedNotification.lastProcessedNotificationId))
 		await this.sseStorage.recordMissedNotificationCheckTime()
 		for (const notificationInfo of missedNotification.notificationInfos) {

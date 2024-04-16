@@ -69,7 +69,7 @@ export class DesktopNetworkClient {
 	}
 
 	private getModule(url: URL): typeof import("http") | typeof import("https") {
-		if (url.protocol === "https") {
+		if (url.protocol === "https:") {
 			return https
 		} else {
 			return http

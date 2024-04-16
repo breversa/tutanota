@@ -49,7 +49,7 @@ export class CredentialsProvider {
 	}
 
 	async getCredentialsInfoByUserId(userId: Id): Promise<CredentialsInfo | null> {
-		return (await this.getDecryptedCredentialsByUserId(userId))?.credentialInfo ?? null
+		return (await this.getCredentialsByUserId(userId))?.credentialInfo ?? null
 	}
 
 	private async getCredentialsByUserId(userId: Id): Promise<PersistedCredentials | null> {

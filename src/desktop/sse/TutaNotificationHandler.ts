@@ -111,7 +111,15 @@ export class TutaNotificationHandler {
 		return url
 	}
 
-	onAlarmNotification(alarmNotification: EncryptedAlarmNotification) {}
+	async onAlarmNotification(alarmNotification: EncryptedAlarmNotification) {
+		// FIXME implement
+	}
 
-	onUserInvalidated(userId: Id) {}
+	onUserInvalidated(userId: Id) {
+		// FIXME implement
+	}
+
+	async onExpiredData() {
+		// FIXME implement
+	}
 }

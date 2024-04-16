@@ -27,7 +27,6 @@ export class SseClient {
 		switch (this.state.state) {
 			case "connected":
 			case "connecting":
-				;``
 				// FIXME maybe await for it
 				this.disconnect()
 				break

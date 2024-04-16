@@ -7,7 +7,6 @@ import { DesktopUtils } from "./DesktopUtils"
 import { setupAssetProtocol, WindowManager } from "./DesktopWindowManager"
 import { DesktopNotifier } from "./DesktopNotifier"
 import { ElectronUpdater } from "./ElectronUpdater.js"
-import { TutaSseFacade } from "./sse/DesktopSseClient"
 import { Socketeer } from "./Socketeer"
 import { DesktopAlarmStorage } from "./sse/DesktopAlarmStorage"
 import { DesktopAlarmScheduler } from "./sse/DesktopAlarmScheduler"
@@ -66,6 +65,8 @@ import { AppPassHandler } from "./credentials/AppPassHandler.js"
 import { SseClient } from "./sse/SseClient.js"
 import { suspensionAwareFetch } from "./sse/SuspensionAwareFetch.js"
 import { TutaNotificationHandler } from "./sse/TutaNotificationHandler.js"
+import { TutaSseFacade } from "./sse/TutaSseFacade.js"
+import { SseStorage } from "./sse/SseStorage.js"
 
 /**
  * Should be injected during build time.
@@ -204,7 +205,7 @@ async function createComponents(): Promise<Components> {
 	const desktopAlarmScheduler = new DesktopAlarmScheduler(wm, notifier, alarmStorage, desktopCrypto, alarmScheduler)
 	desktopAlarmScheduler.rescheduleAll().catch((e) => {
 		log.error("Could not reschedule alarms", e)
-		return sse.resetStoredState()
+		return pushFacade.resetStoredState()
 	})
 	const webDialogController = new WebDialogController()
 
@@ -221,7 +222,8 @@ async function createComponents(): Promise<Components> {
 	tray.setWindowManager(wm)
 	const notificationHandler = new TutaNotificationHandler(wm, nativeCredentialsFacade, conf, notifier, lang, suspensionAwareFetch, app.getVersion())
 	const sseClient = new SseClient(desktopNet)
-	const sse = new TutaSseFacade(conf, notificationHandler, sseClient, desktopCrypto, app.getVersion(), suspensionAwareFetch)
+	const sseStorage = new SseStorage(conf)
+	const sse = new TutaSseFacade(sseStorage, notificationHandler, sseClient, desktopCrypto, app.getVersion(), suspensionAwareFetch)
 	// It should be ok to await this, all we are waiting for is dynamic imports
 	const integrator = await getDesktopIntegratorForPlatform(electron, fs, child_process, () => import("winreg"))
 
@@ -229,7 +231,7 @@ async function createComponents(): Promise<Components> {
 		eml: desktopUtils.getIconByName("eml.png"),
 		msg: desktopUtils.getIconByName("msg.png"),
 	}
-	const pushFacade = new DesktopNativePushFacade(sse, desktopAlarmScheduler, alarmStorage, conf)
+	const pushFacade = new DesktopNativePushFacade(sse, desktopAlarmScheduler, alarmStorage, conf, sseStorage)
 	const settingsFacade = new DesktopSettingsFacade(conf, desktopUtils, integrator, updater, lang)
 
 	const dispatcherFactory = (window: ApplicationWindow) => {

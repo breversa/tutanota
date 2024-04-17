@@ -67,6 +67,7 @@ export class DesktopNativePushFacade implements NativePushFacade {
 
 	async resetStoredState() {
 		await this.sse.disconnect()
+		await this.alarmScheduler.unscheduleAllAlarms()
 		await this.sseStorage.clear()
 	}
 }

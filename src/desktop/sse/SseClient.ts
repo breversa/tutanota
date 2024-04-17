@@ -31,6 +31,8 @@ export class SseClient {
 	private _state: State = { state: ConnectionState.disconnected }
 	private readTimeout: number | null = null
 	private timeoutHandle: NodeJS.Timeout | null = null
+	private receivedHeartbeat: boolean = false
+	private heartBeatListenderHandle: NodeJS.Timeout | undefined = undefined
 	private set state(newState: State) {
 		log.debug(TAG, "state:", ConnectionState[newState.state])
 		this._state = newState
@@ -43,7 +45,6 @@ export class SseClient {
 	constructor(private readonly net: DesktopNetworkClient, private readonly sseStorage: SseStorage) {}
 
 	async connect(options: SseConnectOptions) {
-		// FIXME split to handle different states
 		log.debug(TAG, "connect")
 		switch (this.state.state) {
 			case ConnectionState.connecting:
@@ -97,24 +98,21 @@ export class SseClient {
 				})
 					.on("close", async () => {
 						log.debug("sse response closed")
-
-						// FIXME reschedule if needed
-						const initialConnectTimeoutSeconds = (await this.sseStorage.getInitialSseConnectTimeoutInSeconds()) ?? 60
-						await this.scheduledReconnect(initialConnectTimeoutSeconds)
-						// this._reschedule(initialConnectTimeoutSeconds)
+						await this.delayedReconnect()
 					})
-					.on("error", (e) => {
+					.on("error", async (e) => {
 						console.error("sse response error:", e)
-						// FIXME reconnect
+						await this.delayedReconnect()
 					})
 			})
 			.on("information", (e) => log.debug(TAG, "sse information"))
 			.on("connect", (e) => log.debug(TAG, "sse connect:"))
 			.on("error", async (e) => {
 				console.error("sse error:", e.message)
-				this.scheduledReconnect(await this.calcReconnectTimeoutInSeconds())
+				await this.delayedReconnect(await this.calcReconnectTimeoutInSeconds())
 			})
 			.end()
+		this.state = { state: ConnectionState.connecting, attempt: 1, connection, options }
 	}
 
 	async disconnect() {
@@ -137,39 +135,45 @@ export class SseClient {
 
 	setReadTimeout(timeout: number) {
 		this.readTimeout = timeout
+		this.resetHeartbeatListener()
 	}
 
 	private async calcReconnectTimeoutInSeconds() {
 		if (this.state.state !== ConnectionState.connecting) return 0
-		// FIXME null may be unnecessary
-		const initialConnectTimeoutSeconds = (await this.sseStorage.getInitialSseConnectTimeoutInSeconds()) ?? 60
-		const maxConnectTimeoutSeconds = (await this.sseStorage.getMaxSseConnectTimeoutInSeconds()) ?? 2400
+		const initialConnectTimeoutSeconds = await this.sseStorage.getInitialSseConnectTimeoutInSeconds()
+		const maxConnectTimeoutSeconds = await this.sseStorage.getMaxSseConnectTimeoutInSeconds()
 		// double the connection timeout with each attempt to connect, capped by maxConnectTimeoutSeconds
 		return Math.min(initialConnectTimeoutSeconds * Math.pow(2, this.state.attempt), maxConnectTimeoutSeconds)
 	}
 
-	/**
-	 * Only use with clean disconnected state
-	 */
-	scheduledConnect(timeout: number, options: SseConnectOptions) {
-		if (this.state.state === ConnectionState.connecting) return
+	private async delayedReconnect(timeout?: number) {
 		if (this.timeoutHandle != null) clearTimeout(this.timeoutHandle)
-		this.timeoutHandle = setTimeout(async () => {
-			await this.connect(options)
-		}, timeout)
+		this.timeoutHandle = setTimeout(this.retryConnect, timeout ?? (await this.sseStorage.getInitialSseConnectTimeoutInSeconds()))
 	}
 
-	/**
-	 * Only use with connecting state
-	 */
-	private scheduledReconnect(timeout: number) {
-		if (this.timeoutHandle != null) clearTimeout(this.timeoutHandle)
-		this.timeoutHandle = setTimeout(this.reconnect, timeout)
+	private async retryConnect() {
+		switch (this.state.state) {
+			case ConnectionState.connecting:
+				this.state.attempt++
+			case ConnectionState.connected:
+				await this.connect(this.state.options)
+				break
+		}
 	}
 
-	private async reconnect() {
-		if (this.state.state !== ConnectionState.connecting) return
-		this.state.attempt++
-		await this.connect(this.state.options)
+	onHeartbeat() {
+		this.receivedHeartbeat = true
+	}
+
+	private resetHeartbeatListener() {
+		clearInterval(this.heartBeatListenderHandle)
+		this.heartBeatListenderHandle = setInterval(() => {
+			if (!this.receivedHeartbeat) {
+				if (this.state.state === ConnectionState.connected) {
+					this.connect(this.state.options)
+				}
+			}
+			this.receivedHeartbeat = false
+		}, Math.floor(this.readTimeout! * 1.2))
 	}
 }

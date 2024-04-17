@@ -61,14 +61,12 @@ export class SseStorage {
 		await this.conf.setVar(DesktopConfigKey.heartbeatTimeoutInSeconds, timeout)
 	}
 
-	async getInitialSseConnectTimeoutInSeconds(): Promise<number | null> {
-		const value = await this.conf.getConst(BuildConfigKey.initialSseConnectTimeoutInSeconds)
-		return value ?? null
+	async getInitialSseConnectTimeoutInSeconds(): Promise<number> {
+		return await this.conf.getConst(BuildConfigKey.initialSseConnectTimeoutInSeconds)
 	}
 
-	async getMaxSseConnectTimeoutInSeconds(): Promise<number | null> {
-		const value = await this.conf.getConst(BuildConfigKey.maxSseConnectTimeoutInSeconds)
-		return value ?? null
+	async getMaxSseConnectTimeoutInSeconds(): Promise<number> {
+		return await this.conf.getConst(BuildConfigKey.maxSseConnectTimeoutInSeconds)
 	}
 
 	async clear() {

@@ -15,6 +15,8 @@ import { handleRestError } from "../../api/common/error/RestError"
 import { EncryptedAlarmNotification } from "../../native/common/EncryptedAlarmNotification"
 import { SseInfo } from "./DesktopSseClient"
 import { Mail } from "../../api/entities/tutanota/TypeRefs.js"
+import { NativeAlarmScheduler } from "./DesktopAlarmScheduler.js"
+import { DesktopAlarmStorage } from "./DesktopAlarmStorage.js"
 
 const TAG = "[notifications]"
 
@@ -26,6 +28,8 @@ export class TutaNotificationHandler {
 		private readonly nativeCredentialFacade: NativeCredentialsFacade,
 		private readonly conf: DesktopConfig,
 		private readonly notifier: DesktopNotifier,
+		private readonly alarmScheduler: NativeAlarmScheduler,
+		private readonly alarmStorage: DesktopAlarmStorage,
 		private readonly lang: LanguageViewModel,
 		private readonly fetch: typeof undiciFetch,
 		private readonly appVersion: string,
@@ -112,14 +116,29 @@ export class TutaNotificationHandler {
 	}
 
 	async onAlarmNotification(alarmNotification: EncryptedAlarmNotification) {
-		// FIXME implement
+		await this.alarmScheduler.handleAlarmNotification(alarmNotification)
 	}
 
 	async onUserInvalidated(userId: Id) {
 		// FIXME implement
+		return Promise.resolve()
+	}
+
+	async onUserRemoved(userId: Id) {
+		await this.alarmScheduler.unscheduleAllAlarms(userId)
 	}
 
 	async onExpiredData() {
-		// FIXME implement
+		await this.clearAlarms()
+	}
+
+	async onInvalidSseInfo() {
+		await this.clearAlarms()
+		await this.wm.invalidateAlarms()
+	}
+
+	private async clearAlarms() {
+		await this.alarmScheduler.unscheduleAllAlarms()
+		await this.alarmStorage.removePushIdentifierKeys()
 	}
 }

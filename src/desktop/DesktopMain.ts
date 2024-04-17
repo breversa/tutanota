@@ -220,7 +220,17 @@ async function createComponents(): Promise<Components> {
 	})
 
 	tray.setWindowManager(wm)
-	const notificationHandler = new TutaNotificationHandler(wm, nativeCredentialsFacade, conf, notifier, lang, suspensionAwareFetch, app.getVersion())
+	const notificationHandler = new TutaNotificationHandler(
+		wm,
+		nativeCredentialsFacade,
+		conf,
+		notifier,
+		desktopAlarmScheduler,
+		alarmStorage,
+		lang,
+		suspensionAwareFetch,
+		app.getVersion(),
+	)
 	const sseStorage = new SseStorage(conf)
 	const sseClient = new SseClient(desktopNet, sseStorage)
 	const sse = new TutaSseFacade(sseStorage, notificationHandler, sseClient, desktopCrypto, app.getVersion(), suspensionAwareFetch)

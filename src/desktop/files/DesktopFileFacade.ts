@@ -23,7 +23,6 @@ import { WriteStream } from "fs-extra"
 import { BuildConfigKey, DesktopConfigKey } from "../config/ConfigKeys.js"
 import { CancelledError } from "../../api/common/error/CancelledError.js"
 import { DesktopConfig } from "../config/DesktopConfig.js"
-import { DesktopUtils } from "../DesktopUtils.js"
 import { DateProvider } from "../../api/common/DateProvider.js"
 import { TempFs } from "./TempFs.js"
 import OpenDialogOptions = Electron.OpenDialogOptions
@@ -37,7 +36,6 @@ export class DesktopFileFacade implements FileFacade {
 	constructor(
 		private readonly win: ApplicationWindow,
 		private readonly conf: DesktopConfig,
-		private readonly desktopUtils: DesktopUtils,
 		private readonly dateProvider: DateProvider,
 		private readonly net: DesktopNetworkClient,
 		private readonly electron: ElectronExports,

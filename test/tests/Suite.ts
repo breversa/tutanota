@@ -172,7 +172,7 @@ async function setupSuite({ integration }: { integration?: boolean }) {
 		await import("./desktop/DesktopKeyStoreFacadeTest.js")
 		await import("./desktop/config/ConfigFileTest.js")
 		await import("./desktop/db/OfflineDbFacadeTest.js")
-		await import("./desktop/credentials/DesktopCredentialsFacadeTest.js")
+		await import("./desktop/credentials/DesktopNativeCredentialsFacadeTest.js")
 		await import("./desktop/credentials/AppPassHandlerTest.js")
 		await import("./api/worker/offline/OfflineStorageMigratorTest.js")
 		await import("./api/worker/offline/OfflineStorageMigrationsTest.js")

@@ -3,7 +3,6 @@ import { DesktopKeyStoreFacade } from "../DesktopKeyStoreFacade.js"
 import { DesktopNativeCryptoFacade } from "../DesktopNativeCryptoFacade"
 import { assert, base64ToUint8Array, stringToUtf8Uint8Array, uint8ArrayToBase64, utf8Uint8ArrayToString } from "@tutao/tutanota-utils"
 import { NativeCredentialsFacade } from "../../native/common/generatedipc/NativeCredentialsFacade.js"
-import { DesktopConfig } from "../config/DesktopConfig.js"
 import { bitArrayToUint8Array, uint8ArrayToBitArray } from "@tutao/tutanota-crypto"
 import { CryptoError } from "@tutao/tutanota-crypto/error.js"
 import { KeyPermanentlyInvalidatedError } from "../../api/common/error/KeyPermanentlyInvalidatedError.js"
@@ -23,7 +22,6 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 	constructor(
 		private readonly desktopKeyStoreFacade: DesktopKeyStoreFacade,
 		private readonly crypto: DesktopNativeCryptoFacade,
-		private readonly conf: DesktopConfig,
 		private readonly credentialDb: DesktopCredentialsStorage,
 		private readonly appPassHandler: AppPassHandler,
 	) {}

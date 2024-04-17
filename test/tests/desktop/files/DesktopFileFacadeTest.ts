@@ -46,7 +46,7 @@ o.spec("DesktopFileFacade", function () {
 		du = object()
 		dp = object()
 
-		ff = new DesktopFileFacade(win, conf, du, dp, net, electron, tfs, fs)
+		ff = new DesktopFileFacade(win, conf, dp, net, electron, tfs, fs)
 	})
 	o.spec("saveDataFile", function () {
 		o("when there's no existing file it will be simply written", async function () {
@@ -81,7 +81,7 @@ o.spec("DesktopFileFacade", function () {
 			const ws: fs.WriteStream = mockWriteStream(response)
 			when(fs.createWriteStream(expectedFilePath, { emitClose: true })).thenReturn(ws)
 			when(
-				net.executeRequest("some://url/file", {
+				net.executeRequest(matchers.anything(), {
 					method: "GET",
 					headers,
 					timeout: 20000,
@@ -237,7 +237,7 @@ o.spec("DesktopFileFacade", function () {
 			}
 			const fileStreamMock = mockReadStream()
 			when(fs.createReadStream(fileToUploadPath)).thenReturn(fileStreamMock)
-			when(net.executeRequest(targetUrl, { method: "POST", headers, timeout: 20000 }, fileStreamMock)).thenResolve(response)
+			when(net.executeRequest(matchers.anything(), { method: "POST", headers, timeout: 20000 }, fileStreamMock)).thenResolve(response)
 			const uploadResult = await ff.upload(fileToUploadPath, targetUrl, "POST", headers)
 
 			o(uploadResult.statusCode).equals(200)

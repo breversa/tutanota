@@ -1,9 +1,9 @@
 import o from "@tutao/otest"
-import { AppPassHandler } from "../../../../src/desktop/credentials/AppPassHandler.js"
+import { AppPassHandler, resolveChecked } from "../../../../src/desktop/credentials/AppPassHandler.js"
 import { DesktopNativeCryptoFacade } from "../../../../src/desktop/DesktopNativeCryptoFacade.js"
 import { LanguageViewModel } from "../../../../src/misc/LanguageViewModel.js"
 import { DesktopConfig } from "../../../../src/desktop/config/DesktopConfig.js"
-import { matchers, object, verify, when } from "testdouble"
+import { function as fn, matchers, object, verify, when } from "testdouble"
 import { CommonNativeFacade } from "../../../../src/native/common/generatedipc/CommonNativeFacade.js"
 import { DesktopConfigKey } from "../../../../src/desktop/config/ConfigKeys.js"
 import { defer, delay, stringToBase64 } from "@tutao/tutanota-utils"
@@ -80,3 +80,37 @@ async function loadArgon2ModuleFromFile(path: string): Promise<WebAssembly.Expor
 		return (await WebAssembly.instantiateStreaming(await fetch(path))).instance.exports
 	}
 }
+
+o.spec("resolveChecked", function () {
+	o("rejects if whileNot rejects, also calls otherwise", async function () {
+		const otherWise = fn<any>()
+		const { promise, resolve } = defer()
+		const rejector = defer<never>()
+		const subject = assertThrows(Error, () => resolveChecked(promise, rejector.promise, otherWise))
+		rejector.reject(new Error("aw"))
+		resolve(0)
+		await subject
+		verify(otherWise(), { times: 1 })
+	})
+
+	o("rejects if promise rejects", async function () {
+		const otherWise = fn<any>()
+		const { promise, resolve, reject } = defer()
+		const rejector = defer<never>()
+		const subject = assertThrows(Error, () => resolveChecked(promise, rejector.promise, otherWise))
+		reject(new Error("aw"))
+		await subject
+		verify(otherWise(), { times: 0 })
+	})
+
+	o("resolves if promise resolves", async function () {
+		const otherWise = fn<any>()
+		const { promise, resolve } = defer()
+		const rejector = defer<never>()
+		const subject = resolveChecked(promise, rejector.promise, otherWise)
+		resolve("hello")
+		const value = await subject
+		verify(otherWise(), { times: 0 })
+		o(value).equals("hello")
+	})
+})

@@ -4,7 +4,6 @@ import { DesktopNativeCryptoFacade } from "../DesktopNativeCryptoFacade"
 import { assert, base64ToUint8Array, stringToUtf8Uint8Array, uint8ArrayToBase64, utf8Uint8ArrayToString } from "@tutao/tutanota-utils"
 import { NativeCredentialsFacade } from "../../native/common/generatedipc/NativeCredentialsFacade.js"
 import { DesktopConfig } from "../config/DesktopConfig.js"
-import { DesktopConfigKey } from "../config/ConfigKeys.js"
 import { bitArrayToUint8Array, uint8ArrayToBitArray } from "@tutao/tutanota-crypto"
 import { CryptoError } from "@tutao/tutanota-crypto/error.js"
 import { KeyPermanentlyInvalidatedError } from "../../api/common/error/KeyPermanentlyInvalidatedError.js"
@@ -38,17 +37,17 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 	}
 
 	async getCredentialEncryptionMode(): Promise<CredentialEncryptionMode | null> {
-		const retVal = await this.conf.getVar(DesktopConfigKey.credentialEncryptionMode)
+		const retVal = this.credentialDb.getCredentialEncryptionMode()
 		return retVal ? CredentialEncryptionMode[retVal as keyof typeof CredentialEncryptionMode] : null
 	}
 
 	private async getDesktopCredentialEncryptionMode(): Promise<DesktopCredentialsMode | null> {
-		const retVal = await this.conf.getVar(DesktopConfigKey.credentialEncryptionMode)
+		const retVal = this.credentialDb.getCredentialEncryptionMode()
 		return retVal ? CredentialEncryptionMode[retVal as DesktopCredentialsMode] : null
 	}
 
 	private async getCredentialsEncryptionKey(): Promise<Uint8Array | null> {
-		const credentialsEncryptionKey = await this.conf.getVar(DesktopConfigKey.credentialsEncryptionKey)
+		const credentialsEncryptionKey = await this.credentialDb.getCredentialsEncryptionKey()
 		return credentialsEncryptionKey ? base64ToUint8Array(credentialsEncryptionKey) : null
 	}
 
@@ -90,11 +89,11 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 	}
 
 	async setCredentialEncryptionMode(encryptionMode: CredentialEncryptionMode): Promise<void> {
-		await this.conf.setVar(DesktopConfigKey.credentialEncryptionMode, encryptionMode)
+		this.credentialDb.setCredentialEncryptionMode(encryptionMode)
 	}
 
-	private async setCredentialsEncryptionKey(credentialsEncryptionKey: Uint8Array | null): Promise<void> {
-		await this.conf.setVar(DesktopConfigKey.credentialsEncryptionKey, credentialsEncryptionKey ? uint8ArrayToBase64(credentialsEncryptionKey) : null)
+	private setCredentialsEncryptionKey(credentialsEncryptionKey: Uint8Array | null) {
+		this.credentialDb.setCredentialsEncryptionKey(credentialsEncryptionKey ? uint8ArrayToBase64(credentialsEncryptionKey) : null)
 	}
 
 	async store(credentials: UnencryptedCredentials): Promise<void> {
@@ -105,15 +104,15 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 
 	async clear(): Promise<void> {
 		this.credentialDb.deleteAllCredentials()
-		await this.setCredentialsEncryptionKey(null)
-		await this.conf.setVar(DesktopConfigKey.credentialEncryptionMode, null)
+		this.setCredentialsEncryptionKey(null)
+		this.credentialDb.setCredentialEncryptionMode(null)
 	}
 
 	async migrateToNativeCredentials(credentials: ReadonlyArray<PersistedCredentials>, encryptionMode: CredentialEncryptionMode, credentialsKey: Uint8Array) {
 		// store persistedCredentials, key & mode
 		this.assertSupportedEncryptionMode(encryptionMode as DesktopCredentialsMode)
 		await this.setCredentialEncryptionMode(encryptionMode)
-		await this.setCredentialsEncryptionKey(credentialsKey)
+		this.setCredentialsEncryptionKey(credentialsKey)
 		for (const credential of credentials) {
 			await this.storeEncrypted(credential)
 		}
@@ -136,7 +135,7 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 		} else {
 			const newKey = bitArrayToUint8Array(this.crypto.generateDeviceKey())
 			const encryptedKey = await this.encryptUsingKeychain(newKey, encryptionMode)
-			await this.setCredentialsEncryptionKey(encryptedKey)
+			this.setCredentialsEncryptionKey(encryptedKey)
 			return uint8ArrayToBitArray(newKey)
 		}
 	}

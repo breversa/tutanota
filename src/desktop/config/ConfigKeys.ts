@@ -19,8 +19,6 @@ export enum DesktopConfigKey {
 	/** the app password salt for encrypting the credentials key */
 	appPassSalt = "appPassSalt",
 	webConfigLocation = "webConfigLocation",
-	credentialEncryptionMode = "credentialEncryptionMode",
-	credentialsEncryptionKey = "credentialsEncryptionKey",
 	extendedNotificationMode = "extendedNotificationMode",
 }
 

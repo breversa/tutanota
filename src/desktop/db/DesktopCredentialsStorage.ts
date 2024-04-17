@@ -9,23 +9,25 @@ import { SqlValue } from "../../api/worker/offline/SqlValue.js"
 import { PersistedCredentials } from "../../native/common/generatedipc/PersistedCredentials.js"
 import { UntaggedQuery, usql } from "../../api/worker/offline/Sql.js"
 import { CredentialType } from "../../misc/credentials/CredentialType.js"
+import { CredentialEncryptionMode } from "../../native/common/generatedipc/CredentialEncryptionMode.js"
+import { Base64 } from "@tutao/tutanota-utils"
 
 const TableDefinitions = Object.freeze({
 	credentials:
 		"login TEXT NOT NULL, userId TEXT NOT NULL, type TEXT NOT NULL, accessToken TEXT NOT NULL, databaseKey TEXT," +
 		" encryptedPassword TEXT NOT NULL, PRIMARY KEY (userId), UNIQUE(login)",
+	credentialEncryptionMode: "credentialEncryptionMode TEXT, FOREIGN KEY(credentialEncryptionMode) REFERENCES credentialEncryptionModeEnum(mode)",
+	credentialsEncryptionKey: "credentialsEncryptionKey TEXT",
 } as const)
 
 /**
  * Sql database for storing already encrypted user credentials
- * FIXME use worker
- * FIXME maybe a different interface
  */
 export class DesktopCredentialsStorage {
 	private _db: Database | null = null
 	private get db(): Database {
 		if (this._db == null) {
-			throw new OfflineDbClosedError() // FIXME different error
+			throw new OfflineDbClosedError()
 		}
 		return this._db
 	}
@@ -91,6 +93,7 @@ export class DesktopCredentialsStorage {
 	}
 
 	private createTables() {
+		this.createEnumTable()
 		for (let [name, definition] of Object.entries(TableDefinitions)) {
 			this.run({ query: `CREATE TABLE IF NOT EXISTS ${name} (${definition})`, params: [] })
 		}
@@ -122,9 +125,17 @@ ${credentials.accessToken}, ${credentials.databaseKey}, ${credentials.encryptedP
 		this.run(usql`DELETE FROM credentials`)
 	}
 
+	private createEnumTable() {
+		this.run({ query: `CREATE TABLE IF NOT EXISTS credentialEncryptionModeEnum (mode TEXT UNIQUE)`, params: [] })
+		for (let i in CredentialEncryptionMode) {
+			const insertQuery = usql`INSERT INTO credentialEncryptionModeEnum (mode) VALUES (${i})`
+			this.run(insertQuery)
+		}
+	}
+
 	private unmapCredentials(row: Record<string, string | number | Uint8Array | null>) {
 		const credentialType = CredentialType[row.type as keyof typeof CredentialType]
-		if (!credentialType) throw Error() // FIXME
+		if (!credentialType) throw Error() // FIXME different error
 		return {
 			credentialInfo: {
 				login: row.login as string,
@@ -155,5 +166,31 @@ ${credentials.accessToken}, ${credentials.databaseKey}, ${credentials.encryptedP
 	 */
 	private all({ query, params }: UntaggedQuery): Array<Record<string, SqlValue>> {
 		return this.db.prepare(query).all(params)
+	}
+
+	getCredentialEncryptionMode(): string | null {
+		const row = this.get(usql`SELECT credentialEncryptionMode FROM credentialEncryptionMode LIMIT 1`)
+		if (!row) return null
+		return row.credentialEncryptionMode as string
+	}
+
+	getCredentialsEncryptionKey(): Base64 | null {
+		const row = this.get(usql`SELECT credentialEncryptionKey FROM credentialEncryptionKey LIMIT 1`)
+		if (!row) return null
+		return row.credentialEncryptionKey as string
+	}
+
+	setCredentialEncryptionMode(encryptionMode: CredentialEncryptionMode | null) {
+		this.run(usql`DELETE FROM credentialEncryptionMode`)
+		if (encryptionMode != null) {
+			this.run(usql`INSERT INTO credentialEncryptionMode (credentialEncryptionMode) VALUES (${encryptionMode})`)
+		}
+	}
+
+	setCredentialsEncryptionKey(encryptionKey: Base64 | null) {
+		this.run(usql`DELETE FROM credentialEncryptionKey`)
+		if (encryptionKey != null) {
+			this.run(usql`INSERT INTO credentialEncryptionKey (credentialEncryptionKey) VALUES (${encryptionKey})`)
+		}
 	}
 }

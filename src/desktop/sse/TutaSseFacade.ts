@@ -5,7 +5,7 @@ import { Agent, fetch as undiciFetch } from "undici"
 import { log } from "../DesktopLog.js"
 import { typeModels } from "../../api/entities/sys/TypeModels.js"
 import { assertNotNull, base64ToBase64Url, filterInt, neverNull, stringToUtf8Uint8Array, uint8ArrayToBase64 } from "@tutao/tutanota-utils"
-import { handleRestError, ServiceUnavailableError, TooManyRequestsError } from "../../api/common/error/RestError.js"
+import { handleRestError } from "../../api/common/error/RestError.js"
 import { SseInfo } from "./DesktopSseClient.js"
 import { MissedNotification } from "../../api/entities/sys/TypeRefs.js"
 import { EncryptedAlarmNotification } from "../../native/common/EncryptedAlarmNotification.js"
@@ -43,8 +43,8 @@ export class TutaSseFacade implements SseEventHandler {
 		if (sseInfo == null) {
 			log.debug(TAG, "No SSE info")
 			await this.sseStorage.clear()
+			// FIXME probably not needed here, if we don't have SSE info we should have deleted everything else as well by now
 			await this.notificationHandler.onInvalidSseInfo()
-			this.reconnect()
 			return
 		}
 		const url = this.getSseUrl(sseInfo, sseInfo.userIds[0])
@@ -102,6 +102,7 @@ export class TutaSseFacade implements SseEventHandler {
 		}
 		if (await this.hasNotificationTTLExpired()) {
 			await this.notificationHandler.onExpiredData()
+			return
 		}
 		let missedNotification
 		try {
@@ -139,18 +140,7 @@ export class TutaSseFacade implements SseEventHandler {
 
 		const res = await this.fetch(url, { headers, dispatcher: new Agent({ connectTimeout: 20000 }) })
 
-		if (
-			(res.status === ServiceUnavailableError.CODE || TooManyRequestsError.CODE) &&
-			(res.headers.get("retry-after") || res.headers.get("suspension-time"))
-		) {
-			// headers are lowercased, see https://nodejs.org/api/http.html#http_message_headers
-			const time = filterInt((res.headers.get("retry-after") ?? res.headers.get("suspension-time")) as string)
-			log.debug(TAG, `ServiceUnavailable when downloading missed notification, waiting ${time}s`)
-
-			return new Promise((resolve, reject) => {
-				setTimeout(() => this.downloadMissedNotification().then(resolve, reject), time * 1000)
-			})
-		} else if (!res.ok) {
+		if (!res.ok) {
 			throw handleRestError(neverNull(res.status), url, res.headers.get("error-id") as string, null)
 		} else {
 			const json = await res.json()
@@ -177,11 +167,7 @@ export class TutaSseFacade implements SseEventHandler {
 			if (timeout != null && !isNaN(timeout)) {
 				await this.sseStorage.setHeartbeatTimeoutSec(timeout)
 				this.sseClient.setReadTimeout(timeout)
-				this.sseClient.onHeartbeat()
 			}
-		} else if (!message.startsWith("data: ")) {
-			log.debug("Received SSE heartbeat")
-			this.sseClient.onHeartbeat()
 		}
 	}
 
@@ -203,8 +189,6 @@ export class TutaSseFacade implements SseEventHandler {
 		if (lastSseInfo && lastSseInfo.userIds.length === 0) {
 			log.debug(TAG, "No user ids, skipping reconnect")
 			await this.sseStorage.clear()
-		} else {
-			await this.connect()
 		}
 	}
 

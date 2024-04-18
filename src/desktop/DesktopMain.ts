@@ -67,6 +67,7 @@ import { suspensionAwareFetch } from "./sse/SuspensionAwareFetch.js"
 import { TutaNotificationHandler } from "./sse/TutaNotificationHandler.js"
 import { TutaSseFacade } from "./sse/TutaSseFacade.js"
 import { SseStorage } from "./sse/SseStorage.js"
+import { DesktopSseDelay } from "./sse/reconnectDelay.js"
 
 /**
  * Should be injected during build time.
@@ -166,7 +167,7 @@ async function createComponents(): Promise<Components> {
 		const last = await wm.getLastFocused(true)
 		return last.commonNativeFacade
 	})
-	const nativeCredentialsFacade = new DesktopNativeCredentialsFacade(keyStoreFacade, desktopCrypto, conf, credentialsDb, appPassHandler)
+	const nativeCredentialsFacade = new DesktopNativeCredentialsFacade(keyStoreFacade, desktopCrypto, credentialsDb, appPassHandler)
 
 	updater.setUpdateDownloadedListener(() => {
 		for (let applicationWindow of wm.getAll()) {
@@ -232,7 +233,7 @@ async function createComponents(): Promise<Components> {
 		app.getVersion(),
 	)
 	const sseStorage = new SseStorage(conf)
-	const sseClient = new SseClient(desktopNet, sseStorage)
+	const sseClient = new SseClient(desktopNet, new DesktopSseDelay())
 	const sse = new TutaSseFacade(sseStorage, notificationHandler, sseClient, desktopCrypto, app.getVersion(), suspensionAwareFetch)
 	// It should be ok to await this, all we are waiting for is dynamic imports
 	const integrator = await getDesktopIntegratorForPlatform(electron, fs, child_process, () => import("winreg"))
@@ -253,7 +254,7 @@ async function createComponents(): Promise<Components> {
 			desktopCommonSystemFacade,
 			new DesktopDesktopSystemFacade(wm, window, sock),
 			new DesktopExportFacade(tfs, conf, window, dragIcons),
-			new DesktopFileFacade(window, conf, desktopUtils, dateProvider, desktopNet, electron, tfs, fs),
+			new DesktopFileFacade(window, conf, dateProvider, desktopNet, electron, tfs, fs),
 			new DesktopInterWindowEventFacade(window, wm),
 			nativeCredentialsFacade,
 			desktopCrypto,

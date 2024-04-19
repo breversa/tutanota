@@ -3,7 +3,7 @@ import type { Db } from "../../src/api/worker/search/SearchTypes.js"
 import { IndexerCore } from "../../src/api/worker/search/IndexerCore.js"
 import { EventQueue } from "../../src/api/worker/EventQueue.js"
 import { DbFacade, DbTransaction } from "../../src/api/worker/search/DbFacade.js"
-import { Thunk, TypeRef } from "@tutao/tutanota-utils"
+import { assertNotNull, Thunk, TypeRef } from "@tutao/tutanota-utils"
 import type { DesktopKeyStoreFacade } from "../../src/desktop/DesktopKeyStoreFacade.js"
 import { mock } from "@tutao/tutanota-test-utils"
 import { aes256RandomKey, fixedIv, uint8ArrayToKey } from "@tutao/tutanota-crypto"
@@ -63,6 +63,7 @@ export class SchedulerMock implements Scheduler {
 
 	/** key is the time */
 	scheduledAt: Map<number, IdThunk> = new Map()
+	scheduledAfter: Map<number, IdThunk> = new Map()
 	cancelledAt: Set<ScheduledTimeoutId> = new Set()
 	scheduledPeriodic: Map<number, IdThunk> = new Map()
 	cancelledPeriodic: Set<ScheduledTimeoutId> = new Set()
@@ -77,6 +78,24 @@ export class SchedulerMock implements Scheduler {
 		return id
 	}
 
+	getThunkAt(time: number): Thunk {
+		return assertNotNull(this.scheduledAt.get(time), "No thunk scheduled at " + time).thunk
+	}
+
+	getThunkAfter(time: number): Thunk {
+		return assertNotNull(this.scheduledAfter.get(time), "No thunk scheduled after " + time).thunk
+	}
+
+	scheduleAfter(thunk: Thunk, after: number): ScheduledTimeoutId {
+		const id = this._incAlarmId()
+
+		this.scheduledAfter.set(after, {
+			id,
+			thunk: thunk,
+		})
+		return id
+	}
+
 	unscheduleTimeout(id) {
 		this.cancelledAt.add(id)
 	}
@@ -85,6 +104,14 @@ export class SchedulerMock implements Scheduler {
 		const id = this._incAlarmId()
 		this.scheduledPeriodic.set(period, { id, thunk })
 		return id
+	}
+
+	getThunkPeriodic(period: number): Thunk {
+		return assertNotNull(this.scheduledPeriodic.get(period), "No thunk scheduled each " + period).thunk
+	}
+
+	getAllPeriodThunks(): Array<Thunk> {
+		return Array.from(this.scheduledPeriodic.values()).map((idThunk) => idThunk.thunk)
 	}
 
 	unschedulePeriodic(id: ScheduledPeriodicId) {

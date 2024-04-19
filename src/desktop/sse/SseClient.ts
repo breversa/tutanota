@@ -1,11 +1,14 @@
 import http from "node:http"
 import type { DesktopNetworkClient } from "../net/DesktopNetworkClient"
 import { log } from "../DesktopLog"
+import { Scheduler } from "../../api/common/utils/Scheduler.js"
+import { ProgrammingError } from "../../api/common/error/ProgrammingError.js"
 
 const TAG = "[SSE]"
 
 export interface SseDelay {
 	reconnectDelay(attempt: number): number
+
 	initialConnectionDelay(): number
 }
 
@@ -20,22 +23,45 @@ export interface SseConnectOptions {
 }
 
 export enum ConnectionState {
+	/** Not connecting or trying to connect. */
 	disconnected,
+	/** Will try to reconnect after timeout. */
+	delayedReconnect,
+	/** Started the connection. */
 	connecting,
+	/** Received the response, connection is usable. */
 	connected,
 }
 
+/**
+ *  +--------------+                              +-------------+
+ *   | Disconnected |                              |  Connecting |
+ *   +-------^------+ ----------connect-------->   +----+--------+
+ *           |                                  | ^     |
+ *           |        +-----------error---------+ |     |
+ *           |        |                           |     response
+ *       disconnect   |                           |     |
+ *           |        v ----------timeout---------+     v
+ * +---------+---------+                           +--------------+
+ * | DelayedConnecting |<---------close------------+   Connected  |
+ * +-------------------+          error            +--------------+
+ */
 type State =
 	| { state: ConnectionState.disconnected }
-	| { state: ConnectionState.connecting; options: SseConnectOptions; connection: http.ClientRequest; attempt: number }
+	| { state: ConnectionState.connecting; options: SseConnectOptions; attempt: number; connection: http.ClientRequest }
+	| { state: ConnectionState.delayedReconnect; options: SseConnectOptions; attempt: number; timeout: NodeJS.Timeout }
 	| { state: ConnectionState.connected; options: SseConnectOptions; connection: http.ClientRequest; receivedHeartbeat: boolean }
 
+/**
+ * Generic Server Sent Events client.
+ * Does automatically reconnect.
+ */
 export class SseClient {
 	private listener: SseEventHandler | null = null
 	private _state: State = { state: ConnectionState.disconnected }
 	private readTimeout: number | null = null
-	private timeoutHandle: NodeJS.Timeout | null = null
 	private heartBeatListenderHandle: NodeJS.Timeout | undefined = undefined
+
 	private set state(newState: State) {
 		log.debug(TAG, "state:", ConnectionState[newState.state])
 		this._state = newState
@@ -45,18 +71,40 @@ export class SseClient {
 		return this._state
 	}
 
-	constructor(private readonly net: DesktopNetworkClient, private readonly delay: SseDelay) {}
+	constructor(private readonly net: DesktopNetworkClient, private readonly delay: SseDelay, private readonly scheduler: Scheduler) {}
 
 	async connect(options: SseConnectOptions) {
 		log.debug(TAG, "connect")
 		switch (this.state.state) {
+			case ConnectionState.delayedReconnect:
+				this.scheduler.unscheduleTimeout(this.state.timeout)
+				break
 			case ConnectionState.connecting:
 			case ConnectionState.connected:
 				await this.disconnect()
 				break
 			case ConnectionState.disconnected:
+				break
 			// go on with connection
 		}
+		this.doConnect(options)
+	}
+
+	private doConnect(options: SseConnectOptions) {
+		let attempt: number
+		switch (this.state.state) {
+			case ConnectionState.disconnected:
+				attempt = 1
+				break
+			case ConnectionState.delayedReconnect:
+				attempt = this.state.attempt
+				// go on with connection
+				break
+			case ConnectionState.connecting:
+			case ConnectionState.connected:
+				throw new ProgrammingError("Invalid state: already connecting")
+		}
+
 		const { url, headers } = options
 
 		const connection = this.net.request(url, {
@@ -80,10 +128,11 @@ export class SseClient {
 			.on("response", async (res) => {
 				log.debug("established SSE connection with code", res.statusCode)
 				this.state = { state: ConnectionState.connected, connection, options, receivedHeartbeat: false }
+				this.resetHeartbeatListener()
 
 				if (res.statusCode === 403 || res.statusCode === 401) {
 					await this.listener?.onNotAuthenticated()
-					await this.delayedReconnect()
+					await this.disconnect()
 					return
 				}
 
@@ -105,37 +154,42 @@ export class SseClient {
 						}
 					}
 				})
-					.on("close", async () => {
-						log.debug("sse response closed")
-						await this.delayedReconnect()
+					.on("close", () => {
+						log.debug("response closed")
+						this.delayedReconnect()
 					})
-					.on("error", async (e) => {
-						console.error("sse response error:", e)
-						await this.delayedReconnect()
+					.on("error", (e) => {
+						log.error("response error:", e)
+						this.delayedReconnect()
 					})
 			})
 			.on("information", () => log.debug(TAG, "sse information"))
 			.on("connect", () => log.debug(TAG, "sse connect:"))
 			.on("error", async (e) => {
-				console.error("sse error:", e.message)
-				await this.exponentialBackdownReconnect()
+				log.error("error:", e.message)
+				this.exponentialBackdownReconnect()
 			})
 			.end()
-		this.state = { state: ConnectionState.connecting, attempt: 1, connection, options }
+		this.state = { state: ConnectionState.connecting, connection, attempt, options }
 	}
 
 	async disconnect() {
-		return new Promise<void>((resolve) => {
-			switch (this.state.state) {
-				case ConnectionState.connected:
-				case ConnectionState.connecting:
-					this.state.connection.once("close", () => {
+		const state = this.state
+		switch (state.state) {
+			case ConnectionState.delayedReconnect:
+				this.scheduler.unscheduleTimeout(state.timeout)
+				this.state = { state: ConnectionState.disconnected }
+				break
+			case ConnectionState.connected:
+			case ConnectionState.connecting:
+				return new Promise<void>((resolve) => {
+					state.connection.once("close", () => {
 						this.state = { state: ConnectionState.disconnected }
 						resolve()
 					})
-					this.state.connection.destroy()
-			}
-		})
+					state.connection.destroy()
+				})
+		}
 	}
 
 	setEventListener(listener: SseEventHandler) {
@@ -148,26 +202,27 @@ export class SseClient {
 		this.onHeartbeat()
 	}
 
-	private async exponentialBackdownReconnect() {
-		if (this.timeoutHandle != null) clearTimeout(this.timeoutHandle)
-		if (this.state.state !== ConnectionState.connecting) return
-		this.timeoutHandle = setTimeout(this.retryConnect, this.delay.reconnectDelay(this.state.attempt))
+	private exponentialBackdownReconnect() {
+		if (this.state.state != ConnectionState.connecting) {
+			throw new ProgrammingError("Invalid state: not connecting")
+		}
+		const timeout = this.scheduler.scheduleAfter(() => this.retryConnect(), this.delay.reconnectDelay(this.state.attempt))
+		this.state = { state: ConnectionState.delayedReconnect, attempt: this.state.attempt + 1, options: this.state.options, timeout }
 	}
 
-	private async delayedReconnect() {
-		if (this.timeoutHandle != null) clearTimeout(this.timeoutHandle)
-		this.timeoutHandle = setTimeout(this.retryConnect, this.delay.initialConnectionDelay())
+	private delayedReconnect() {
+		if (this.state.state != ConnectionState.connected) {
+			throw new ProgrammingError("Invalid state: not connected")
+		}
+		const timeout = this.scheduler.scheduleAfter(() => this.retryConnect(), this.delay.initialConnectionDelay())
+		this.state = { state: ConnectionState.delayedReconnect, attempt: 0, options: this.state.options, timeout }
 	}
 
 	private async retryConnect() {
-		// noinspection FallThroughInSwitchStatementJS
-		switch (this.state.state) {
-			case ConnectionState.connecting:
-				this.state.attempt++
-			case ConnectionState.connected:
-				await this.connect(this.state.options)
-				break
+		if (this.state.state !== ConnectionState.delayedReconnect) {
+			throw new ProgrammingError("Invalid state: not in delayed reconnect")
 		}
+		this.doConnect(this.state.options)
 	}
 
 	private onHeartbeat() {
@@ -180,13 +235,15 @@ export class SseClient {
 		// It will check if the heartbeat was received periodically.
 		// Theoretically we need to reset this every time we connect but
 		// the server will send us the timeout right after the connection anyway.
-		clearInterval(this.heartBeatListenderHandle)
-		this.heartBeatListenderHandle = setInterval(() => {
-			if (this.state.state === ConnectionState.connected) {
-				if (this.state.receivedHeartbeat) {
-					this.state = { ...this.state, receivedHeartbeat: false }
+		if (this.heartBeatListenderHandle != null) this.scheduler.unschedulePeriodic(this.heartBeatListenderHandle)
+		this.heartBeatListenderHandle = this.scheduler.schedulePeriodic(async () => {
+			const state = this.state
+			if (state.state === ConnectionState.connected) {
+				if (state.receivedHeartbeat) {
+					this.state = { ...state, receivedHeartbeat: false }
 				} else {
-					this.connect(this.state.options)
+					await this.disconnect()
+					this.doConnect(state.options)
 				}
 			}
 		}, Math.floor(this.readTimeout! * 1.2))

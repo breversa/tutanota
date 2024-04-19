@@ -6,14 +6,15 @@ import { log } from "../DesktopLog.js"
 import { typeModels } from "../../api/entities/sys/TypeModels.js"
 import { assertNotNull, base64ToBase64Url, filterInt, neverNull, stringToUtf8Uint8Array, uint8ArrayToBase64 } from "@tutao/tutanota-utils"
 import { handleRestError } from "../../api/common/error/RestError.js"
-import { SseInfo } from "./_DesktopSseClient.js"
+import { SseInfo } from "./DesktopSseClient.js"
 import { MissedNotification } from "../../api/entities/sys/TypeRefs.js"
 import { EncryptedAlarmNotification } from "../../native/common/EncryptedAlarmNotification.js"
 import { SseStorage } from "./SseStorage.js"
+import { DateProvider } from "../../api/common/DateProvider.js"
 
 const TAG = "[SSEFacade]"
 
-const MISSED_NOTIFICATION_TTL = 30 * 24 * 60 * 60 * 1000 // 30 days
+export const MISSED_NOTIFICATION_TTL = 30 * 24 * 60 * 60 * 1000 // 30 days
 type EncryptedMissedNotification = MissedNotification & { alarmNotifications: readonly EncryptedAlarmNotification[] }
 
 export class TutaSseFacade implements SseEventHandler {
@@ -26,6 +27,7 @@ export class TutaSseFacade implements SseEventHandler {
 		private readonly crypto: DesktopNativeCryptoFacade,
 		private readonly appVersion: string,
 		private readonly fetch: typeof undiciFetch,
+		private readonly date: DateProvider,
 	) {
 		sseClient.setEventListener(this)
 	}
@@ -42,9 +44,6 @@ export class TutaSseFacade implements SseEventHandler {
 		const sseInfo = await this.sseStorage.getSseInfo()
 		if (sseInfo == null) {
 			log.debug(TAG, "No SSE info")
-			await this.sseStorage.clear()
-			// FIXME probably not needed here, if we don't have SSE info we should have deleted everything else as well by now
-			await this.notificationHandler.onInvalidSseInfo()
 			return
 		}
 		const url = this.getSseUrl(sseInfo, sseInfo.userIds[0])
@@ -71,7 +70,7 @@ export class TutaSseFacade implements SseEventHandler {
 		log.debug(TAG, "last missed notification check:", {
 			lastMissedNotificationCheckTime,
 		})
-		return lastMissedNotificationCheckTime != null && Date.now() - lastMissedNotificationCheckTime > MISSED_NOTIFICATION_TTL
+		return lastMissedNotificationCheckTime != null && this.date.now() - lastMissedNotificationCheckTime > MISSED_NOTIFICATION_TTL
 	}
 
 	private getSseUrl(sseInfo: SseInfo, userId: string): URL {

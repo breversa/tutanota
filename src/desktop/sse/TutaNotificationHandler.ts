@@ -13,7 +13,7 @@ import { log } from "../DesktopLog"
 import tutanotaModelInfo from "../../api/entities/tutanota/ModelInfo"
 import { handleRestError } from "../../api/common/error/RestError"
 import { EncryptedAlarmNotification } from "../../native/common/EncryptedAlarmNotification"
-import { SseInfo } from "./_DesktopSseClient"
+import { SseInfo } from "./DesktopSseClient.js"
 import { Mail } from "../../api/entities/tutanota/TypeRefs.js"
 import { NativeAlarmScheduler } from "./DesktopAlarmScheduler.js"
 import { DesktopAlarmStorage } from "./DesktopAlarmStorage.js"
@@ -132,6 +132,7 @@ export class TutaNotificationHandler {
 		await this.clearAlarms()
 	}
 
+	// FIXME it's not called, should it be called somewhere?
 	async onInvalidSseInfo() {
 		await this.clearAlarms()
 		await this.wm.invalidateAlarms()

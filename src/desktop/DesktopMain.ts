@@ -202,7 +202,8 @@ async function createComponents(): Promise<Components> {
 
 	const wm = new WindowManager(conf, tray, notifier, electron, shortcutManager, appIcon)
 	const themeFacade = new DesktopThemeFacade(conf, wm, electron.nativeTheme)
-	const alarmScheduler = new AlarmScheduler(dateProvider, new SchedulerImpl(dateProvider, global, global))
+	const schedulerImpl = new SchedulerImpl(dateProvider, global, global)
+	const alarmScheduler = new AlarmScheduler(dateProvider, schedulerImpl)
 	const desktopAlarmScheduler = new DesktopAlarmScheduler(wm, notifier, alarmStorage, desktopCrypto, alarmScheduler)
 	desktopAlarmScheduler.rescheduleAll().catch((e) => {
 		log.error("Could not reschedule alarms", e)
@@ -233,8 +234,8 @@ async function createComponents(): Promise<Components> {
 		app.getVersion(),
 	)
 	const sseStorage = new SseStorage(conf)
-	const sseClient = new SseClient(desktopNet, new DesktopSseDelay())
-	const sse = new TutaSseFacade(sseStorage, notificationHandler, sseClient, desktopCrypto, app.getVersion(), suspensionAwareFetch)
+	const sseClient = new SseClient(desktopNet, new DesktopSseDelay(), schedulerImpl)
+	const sse = new TutaSseFacade(sseStorage, notificationHandler, sseClient, desktopCrypto, app.getVersion(), suspensionAwareFetch, dateProvider)
 	// It should be ok to await this, all we are waiting for is dynamic imports
 	const integrator = await getDesktopIntegratorForPlatform(electron, fs, child_process, () => import("winreg"))
 

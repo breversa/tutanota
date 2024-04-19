@@ -1,5 +1,5 @@
 import { DesktopConfig } from "../config/DesktopConfig.js"
-import { SseInfo } from "./_DesktopSseClient.js"
+import { SseInfo } from "./DesktopSseClient.js"
 import { DesktopConfigEncKey, DesktopConfigKey } from "../config/ConfigKeys.js"
 import { remove } from "@tutao/tutanota-utils"
 

@@ -28,7 +28,7 @@ import { RequestInit } from "undici/types/fetch.js"
 import { CredentialEncryptionMode } from "../../../../src/native/common/generatedipc/CredentialEncryptionMode.js"
 import { ExtendedNotificationMode } from "../../../../src/native/common/generatedipc/ExtendedNotificationMode.js"
 
-o.spec("DesktopSseClient Test", function () {
+o.spec("DEPRECATED Test", function () {
 	const identifier = "identifier"
 	const userIds = ["id1", "id2"]
 

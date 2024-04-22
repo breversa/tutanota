@@ -6,11 +6,11 @@ import { log } from "../DesktopLog.js"
 import { typeModels } from "../../api/entities/sys/TypeModels.js"
 import { assertNotNull, base64ToBase64Url, filterInt, neverNull, stringToUtf8Uint8Array, uint8ArrayToBase64 } from "@tutao/tutanota-utils"
 import { handleRestError } from "../../api/common/error/RestError.js"
-import { SseInfo } from "./DesktopSseClient.js"
 import { MissedNotification } from "../../api/entities/sys/TypeRefs.js"
 import { EncryptedAlarmNotification } from "../../native/common/EncryptedAlarmNotification.js"
 import { SseStorage } from "./SseStorage.js"
 import { DateProvider } from "../../api/common/DateProvider.js"
+import { SseInfo } from "./SseInfo.js"
 
 const TAG = "[SSEFacade]"
 
@@ -34,7 +34,7 @@ export class TutaSseFacade implements SseEventHandler {
 
 	async connect() {
 		if (await this.hasNotificationTTLExpired()) {
-			await this.notificationHandler.onExpiredData()
+			await this.notificationHandler.onLocalDataInvalidated()
 			await this.sseStorage.clear()
 			return
 		}
@@ -100,7 +100,7 @@ export class TutaSseFacade implements SseEventHandler {
 			await this.sseStorage.recordMissedNotificationCheckTime()
 		}
 		if (await this.hasNotificationTTLExpired()) {
-			await this.notificationHandler.onExpiredData()
+			await this.notificationHandler.onLocalDataInvalidated()
 			return
 		}
 		let missedNotification
@@ -113,8 +113,10 @@ export class TutaSseFacade implements SseEventHandler {
 
 		await this.sseStorage.setLastProcessedNotificationId(assertNotNull(missedNotification.lastProcessedNotificationId))
 		await this.sseStorage.recordMissedNotificationCheckTime()
+		const sseInfo = this.currentSseInfo
+		if (sseInfo == null) return
 		for (const notificationInfo of missedNotification.notificationInfos) {
-			await this.notificationHandler.onMailNotification(notificationInfo)
+			await this.notificationHandler.onMailNotification(sseInfo, notificationInfo)
 		}
 		for (const alarmNotification of missedNotification.alarmNotifications) {
 			await this.notificationHandler.onAlarmNotification(alarmNotification)
@@ -180,24 +182,27 @@ export class TutaSseFacade implements SseEventHandler {
 			return
 		}
 		const firstUser = lastSseInfo.userIds.at(0)
-		if (firstUser != null) {
-			lastSseInfo = await this.sseStorage.removeUser(firstUser)
-			await this.notificationHandler.onUserInvalidated(firstUser)
-		}
-
-		if (lastSseInfo && lastSseInfo.userIds.length === 0) {
-			log.debug(TAG, "No user ids, skipping reconnect")
-			await this.sseStorage.clear()
-		}
+		await this.removeUserIdInternal(firstUser)
 	}
 
 	async removeUser(userId: Id) {
-		const sseInfo = await this.sseStorage.removeUser(userId)
+		await this.removeUserIdInternal(userId)
+		await this.connect()
+	}
+
+	private async removeUserIdInternal(userId: string | undefined) {
+		let sseInfo
+		if (userId != null) {
+			sseInfo = await this.sseStorage.removeUser(userId)
+			await this.notificationHandler.onUserRemoved(userId)
+		} else {
+			sseInfo = await this.sseStorage.getSseInfo()
+		}
 		if (sseInfo?.userIds.length === 0) {
+			log.debug(TAG, "No user ids, skipping reconnect")
+			await this.notificationHandler.onLocalDataInvalidated()
 			await this.sseStorage.clear()
 		}
-		await this.notificationHandler.onUserRemoved(userId)
-		await this.connect()
 	}
 
 	async reconnect() {

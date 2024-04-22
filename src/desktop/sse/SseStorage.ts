@@ -1,7 +1,7 @@
 import { DesktopConfig } from "../config/DesktopConfig.js"
-import { SseInfo } from "./DesktopSseClient.js"
 import { DesktopConfigEncKey, DesktopConfigKey } from "../config/ConfigKeys.js"
 import { remove } from "@tutao/tutanota-utils"
+import { SseInfo } from "./SseInfo.js"
 
 export class SseStorage {
 	constructor(private readonly conf: DesktopConfig) {}

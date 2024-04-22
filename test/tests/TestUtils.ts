@@ -3,15 +3,16 @@ import type { Db } from "../../src/api/worker/search/SearchTypes.js"
 import { IndexerCore } from "../../src/api/worker/search/IndexerCore.js"
 import { EventQueue } from "../../src/api/worker/EventQueue.js"
 import { DbFacade, DbTransaction } from "../../src/api/worker/search/DbFacade.js"
-import { assertNotNull, Thunk, TypeRef } from "@tutao/tutanota-utils"
+import { assertNotNull, deepEqual, defer, Thunk, TypeRef } from "@tutao/tutanota-utils"
 import type { DesktopKeyStoreFacade } from "../../src/desktop/DesktopKeyStoreFacade.js"
 import { mock } from "@tutao/tutanota-test-utils"
 import { aes256RandomKey, fixedIv, uint8ArrayToKey } from "@tutao/tutanota-crypto"
 import { ScheduledPeriodicId, ScheduledTimeoutId, Scheduler } from "../../src/api/common/utils/Scheduler.js"
-import { object, when } from "testdouble"
+import { matchers, object, when } from "testdouble"
 import { Entity, TypeModel } from "../../src/api/common/EntityTypes.js"
 import { create } from "../../src/api/common/utils/EntityUtils.js"
 import { typeModels } from "../../src/api/common/EntityFunctions.js"
+import { type fetch as undiciFetch, type Response } from "undici"
 
 export const browserDataStub: BrowserData = {
 	needsMicrotaskHack: false,
@@ -160,4 +161,24 @@ export function createTestEntity<T extends Entity>(typeRef: TypeRef<T>, values?:
 	} else {
 		return entity
 	}
+}
+
+export function mockFetchRequest(mock: typeof undiciFetch, url: string, headers: Record<string, string>, status: number, jsonObject: unknown): Promise<void> {
+	const response = object<Writeable<Response>>()
+	response.ok = status >= 200 && status < 300
+	response.status = status
+	const jsonDefer = defer<void>()
+	when(response.json()).thenDo(() => {
+		jsonDefer.resolve()
+		return Promise.resolve(jsonObject)
+	})
+	when(
+		mock(
+			matchers.argThat((urlArg) => urlArg.toString() === url),
+			matchers.argThat((options) => {
+				return deepEqual(options.headers, headers)
+			}),
+		),
+	).thenResolve(response)
+	return jsonDefer.promise
 }

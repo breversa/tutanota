@@ -5,13 +5,14 @@ import { SseStorage } from "../../../../src/desktop/sse/SseStorage.js"
 import { TutaNotificationHandler } from "../../../../src/desktop/sse/TutaNotificationHandler.js"
 import { SseClient, SseConnectOptions } from "../../../../src/desktop/sse/SseClient.js"
 import { DesktopNativeCryptoFacade } from "../../../../src/desktop/DesktopNativeCryptoFacade.js"
-import { fetch as undiciFetch, Response } from "undici"
+import { fetch as undiciFetch } from "undici"
 import { typeModels } from "../../../../src/api/entities/sys/TypeModels.js"
-import { deepEqual, defer } from "@tutao/tutanota-utils"
+import { deepEqual } from "@tutao/tutanota-utils"
 import { DateProvider } from "../../../../src/api/common/DateProvider.js"
 import { createIdTupleWrapper, createMissedNotification, createNotificationInfo } from "../../../../src/api/entities/sys/TypeRefs.js"
 import { EncryptedAlarmNotification } from "../../../../src/native/common/EncryptedAlarmNotification.js"
-import { SseInfo } from "../../../../src/desktop/sse/DesktopSseClient.js"
+import { mockFetchRequest } from "../../TestUtils.js"
+import { SseInfo } from "../../../../src/desktop/sse/SseInfo.js"
 
 const APP_V = "3"
 o.spec("TutaSseFacade", () => {
@@ -62,7 +63,7 @@ o.spec("TutaSseFacade", () => {
 			when(date.now()).thenReturn(MISSED_NOTIFICATION_TTL + 100)
 			when(sseStorage.getMissedNotificationCheckTime()).thenResolve(1)
 			await sseFacade.connect()
-			verify(notificationHandler.onExpiredData())
+			verify(notificationHandler.onLocalDataInvalidated())
 			verify(sseStorage.clear())
 			verify(sseClient.connect(matchers.anything()), { times: 0 })
 		})
@@ -82,13 +83,13 @@ o.spec("TutaSseFacade", () => {
 	})
 
 	o.spec("onNotification", () => {
-		o("downloads and handles notification", async () => {
+		o.test("downloads and handles notification", async () => {
 			const headers: Record<string, string> = {
 				userIds: "userId",
 				v: typeModels.MissedNotification.version,
 				cv: APP_V,
 			}
-			setupSseInfo()
+			const sseInfo = setupSseInfo()
 			await sseFacade.connect()
 			const alarmNotification = { _marker: "encryptedAlarmNotification" } as unknown as EncryptedAlarmNotification
 			const notificationInfo = createNotificationInfo({
@@ -115,18 +116,18 @@ o.spec("TutaSseFacade", () => {
 				alarmNotifications: [alarmNotification] as readonly EncryptedAlarmNotification[],
 			})
 
-			const jsonDefer = mockRequest("http://something.com/rest/sys/missednotification/aWQ", headers, 200, encryptedMissedNotification)
+			const jsonDefer = mockFetchRequest(fetch, "http://something.com/rest/sys/missednotification/aWQ", headers, 200, encryptedMissedNotification)
 
 			await sseFacade.onNewMessage("data: notification")
 
 			await jsonDefer
 			verify(sseStorage.setLastProcessedNotificationId("lastProcessedNotificationId"))
 			verify(sseStorage.recordMissedNotificationCheckTime())
-			verify(notificationHandler.onMailNotification(notificationInfo))
+			verify(notificationHandler.onMailNotification(sseInfo, notificationInfo))
 			verify(notificationHandler.onAlarmNotification(alarmNotification))
 		})
 
-		o("passes lastProcessedNotificationId if present", async () => {
+		o.test("passes lastProcessedNotificationId if present", async () => {
 			const previousLastProcessedNotificationId = "previousLastProcessedNotificationId"
 			const newLastProcessedNotificationId = "newLastProcessedNotificationId"
 			const headers: Record<string, string> = {
@@ -151,7 +152,7 @@ o.spec("TutaSseFacade", () => {
 			const encryptedMissedNotification: EncryptedMissedNotification = Object.assign({}, missedNotification, { alarmNotifications: [] })
 			await sseFacade.connect()
 
-			const jsonDefer = mockRequest("http://something.com/rest/sys/missednotification/aWQ", headers, 200, encryptedMissedNotification)
+			const jsonDefer = mockFetchRequest(fetch, "http://something.com/rest/sys/missednotification/aWQ", headers, 200, encryptedMissedNotification)
 
 			await sseFacade.onNewMessage("data: notification")
 
@@ -161,7 +162,7 @@ o.spec("TutaSseFacade", () => {
 	})
 
 	o.spec("heartbeat", () => {
-		o("saves valid heartbeat and passes it to sse client", async () => {
+		o.test("saves valid heartbeat and passes it to sse client", async () => {
 			setupSseInfo()
 			await sseFacade.connect()
 			await sseFacade.onNewMessage("data: heartbeatTimeout:240")
@@ -172,7 +173,7 @@ o.spec("TutaSseFacade", () => {
 	})
 
 	o.spec("onNotAuthenticated", () => {
-		o("when it has more than one user it removes the first one", async () => {
+		o.test("when it has more than one user it removes the first one", async () => {
 			setupSseInfo({
 				userIds: ["user1", "user2"],
 			})
@@ -181,10 +182,10 @@ o.spec("TutaSseFacade", () => {
 			await sseFacade.onNotAuthenticated()
 
 			verify(sseStorage.removeUser("user1"))
-			verify(notificationHandler.onUserInvalidated("user1"))
+			verify(notificationHandler.onUserRemoved("user1"))
 		})
 
-		o("when it has only one user it invalidates the storage", async () => {
+		o.test("when it has only one user it invalidates the storage", async () => {
 			const sseInfo = setupSseInfo({
 				userIds: ["user1"],
 			})
@@ -193,13 +194,14 @@ o.spec("TutaSseFacade", () => {
 
 			await sseFacade.onNotAuthenticated()
 
-			verify(notificationHandler.onUserInvalidated("user1"))
+			verify(notificationHandler.onUserRemoved("user1"))
 			verify(sseStorage.clear())
+			verify(notificationHandler.onLocalDataInvalidated())
 		})
 	})
 
 	o.spec("removeUser", () => {
-		o("reconnects with new SSE info", async () => {
+		o.test("reconnects with new SSE info", async () => {
 			when(sseStorage.getSseInfo()).thenResolve(
 				{
 					identifier: "id",
@@ -227,7 +229,7 @@ o.spec("TutaSseFacade", () => {
 			o(JSON.parse(body).userIds).deepEquals([{ value: "user1" }])
 		})
 
-		o("does not reconnect if there are no more users", async () => {
+		o.test("does not reconnect if there are no more users", async () => {
 			when(sseStorage.getSseInfo()).thenResolve(
 				{
 					identifier: "id",
@@ -250,28 +252,9 @@ o.spec("TutaSseFacade", () => {
 			verify(notificationHandler.onUserRemoved("user1"))
 			// that was the last user
 			verify(sseStorage.clear())
+			verify(notificationHandler.onLocalDataInvalidated())
 
 			verify(sseClient.connect(matchers.anything()), { times: 1 })
 		})
 	})
-
-	function mockRequest(url: string, headers: Record<string, string>, status: number, jsonObject: unknown): Promise<void> {
-		const response = object<Writeable<Response>>()
-		response.ok = status >= 200 && status < 300
-		response.status = status
-		const jsonDefer = defer<void>()
-		when(response.json()).thenDo(() => {
-			jsonDefer.resolve()
-			return Promise.resolve(jsonObject)
-		})
-		when(
-			fetch(
-				matchers.argThat((urlArg) => urlArg.toString() === url),
-				matchers.argThat((options) => {
-					return deepEqual(options.headers, headers)
-				}),
-			),
-		).thenResolve(response)
-		return jsonDefer.promise
-	}
 })

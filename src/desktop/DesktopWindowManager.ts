@@ -14,7 +14,8 @@ import { DesktopThemeFacade } from "./DesktopThemeFacade"
 import { ElectronExports } from "./ElectronExportTypes"
 import { RemoteBridge } from "./ipc/RemoteBridge.js"
 import { ASSET_PROTOCOL } from "./net/ProtocolProxy.js"
-import { SseInfo } from "./sse/DesktopSseClient.js"
+
+import { SseInfo } from "./sse/SseInfo.js"
 
 const TAG = "[DesktopWindowManager]"
 

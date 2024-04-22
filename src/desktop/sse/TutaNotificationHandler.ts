@@ -6,21 +6,21 @@ import { LanguageViewModel } from "../../misc/LanguageViewModel"
 import { Agent, fetch as undiciFetch } from "undici"
 import { IdTupleWrapper, NotificationInfo } from "../../api/entities/sys/TypeRefs"
 import { CredentialEncryptionMode } from "../../misc/credentials/CredentialEncryptionMode.js"
-import { DesktopConfigEncKey, DesktopConfigKey } from "../config/ConfigKeys"
+import { DesktopConfigKey } from "../config/ConfigKeys"
 import { ExtendedNotificationMode } from "../../native/common/generatedipc/ExtendedNotificationMode"
 import { assertNotNull, base64ToBase64Url, neverNull } from "@tutao/tutanota-utils"
 import { log } from "../DesktopLog"
 import tutanotaModelInfo from "../../api/entities/tutanota/ModelInfo"
 import { handleRestError } from "../../api/common/error/RestError"
 import { EncryptedAlarmNotification } from "../../native/common/EncryptedAlarmNotification"
-import { SseInfo } from "./DesktopSseClient.js"
 import { Mail } from "../../api/entities/tutanota/TypeRefs.js"
 import { NativeAlarmScheduler } from "./DesktopAlarmScheduler.js"
 import { DesktopAlarmStorage } from "./DesktopAlarmStorage.js"
+import { SseInfo } from "./SseInfo.js"
 
 const TAG = "[notifications]"
 
-type MailMetadata = Pick<Mail, "sender" | "firstRecipient" | "_id">
+export type MailMetadata = Pick<Mail, "sender" | "firstRecipient" | "_id">
 
 export class TutaNotificationHandler {
 	constructor(
@@ -35,7 +35,7 @@ export class TutaNotificationHandler {
 		private readonly appVersion: string,
 	) {}
 
-	async onMailNotification(notificationInfo: NotificationInfo) {
+	async onMailNotification(sseInfo: SseInfo, notificationInfo: NotificationInfo) {
 		const w = this.wm.getAll().find((w) => w.getUserId() === notificationInfo.userId)
 
 		if (w && w.isFocused()) {
@@ -51,12 +51,12 @@ export class TutaNotificationHandler {
 			const notificationId = notificationInfo.mailId
 				? `${notificationInfo.mailId.listId},${notificationInfo.mailId?.listElementId}`
 				: notificationInfo.userId
-			this.notifier.submitGroupedNotification(this.lang.get("pushNewMail_msg"), `${notificationInfo.mailAddress}`, notificationId, (res) =>
+			this.notifier.submitGroupedNotification(this.lang.get("pushNewMail_msg"), notificationInfo.mailAddress, notificationId, (res) =>
 				this.onMailNotificationClick(res, notificationInfo),
 			)
 			return
 		}
-		const mailMetadata = await this.downloadMailMetadata(notificationInfo)
+		const mailMetadata = await this.downloadMailMetadata(sseInfo, notificationInfo)
 		if (mailMetadata == null) return
 		this.notifier.submitGroupedNotification(mailMetadata.sender.address, mailMetadata.firstRecipient?.address ?? "", mailMetadata._id.join(","), (res) =>
 			this.onMailNotificationClick(res, notificationInfo),
@@ -72,9 +72,8 @@ export class TutaNotificationHandler {
 		}
 	}
 
-	private async downloadMailMetadata(ni: NotificationInfo): Promise<MailMetadata | null> {
-		const sseInfo = await this.conf.getVar(DesktopConfigEncKey.sseInfo)
-		const url = this.makeMailMetadataUrl(assertNotNull(sseInfo), assertNotNull(ni.mailId))
+	private async downloadMailMetadata(sseInfo: SseInfo, ni: NotificationInfo): Promise<MailMetadata | null> {
+		const url = this.makeMailMetadataUrl(sseInfo, assertNotNull(ni.mailId))
 
 		// decrypt access token
 		const credentials = await this.nativeCredentialFacade.loadByUserId(ni.userId)
@@ -85,7 +84,6 @@ export class TutaNotificationHandler {
 
 		log.debug(TAG, "downloading mail notification metadata")
 		const headers: Record<string, string> = {
-			userIds: ni.userId,
 			v: tutanotaModelInfo.version.toString(),
 			cv: this.appVersion,
 			accessToken: credentials.accessToken,
@@ -119,27 +117,13 @@ export class TutaNotificationHandler {
 		await this.alarmScheduler.handleAlarmNotification(alarmNotification)
 	}
 
-	async onUserInvalidated(userId: Id) {
-		// FIXME implement
-		return Promise.resolve()
-	}
-
 	async onUserRemoved(userId: Id) {
 		await this.alarmScheduler.unscheduleAllAlarms(userId)
 	}
 
-	async onExpiredData() {
-		await this.clearAlarms()
-	}
-
-	// FIXME it's not called, should it be called somewhere?
-	async onInvalidSseInfo() {
-		await this.clearAlarms()
-		await this.wm.invalidateAlarms()
-	}
-
-	private async clearAlarms() {
+	async onLocalDataInvalidated() {
 		await this.alarmScheduler.unscheduleAllAlarms()
 		await this.alarmStorage.removePushIdentifierKeys()
+		await this.wm.invalidateAlarms()
 	}
 }

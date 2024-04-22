@@ -158,7 +158,6 @@ async function setupSuite({ integration }: { integration?: boolean }) {
 		await import("./desktop/ElectronUpdaterTest.js")
 		await import("./desktop/DesktopNotifierTest.js")
 		await import("./desktop/ApplicationWindowTest.js")
-		await import("./desktop/sse/DesktopSseClientTest.js")
 		await import("./desktop/sse/SecretStorageTest.js")
 		await import("./desktop/sse/DesktopAlarmStorageTest.js")
 		await import("./desktop/sse/DesktopAlarmSchedulerTest.js")
@@ -184,6 +183,7 @@ async function setupSuite({ integration }: { integration?: boolean }) {
 		await import("./desktop/files/TempFsTest.js")
 		await import("./desktop/sse/SseClientTest.js")
 		await import("./desktop/sse/TutaSseFacadeTest.js")
+		await import("./desktop/sse/TutaNotificationHandlerTest.js")
 	}
 
 	// testdouble complains about certain mocking related code smells, and also prints a warning whenever you replace a property on an object.

@@ -15,7 +15,7 @@ import { DateProvider } from "../../api/common/DateProvider.js"
 const TAG = "[SSEFacade]"
 
 export const MISSED_NOTIFICATION_TTL = 30 * 24 * 60 * 60 * 1000 // 30 days
-type EncryptedMissedNotification = MissedNotification & { alarmNotifications: readonly EncryptedAlarmNotification[] }
+export type EncryptedMissedNotification = MissedNotification & { alarmNotifications: readonly EncryptedAlarmNotification[] }
 
 export class TutaSseFacade implements SseEventHandler {
 	private currentSseInfo: SseInfo | null = null
@@ -65,7 +65,7 @@ export class TutaSseFacade implements SseEventHandler {
 	 * expired, we certainly missed some updates.
 	 * We need to unschedule all alarms and to tell web part that we would like alarms to be scheduled all over.
 	 */
-	async hasNotificationTTLExpired(): Promise<boolean> {
+	private async hasNotificationTTLExpired(): Promise<boolean> {
 		const lastMissedNotificationCheckTime = await this.sseStorage.getMissedNotificationCheckTime()
 		log.debug(TAG, "last missed notification check:", {
 			lastMissedNotificationCheckTime,
@@ -173,7 +173,7 @@ export class TutaSseFacade implements SseEventHandler {
 	async onNotAuthenticated() {
 		// invalid userids
 		log.debug("sse: got NotAuthenticated, deleting userId")
-		const lastSseInfo = this.currentSseInfo
+		let lastSseInfo = this.currentSseInfo
 		this.currentSseInfo = null
 		if (lastSseInfo == null) {
 			log.warn("NotAuthorized while not connected?")
@@ -181,7 +181,7 @@ export class TutaSseFacade implements SseEventHandler {
 		}
 		const firstUser = lastSseInfo.userIds.at(0)
 		if (firstUser != null) {
-			await this.sseStorage.removeUser(firstUser)
+			lastSseInfo = await this.sseStorage.removeUser(firstUser)
 			await this.notificationHandler.onUserInvalidated(firstUser)
 		}
 
@@ -192,7 +192,10 @@ export class TutaSseFacade implements SseEventHandler {
 	}
 
 	async removeUser(userId: Id) {
-		await this.sseStorage.removeUser(userId)
+		const sseInfo = await this.sseStorage.removeUser(userId)
+		if (sseInfo?.userIds.length === 0) {
+			await this.sseStorage.clear()
+		}
 		await this.notificationHandler.onUserRemoved(userId)
 		await this.connect()
 	}

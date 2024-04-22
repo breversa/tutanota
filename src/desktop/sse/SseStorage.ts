@@ -26,11 +26,14 @@ export class SseStorage {
 		await this.conf.setVar(DesktopConfigEncKey.sseInfo, newSseInfo)
 	}
 
-	async removeUser(userId: Id) {
+	async removeUser(userId: Id): Promise<SseInfo | null> {
 		const sseInfo = await this.getSseInfo()
 		if (sseInfo != null) {
 			remove(sseInfo.userIds, userId)
 			await this.conf.setVar(DesktopConfigEncKey.sseInfo, sseInfo)
+			return sseInfo
+		} else {
+			return null
 		}
 	}
 

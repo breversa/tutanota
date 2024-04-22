@@ -2,7 +2,7 @@ import { SseClient, SseEventHandler } from "./SseClient.js"
 import { TutaNotificationHandler } from "./TutaNotificationHandler.js"
 import { DesktopNativeCryptoFacade } from "../DesktopNativeCryptoFacade.js"
 import { Agent, fetch as undiciFetch } from "undici"
-import { log } from "../DesktopLog.js"
+import { makeTaggedLogger } from "../DesktopLog.js"
 import { typeModels } from "../../api/entities/sys/TypeModels.js"
 import { assertNotNull, base64ToBase64Url, filterInt, neverNull, stringToUtf8Uint8Array, uint8ArrayToBase64 } from "@tutao/tutanota-utils"
 import { handleRestError } from "../../api/common/error/RestError.js"
@@ -12,7 +12,7 @@ import { SseStorage } from "./SseStorage.js"
 import { DateProvider } from "../../api/common/DateProvider.js"
 import { SseInfo } from "./SseInfo.js"
 
-const TAG = "[SSEFacade]"
+const log = makeTaggedLogger("[SSEFacade]")
 
 export const MISSED_NOTIFICATION_TTL = 30 * 24 * 60 * 60 * 1000 // 30 days
 export type EncryptedMissedNotification = MissedNotification & { alarmNotifications: readonly EncryptedAlarmNotification[] }
@@ -43,7 +43,7 @@ export class TutaSseFacade implements SseEventHandler {
 		}
 		const sseInfo = await this.sseStorage.getSseInfo()
 		if (sseInfo == null) {
-			log.debug(TAG, "No SSE info")
+			log.debug("No SSE info")
 			return
 		}
 		const url = this.getSseUrl(sseInfo, sseInfo.userIds[0])
@@ -67,7 +67,7 @@ export class TutaSseFacade implements SseEventHandler {
 	 */
 	private async hasNotificationTTLExpired(): Promise<boolean> {
 		const lastMissedNotificationCheckTime = await this.sseStorage.getMissedNotificationCheckTime()
-		log.debug(TAG, "last missed notification check:", {
+		log.debug("last missed notification check:", {
 			lastMissedNotificationCheckTime,
 		})
 		return lastMissedNotificationCheckTime != null && this.date.now() - lastMissedNotificationCheckTime > MISSED_NOTIFICATION_TTL
@@ -107,7 +107,7 @@ export class TutaSseFacade implements SseEventHandler {
 		try {
 			missedNotification = await this.downloadMissedNotification()
 		} catch (e) {
-			log.warn(TAG, "Failed to download missed notification", e)
+			log.warn("Failed to download missed notification", e)
 			return
 		}
 
@@ -127,7 +127,7 @@ export class TutaSseFacade implements SseEventHandler {
 		const sseInfo = assertNotNull(this.currentSseInfo)
 		const url = this.makeMissedNotificationUrl(sseInfo)
 
-		log.debug(TAG, "downloading missed notification")
+		log.debug("downloading missed notification")
 		const headers: Record<string, string> = {
 			userIds: sseInfo.userIds[0],
 			v: typeModels.MissedNotification.version,
@@ -145,7 +145,7 @@ export class TutaSseFacade implements SseEventHandler {
 			throw handleRestError(neverNull(res.status), url, res.headers.get("error-id") as string, null)
 		} else {
 			const json = await res.json()
-			log.debug(TAG, "downloaded missed notification")
+			log.debug("downloaded missed notification")
 			return json as EncryptedMissedNotification
 		}
 	}
@@ -160,10 +160,12 @@ export class TutaSseFacade implements SseEventHandler {
 
 	async onNewMessage(message: string) {
 		if (message === "data: notification") {
+			log.debug("notification")
 			await this.onNotification()
 			// deal with it
 		} else if (message.startsWith("data: heartbeatTimeout:")) {
 			const timeoutString = message.split(":").at(2)
+			log.debug("heartbeatTimeout", timeoutString)
 			const timeout = timeoutString == null ? null : filterInt(timeoutString)
 			if (timeout != null && !isNaN(timeout)) {
 				await this.sseStorage.setHeartbeatTimeoutSec(timeout)
@@ -174,7 +176,7 @@ export class TutaSseFacade implements SseEventHandler {
 
 	async onNotAuthenticated() {
 		// invalid userids
-		log.debug("sse: got NotAuthenticated, deleting userId")
+		log.debug("got NotAuthenticated, deleting userId")
 		let lastSseInfo = this.currentSseInfo
 		this.currentSseInfo = null
 		if (lastSseInfo == null) {
@@ -199,7 +201,7 @@ export class TutaSseFacade implements SseEventHandler {
 			sseInfo = await this.sseStorage.getSseInfo()
 		}
 		if (sseInfo?.userIds.length === 0) {
-			log.debug(TAG, "No user ids, skipping reconnect")
+			log.debug("No user ids, skipping reconnect")
 			await this.notificationHandler.onLocalDataInvalidated()
 			await this.sseStorage.clear()
 		}

@@ -9,14 +9,14 @@ import { SqlValue } from "../../api/worker/offline/SqlValue.js"
 import { PersistedCredentials } from "../../native/common/generatedipc/PersistedCredentials.js"
 import { UntaggedQuery, usql } from "../../api/worker/offline/Sql.js"
 import { CredentialType } from "../../misc/credentials/CredentialType.js"
-import { Base64 } from "@tutao/tutanota-utils"
 import { CredentialEncryptionMode } from "../../misc/credentials/CredentialEncryptionMode.js"
+import { Base64 } from "@tutao/tutanota-utils"
 
 const TableDefinitions = Object.freeze({
 	credentials:
 		"login TEXT NOT NULL, userId TEXT NOT NULL, type TEXT NOT NULL, accessToken BLOB NOT NULL, databaseKey BLOB," +
 		" encryptedPassword TEXT NOT NULL, PRIMARY KEY (userId), UNIQUE(login)",
-	credentialEncryptionMode: "credentialEncryptionMode TEXT, FOREIGN KEY(credentialEncryptionMode) REFERENCES credentialEncryptionModeEnum(mode)",
+	credentialsEncryptionMode: "credentialsEncryptionMode TEXT, FOREIGN KEY(credentialsEncryptionMode) REFERENCES credentialsEncryptionModeEnum(mode)",
 	credentialEncryptionKey: "credentialEncryptionKey BLOB",
 } as const)
 
@@ -126,9 +126,9 @@ ${credentials.accessToken}, ${credentials.databaseKey}, ${credentials.encryptedP
 	}
 
 	private createEnumTable() {
-		this.run({ query: `CREATE TABLE IF NOT EXISTS credentialEncryptionModeEnum (mode TEXT UNIQUE)`, params: [] })
+		this.run({ query: `CREATE TABLE IF NOT EXISTS credentialsEncryptionModeEnum (mode TEXT UNIQUE)`, params: [] })
 		for (let i in CredentialEncryptionMode) {
-			const insertQuery = usql`INSERT INTO credentialEncryptionModeEnum (mode) VALUES (${i})`
+			const insertQuery = usql`INSERT INTO credentialsEncryptionModeEnum (mode) VALUES (${i})`
 			this.run(insertQuery)
 		}
 	}
@@ -169,28 +169,28 @@ ${credentials.accessToken}, ${credentials.databaseKey}, ${credentials.encryptedP
 	}
 
 	getCredentialEncryptionMode(): string | null {
-		const row = this.get(usql`SELECT credentialEncryptionMode FROM credentialEncryptionMode LIMIT 1`)
+		const row = this.get(usql`SELECT credentialsEncryptionMode FROM credentialsEncryptionMode LIMIT 1`)
 		if (!row) return null
-		return row.credentialEncryptionMode as string
+		return row.credentialsEncryptionMode as string
 	}
 
 	getCredentialEncryptionKey(): Base64 | null {
-		const row = this.get(usql`SELECT credentialEncryptionKey FROM credentialEncryptionKey LIMIT 1`)
+		const row = this.get(usql`SELECT credentialsEncryptionKey FROM credentialsEncryptionKey LIMIT 1`)
 		if (!row) return null
-		return row.credentialEncryptionKey as string
+		return row.credentialsEncryptionKey as string
 	}
 
 	setCredentialEncryptionMode(encryptionMode: CredentialEncryptionMode | null) {
-		this.run(usql`DELETE FROM credentialEncryptionMode`)
+		this.run(usql`DELETE FROM credentialsEncryptionMode`)
 		if (encryptionMode != null) {
-			this.run(usql`INSERT INTO credentialEncryptionMode (credentialEncryptionMode) VALUES (${encryptionMode})`)
+			this.run(usql`INSERT INTO credentialsEncryptionMode (credentialsEncryptionMode) VALUES (${encryptionMode})`)
 		}
 	}
 
 	setCredentialEncryptionKey(encryptionKey: Base64 | null) {
-		this.run(usql`DELETE FROM credentialEncryptionKey`)
+		this.run(usql`DELETE FROM credentialsEncryptionKey`)
 		if (encryptionKey != null) {
-			this.run(usql`INSERT INTO credentialEncryptionKey (credentialEncryptionKey) VALUES (${encryptionKey})`)
+			this.run(usql`INSERT INTO credentialsEncryptionKey (credentialsEncryptionKey) VALUES (${encryptionKey})`)
 		}
 	}
 }

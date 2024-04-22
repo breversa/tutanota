@@ -1,11 +1,15 @@
 import http from "node:http"
 import type { DesktopNetworkClient } from "../net/DesktopNetworkClient"
-import { log } from "../DesktopLog"
+import { makeTaggedLogger } from "../DesktopLog"
 import { Scheduler } from "../../api/common/utils/Scheduler.js"
 import { ProgrammingError } from "../../api/common/error/ProgrammingError.js"
+import { reverse } from "../../api/common/TutanotaConstants.js"
 
-const TAG = "[SSE]"
+const log = makeTaggedLogger("[SSE]")
 
+/**
+ * Provides computed delays for SSE (in ms)
+ */
 export interface SseDelay {
 	reconnectDelay(attempt: number): number
 
@@ -59,11 +63,12 @@ type State =
 export class SseClient {
 	private listener: SseEventHandler | null = null
 	private _state: State = { state: ConnectionState.disconnected }
-	private readTimeout: number | null = null
-	private heartBeatListenderHandle: NodeJS.Timeout | undefined = undefined
+	private readTimeoutSec: number | null = null
+	private heartBeatListenerHandle: NodeJS.Timeout | undefined = undefined
 
 	private set state(newState: State) {
-		log.debug(TAG, "state:", ConnectionState[newState.state])
+		const stateName = reverse(ConnectionState)[newState.state]
+		log.debug("state:", stateName)
 		this._state = newState
 	}
 
@@ -74,7 +79,7 @@ export class SseClient {
 	constructor(private readonly net: DesktopNetworkClient, private readonly delay: SseDelay, private readonly scheduler: Scheduler) {}
 
 	async connect(options: SseConnectOptions) {
-		log.debug(TAG, "connect")
+		log.debug("connect")
 		switch (this.state.state) {
 			case ConnectionState.delayedReconnect:
 				this.scheduler.unscheduleTimeout(this.state.timeout)
@@ -123,7 +128,7 @@ export class SseClient {
 				// The problem is that sometimes request gets stuck after handshake - does not process unless some event
 				// handler is called (and it works more reliably with console.log()).
 				// This makes the request magically unstuck, probably console.log does some I/O and/or socket things.
-				s.on("lookup", () => log.debug("lookup sse request"))
+				s.on("lookup", () => log.debug("lookup"))
 			})
 			.on("response", async (res) => {
 				log.debug("established SSE connection with code", res.statusCode)
@@ -165,8 +170,8 @@ export class SseClient {
 						if (this.state.state != ConnectionState.disconnected) this.delayedReconnect()
 					})
 			})
-			.on("information", () => log.debug(TAG, "sse information"))
-			.on("connect", () => log.debug(TAG, "sse connect:"))
+			.on("information", () => log.debug("information"))
+			.on("connect", () => log.debug("connect:"))
 			.on("error", async (e) => {
 				log.error("error:", e.message)
 				this.exponentialBackdownReconnect()
@@ -198,8 +203,8 @@ export class SseClient {
 		this.listener = listener
 	}
 
-	setReadTimeout(timeout: number) {
-		this.readTimeout = timeout
+	setReadTimeout(timeoutSeconds: number) {
+		this.readTimeoutSec = timeoutSeconds
 		this.resetHeartbeatListener()
 		this.onHeartbeat()
 	}
@@ -237,8 +242,8 @@ export class SseClient {
 		// It will check if the heartbeat was received periodically.
 		// Theoretically we need to reset this every time we connect but
 		// the server will send us the timeout right after the connection anyway.
-		if (this.heartBeatListenderHandle != null) this.scheduler.unschedulePeriodic(this.heartBeatListenderHandle)
-		this.heartBeatListenderHandle = this.scheduler.schedulePeriodic(async () => {
+		if (this.heartBeatListenerHandle != null) this.scheduler.unschedulePeriodic(this.heartBeatListenerHandle)
+		this.heartBeatListenerHandle = this.scheduler.schedulePeriodic(async () => {
 			const state = this.state
 			if (state.state === ConnectionState.connected) {
 				if (state.receivedHeartbeat) {
@@ -248,6 +253,6 @@ export class SseClient {
 					this.doConnect(state.options)
 				}
 			}
-		}, Math.floor(this.readTimeout! * 1.2 * 1000))
+		}, Math.floor(this.readTimeoutSec! * 1.2 * 1000))
 	}
 }

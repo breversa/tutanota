@@ -32,6 +32,9 @@ public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 		try self.setCredentialsEncryptionKey(nil)
 	}
 	public func migrateToNativeCredentials(_ credentials: [PersistedCredentials], _ encryptionMode: CredentialEncryptionMode, _ credentialsKey: DataWrapper) async throws {
+		// on mobile we alsways use DEVICE_LOCK encryption method but previously it could have been another one
+		// we need to re-encrypt the credentials here
+		// and handle the possible auth failure in the web part
 		fatalError("FIXME Not implemented")
 	}
 

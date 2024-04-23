@@ -20,36 +20,50 @@ public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 	}
 
 	public func loadAll() async throws -> [PersistedCredentials] { try self.credentialsDb.getAll() }
-	public func store(_ credentials: PersistedCredentials) async throws { try self.credentialsDb.store(credentials: credentials) }
-	public func loadByUserId(_ id: String) async throws -> PersistedCredentials? {
+	public func store(_ unencryptedCredentials: UnencryptedCredentials) async throws {
+		let credentialsEncryptionKey = try await self.getOrCreateCredentialEncryptionKey()
+		let encryptedCredentials: PersistedCredentials = try self.encryptCredentials(unencryptedCredentials, credentialsEncryptionKey)
+		return try await self.storeEncrypted(encryptedCredentials)
+	}
+	public func storeEncrypted(_ credentials: PersistedCredentials) async throws { try self.credentialsDb.store(credentials: credentials) }
+	public func clear() async throws {
+		try self.credentialsDb.deleteAllCredentials()
+		try self.setCredentialEncryptionMode(nil)
+		try self.setCredentialsEncryptionKey(nil)
+	}
+	public func migrateToNativeCredentials(_ credentials: [PersistedCredentials], _ encryptionMode: CredentialEncryptionMode, _ credentialsKey: DataWrapper) async throws {
+		fatalError("FIXME Not implemented")
+	}
+
+	public func loadByUserId(_ id: String) async throws -> UnencryptedCredentials? {
 		let credentials = try self.credentialsDb.getAll()
-		return credentials.first { persistedCredentials in persistedCredentials.credentialsInfo.userId == id }
+		guard let persistedCredentials = credentials.first(where: { $0.credentialInfo.userId == id }) else {
+			return nil
+		}
+		return try self.decryptCredentials(persistedCredentials: persistedCredentials, credentialsKey: await self.getOrCreateCredentialEncryptionKey())
 	}
 	public func deleteByUserId(_ id: String) async throws { try self.credentialsDb.delete(userId: id) }
-	public func getCredentialEncryptionMode() async throws -> CredentialEncryptionMode? {
-		let value = self.userDefaults.value(forKey: Self.ENCRYPTION_MODE_KEY) as! String?
-		return value.flatMap(CredentialEncryptionMode.init(rawValue:))
+	public func getCredentialEncryptionMode() throws -> CredentialEncryptionMode? {
+		return try self.credentialsDb.getCredentialEncryptionMode()
 	}
-	public func setCredentialEncryptionMode(_ encryptionMode: CredentialEncryptionMode?) async throws {
-		self.userDefaults.setValue(encryptionMode?.rawValue, forKey: Self.ENCRYPTION_MODE_KEY)
+	public func setCredentialEncryptionMode(_ encryptionMode: CredentialEncryptionMode?) throws {
+		try self.credentialsDb.setCredentialEncryptionMode(encryptionMode: encryptionMode)
 	}
-	public func getCredentialsEncryptionKey() async throws -> DataWrapper? {
-		let value = self.userDefaults.value(forKey: Self.CREDENTIALS_ENCRYPTION_KEY_KEY) as! String?
-		return value.flatMap { Data(base64Encoded: $0) }?.wrap()
+	private func getCredentialsEncryptionKey() throws -> Data? {
+		return try self.credentialsDb.getCredentialsEncryptionKey().map { Data(base64Encoded: $0)! }
 	}
-	public func setCredentialsEncryptionKey(_ credentialsEncryptionKey: DataWrapper?) async throws {
-		let base64 = credentialsEncryptionKey.map { wrapper in wrapper.data.base64EncodedString() }
-		self.userDefaults.setValue(base64, forKey: Self.CREDENTIALS_ENCRYPTION_KEY_KEY)
+	private func setCredentialsEncryptionKey(_ credentialsEncryptionKey: Data?) throws {
+		let base64 = credentialsEncryptionKey?.base64EncodedString()
+		try self.credentialsDb.setCredentialsEncryptionKey(encryptionKey: base64)
 	}
 
-	public func encryptUsingKeychain(_ data: DataWrapper, _ encryptionMode: CredentialEncryptionMode) async throws -> DataWrapper {
-		let encryptedData = try self.keychainManager.encryptData(encryptionMode: encryptionMode, data: data.data)
-		return DataWrapper(data: encryptedData)
+	func encryptUsingKeychain(_ data: Data, _ encryptionMode: CredentialEncryptionMode) async throws -> Data {
+		return try self.keychainManager.encryptData(encryptionMode: encryptionMode, data: data)
 	}
 
-	public func decryptUsingKeychain(_ encryptedData: DataWrapper, _ encryptionMode: CredentialEncryptionMode) async throws -> DataWrapper {
-		let data = try self.keychainManager.decryptData(encryptionMode: encryptionMode, encryptedData: encryptedData.data)
-		return DataWrapper(data: data)
+	private func decryptUsingKeychain(_ encryptedData: Data, _ encryptionMode: CredentialEncryptionMode) async throws -> Data {
+		let data = try self.keychainManager.decryptData(encryptionMode: encryptionMode, encryptedData: encryptedData)
+		return data
 	}
 
 	public func getSupportedEncryptionModes() async -> [CredentialEncryptionMode] {
@@ -62,6 +76,47 @@ public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 		if biometricsSupported { supportedModes.append(.biometrics) }
 		return supportedModes
 	}
+
+	private func encryptCredentials(_ unencryptedCredentials: UnencryptedCredentials, _ credentialsEncryptionKey: Data) throws -> PersistedCredentials {
+		let accessToken = try aesEncryptData(unencryptedCredentials.accessToken.data(using: .utf8)!, withKey:credentialsEncryptionKey)
+		return try PersistedCredentials(
+			credentialInfo: unencryptedCredentials.credentialInfo,
+			accessToken: accessToken.base64EncodedString(),
+			databaseKey: unencryptedCredentials.databaseKey.map { dbKey in try aesEncryptKey(dbKey.data, withKey: credentialsEncryptionKey).base64EncodedString() },
+			encryptedPassword: unencryptedCredentials.encryptedPassword
+		)
+	}
+
+	private func decryptCredentials(persistedCredentials: PersistedCredentials, credentialsKey: Data) throws ->  UnencryptedCredentials {
+			do {
+				let accessTokenData: Data = Data(base64Encoded: persistedCredentials.accessToken)!
+				return try UnencryptedCredentials(
+					credentialInfo: persistedCredentials.credentialInfo,
+					accessToken: String(bytes: aesDecryptData(accessTokenData, withKey: credentialsKey), encoding: .utf8)!,
+					databaseKey: persistedCredentials.databaseKey.map({ dbKey in
+						try aesDecryptKey(Data(base64Encoded: dbKey)!, withKey: credentialsKey).wrap()
+					}),
+					encryptedPassword: persistedCredentials.encryptedPassword
+				)
+			} catch {
+				throw KeyPermanentlyInvalidatedError(underlyingError: error)
+			}
+		}
+
+	private func getOrCreateCredentialEncryptionKey() async throws -> Data {
+		let encryptionMode = (try self.getCredentialEncryptionMode()) ?? CredentialEncryptionMode.deviceLock
+		let exisingKey = try self.getCredentialsEncryptionKey()
+		if let exisingKey {
+			let decryptedKey = try await self.decryptUsingKeychain(exisingKey, encryptionMode)
+			return decryptedKey
+		} else {
+			let newKey = aesGenerateKey()
+			let encryptedKey = try await self.encryptUsingKeychain(newKey, encryptionMode)
+			try self.setCredentialsEncryptionKey(encryptedKey)
+			return newKey
+		}
+	}
+
 }
 
 fileprivate extension LAContext {

@@ -8,6 +8,10 @@ private let MAC_IDENTIFIER: [UInt8] = [0x01]
 private let TUTAO_FIXED_IV: Data = Data(repeating: 0x88, count: TUTAO_IV_BYTE_SIZE)
 private let MAC_TOTAL_OVERHEAD_LENGTH = MAC_DIGEST_LENGTH + MAC_IDENTIFIER.count
 
+public func aesGenerateKey() -> Data {
+	return TUTCrypto.generateAES256Key()
+}
+
 /// Decrypt the encrypted data with padding.
 ///
 /// - Parameters:
@@ -45,7 +49,7 @@ public func aesDecryptKey(_ encryptedKey: Data, withKey key: Data) throws -> Dat
 ///   - withIV: IV to use
 ///
 /// - Returns: Encrypted cyphertext
-public func aesEncryptData(_ data: Data, withKey key: Data, withIV iv: Data) throws -> Data {
+public func aesEncryptData(_ data: Data, withKey key: Data, withIV iv: Data = TUTCrypto.generateIv()) throws -> Data {
 	try aesEncrypt(data: data, withKey: key, withIV: iv, withPadding: true, withMAC: true)
 }
 

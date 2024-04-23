@@ -23,6 +23,26 @@ public class CredentialsDatabase {
 				"""
 		)
 		.run()
+		try db.prepare(
+			query: """
+			CREATE TABLE IF NOT EXISTS credentialEncryptionModeEnum (mode TEXT UNIQUE)
+			"""
+		)
+		.run()
+		try db.prepare(
+			query: """
+			CREATE TABLE IF NOT EXISTS credentialEncryptionMode (id INTEGER NOT NULL,
+			credentialEncryptionMode TEXT NOT NULL, FOREIGN KEY(credentialEncryptionMode) REFERENCES credentialEncryptionModeEnum(mode), PRIMARY KEY (id), CHECK (id=0))
+			"""
+		)
+		.run()
+		try db.prepare(
+			query: """
+			CREATE TABLE IF NOT EXISTS credentialEncryptionKey (id INTEGER NOT NULL,
+			credentialEncryptionKey TEXT NOT NULL, PRIMARY KEY (id), CHECK (id=0))
+			"""
+		)
+		.run()
 	}
 
 	public func getAll() throws -> [PersistedCredentials] {
@@ -41,7 +61,7 @@ public class CredentialsDatabase {
 
 			let databaseKey: String? = if case let .string(value) = sqlRow["databaseKey"] { value } else { nil }
 			return PersistedCredentials(
-				credentialsInfo: credentialsInfo,
+				credentialInfo: credentialsInfo,
 				accessToken: try sqlRow["accessToken"]!.asString(),
 				databaseKey: databaseKey,
 				encryptedPassword: try sqlRow["encryptedPassword"]!.asString()
@@ -58,8 +78,8 @@ public class CredentialsDatabase {
 				"""
 		)
 		.bindParams([
-			.string(value: credentials.credentialsInfo.login), .string(value: credentials.credentialsInfo.userId),
-			.string(value: credentials.credentialsInfo.type.rawValue), .string(value: credentials.accessToken), databaseKey,
+			.string(value: credentials.credentialInfo.login), .string(value: credentials.credentialInfo.userId),
+			.string(value: credentials.credentialInfo.type.rawValue), .string(value: credentials.accessToken), databaseKey,
 			.string(value: credentials.encryptedPassword),
 		])
 		.run()
@@ -72,6 +92,69 @@ public class CredentialsDatabase {
 				"""
 		)
 		.bindParams([.string(value: userId)]).run()
+	}
+
+
+	public func getCredentialEncryptionMode() throws -> CredentialEncryptionMode? {
+		return try db.prepare(
+			query: """
+				SELECT credentialEncryptionMode FROM credentialEncryptionMode LIMIT 1
+				""")
+		.get()?["credentialEncryptionMode"]
+		.flatMap { mode in
+			CredentialEncryptionMode(rawValue: try mode.asString())
+		}
+	}
+
+	public func getCredentialsEncryptionKey() throws -> String?  {
+		return try db.prepare(
+			query: """
+				SELECT credentialEncryptionKey FROM credentialEncryptionKey LIMIT 1
+				""")
+		.get()?["credentialEncryptionKey"]?.asString()
+
+	}
+
+	public func setCredentialEncryptionMode(encryptionMode: CredentialEncryptionMode?) throws {
+		if let encryptionMode {
+			try db.prepare(
+				query: """
+				INSERT OR REPLACE INTO credentialEncryptionMode (id, credentialEncryptionMode) VALUES (0, ?)
+				""")
+			.bindParams([
+				.string(value: encryptionMode.rawValue)
+			]).run()
+		} else {
+			try db.prepare(
+			query: """
+			DELETE FROM credentialEncryptionMode
+			""").run()
+		}
+	}
+
+	public func setCredentialsEncryptionKey(encryptionKey: Base64?) throws {
+		if let encryptionKey {
+			try db.prepare(
+				query: """
+				INSERT OR REPLACE INTO credentialEncryptionKey (id, credentialEncryptionKey) VALUES (0, ?)
+				""")
+			.bindParams([
+				.string(value: encryptionKey)
+			]).run()
+		} else {
+			try db.prepare(
+				query:"""
+				DELETE FROM credentialEncryptionKey
+				"""
+			).run()
+		}
+	}
+
+	public func deleteAllCredentials() throws {
+		try db.prepare(query:"""
+		DELETE FROM credentials
+		""")
+		.run()
 	}
 }
 

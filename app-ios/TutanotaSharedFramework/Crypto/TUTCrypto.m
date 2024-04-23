@@ -241,6 +241,16 @@ static const NSString *const PUBLIC_EXPONENT_STRING = @"65537";
   return [[NSData alloc]initWithBytes:buffer length:TUTAO_IV_BYTE_SIZE];
 }
 
++ (NSData *)generateAES256Key {
+  const int key_length_bytes = AES_256_KEY_LENGTH_IN_BITS / 8;
+  unsigned char buffer[key_length_bytes];
+  int rc = RAND_bytes(buffer, key_length_bytes);
+  if (rc!=1){
+	return nil;
+  }
+  return [[NSData alloc]initWithBytes:buffer length:key_length_bytes];
+}
+
 
 + (NSData *)sha256:(NSData *)data {
   unsigned char hash[CC_SHA256_DIGEST_LENGTH];

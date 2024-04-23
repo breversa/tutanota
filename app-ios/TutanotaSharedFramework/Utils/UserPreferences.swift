@@ -3,7 +3,7 @@ import Foundation
 /// User settings provider
 ///
 /// This is abstracted into an interface for better testability.
-protocol UserPreferencesProvider {
+public protocol UserPreferencesProvider {
 	/// Get the settings object for the given key.
 	///
 	/// Parameters:
@@ -27,8 +27,11 @@ protocol UserPreferencesProvider {
 /// User preferences implementation.
 ///
 /// This interacts with the actual user preferences for the Tuta app.
-class UserPreferencesProviderImpl: UserPreferencesProvider {
-	func getObject(forKey: String) -> Any? { UserDefaults.standard.object(forKey: forKey) }
-	func getDictionary(forKey: String) -> [String: Any]? { UserDefaults.standard.dictionary(forKey: forKey) }
-	func setValue(_ object: Any?, forKey: String) { UserDefaults.standard.set(object, forKey: forKey) }
+public class UserPreferencesProviderImpl: UserPreferencesProvider {
+	private let userDefault = UserDefaults(suiteName: getAppGroupName())!
+	public init() {}
+
+	public func getObject(forKey: String) -> Any? { userDefault.object(forKey: forKey) }
+	public func getDictionary(forKey: String) -> [String: Any]? { userDefault.dictionary(forKey: forKey) }
+	public func setValue(_ object: Any?, forKey: String) { userDefault.set(object, forKey: forKey) }
 }

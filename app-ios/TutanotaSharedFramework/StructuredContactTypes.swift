@@ -122,7 +122,7 @@ extension StructuredWebsite: StableHashable {
 extension RawRepresentable where RawValue: StableHashable { func hash(into hasher: inout MurmurHash3.FourBytesHash) { rawValue.hash(into: &hasher) } }
 
 extension StructuredContact {
-	func stableHash() -> UInt32 {
+	public func stableHash() -> UInt32 {
 		var hash = MurmurHash3.FourBytesHash()
 		id?.hash(into: &hash)
 		firstName.hash(into: &hash)

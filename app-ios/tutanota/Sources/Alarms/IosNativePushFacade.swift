@@ -2,6 +2,14 @@ import Foundation
 import TutanotaSharedFramework
 
 class IosNativePushFacade: NativePushFacade {
+	func setExtendedNotificationConfig(_ type: TutanotaSharedFramework.ExtendedNotificationMode) async throws {
+		// FIXME
+	}
+	
+	func getExtendedNotificationConfig() async throws -> TutanotaSharedFramework.ExtendedNotificationMode {
+		// FIXME
+		return .sender_and_subject
+	}
 
 	private let appDelegate: AppDelegate
 	private let alarmManager: AlarmManager

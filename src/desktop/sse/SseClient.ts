@@ -156,11 +156,13 @@ export class SseClient {
 				})
 					.on("close", () => {
 						log.debug("response closed")
-						this.delayedReconnect()
+						// FIXME not sure if this is correct. There can be a race condition when outgoing connection is closed faster than incoming connection,
+						// causing delayedReconnect() to error because the state is already disconnected
+						if (this.state.state != ConnectionState.disconnected) this.delayedReconnect()
 					})
 					.on("error", (e) => {
 						log.error("response error:", e)
-						this.delayedReconnect()
+						if (this.state.state != ConnectionState.disconnected) this.delayedReconnect()
 					})
 			})
 			.on("information", () => log.debug(TAG, "sse information"))
@@ -246,6 +248,6 @@ export class SseClient {
 					this.doConnect(state.options)
 				}
 			}
-		}, Math.floor(this.readTimeout! * 1.2))
+		}, Math.floor(this.readTimeout! * 1.2 * 1000))
 	}
 }

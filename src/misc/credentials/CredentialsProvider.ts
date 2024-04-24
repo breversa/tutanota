@@ -1,4 +1,4 @@
-import type { CredentialEncryptionMode } from "./CredentialEncryptionMode"
+import type { CredentialEncryptionMode } from "./CredentialEncryptionMode.js"
 import type { Credentials } from "./Credentials"
 import { InterWindowEventFacadeSendDispatcher } from "../../native/common/generatedipc/InterWindowEventFacadeSendDispatcher.js"
 import { SqlCipherFacade } from "../../native/common/generatedipc/SqlCipherFacade.js"

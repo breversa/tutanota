@@ -3,7 +3,7 @@ import { base64ToUint8Array, typedEntries, uint8ArrayToBase64 } from "@tutao/tut
 import type { LanguageCode } from "./LanguageViewModel"
 import type { ThemePreference } from "../gui/theme"
 import { ProgrammingError } from "../api/common/error/ProgrammingError"
-import type { CredentialEncryptionMode } from "./credentials/CredentialEncryptionMode"
+import type { CredentialEncryptionMode } from "./credentials/CredentialEncryptionMode.js"
 import { assertMainOrNodeBoot, isApp } from "../api/common/Env"
 import { PersistedAssignmentData, UsageTestStorage } from "./UsageTestModel"
 import { client } from "./ClientDetector"

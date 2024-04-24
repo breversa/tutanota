@@ -68,6 +68,7 @@ import { TutaNotificationHandler } from "./sse/TutaNotificationHandler.js"
 import { TutaSseFacade } from "./sse/TutaSseFacade.js"
 import { SseStorage } from "./sse/SseStorage.js"
 import { DesktopSseDelay } from "./sse/reconnectDelay.js"
+import { KeychainManager } from "./credentials/KeychainManager.js"
 
 /**
  * Should be injected during build time.
@@ -167,7 +168,8 @@ async function createComponents(): Promise<Components> {
 		const last = await wm.getLastFocused(true)
 		return last.commonNativeFacade
 	})
-	const nativeCredentialsFacade = new DesktopNativeCredentialsFacade(keyStoreFacade, desktopCrypto, credentialsDb, appPassHandler)
+	const keychainManager = new KeychainManager(appPassHandler, desktopCrypto, keyStoreFacade)
+	const nativeCredentialsFacade = new DesktopNativeCredentialsFacade(desktopCrypto, credentialsDb, keychainManager)
 
 	updater.setUpdateDownloadedListener(() => {
 		for (let applicationWindow of wm.getAll()) {

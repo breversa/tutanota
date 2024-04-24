@@ -5,11 +5,12 @@ import androidx.room.PrimaryKey
 import de.tutao.tutanota.CredentialType
 import de.tutao.tutanota.ipc.CredentialsInfo
 import de.tutao.tutanota.ipc.PersistedCredentials
+import de.tutao.tutanota.ipc.wrap
 
 @Entity(tableName = "PersistedCredentials")
 class PersistedCredentialsEntity(
-	val accessToken: String,
-	val databaseKey: String?,
+	val accessToken: ByteArray,
+	val databaseKey: ByteArray?,
 	val encryptedPassword: String,
 	// CredentialsInfo. Cannot use userId as @primarykey if it is @Embedded.
 	val login: String,
@@ -20,25 +21,23 @@ class PersistedCredentialsEntity(
 
 fun PersistedCredentials.toEntity(): PersistedCredentialsEntity {
 	return PersistedCredentialsEntity(
-		accessToken = accessToken,
-		databaseKey = databaseKey,
+		accessToken = accessToken.data,
+		databaseKey = databaseKey?.data,
 		encryptedPassword = encryptedPassword,
-		login = credentialsInfo.login,
-		userId = credentialsInfo.userId,
-		type = credentialsInfo.type,
+		login = credentialInfo.login,
+		userId = credentialInfo.userId,
+		type = credentialInfo.type,
 	)
 }
 
 fun PersistedCredentialsEntity.toObject(): PersistedCredentials {
-	val credentialsInfo = CredentialsInfo(
-		login = login,
-		userId = userId,
-		type = type
+	val credentialInfo = CredentialsInfo(
+		login = login, userId = userId, type = type
 	)
 	return PersistedCredentials(
-		accessToken = accessToken,
-		databaseKey = databaseKey,
+		accessToken = accessToken.wrap(),
+		databaseKey = databaseKey?.wrap(),
 		encryptedPassword = encryptedPassword,
-		credentialsInfo = credentialsInfo,
+		credentialInfo = credentialInfo,
 	)
 }

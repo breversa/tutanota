@@ -2,7 +2,6 @@ import { CredentialEncryptionMode } from "../../misc/credentials/CredentialEncry
 import { DesktopConfigKey } from "../config/ConfigKeys.js"
 import { Aes256Key, generateKeyFromPassphraseArgon2id, KEY_LENGTH_BYTES_AES_256 } from "@tutao/tutanota-crypto"
 import { base64ToUint8Array, Thunk, uint8ArrayToBase64 } from "@tutao/tutanota-utils"
-import { DesktopCredentialsMode } from "./DesktopNativeCredentialsFacade.js"
 import { KeyPermanentlyInvalidatedError } from "../../api/common/error/KeyPermanentlyInvalidatedError.js"
 import { CryptoError } from "@tutao/tutanota-crypto/error.js"
 import { CancelledError } from "../../api/common/error/CancelledError.js"
@@ -10,6 +9,7 @@ import { DesktopNativeCryptoFacade } from "../DesktopNativeCryptoFacade.js"
 import { DesktopConfig } from "../config/DesktopConfig.js"
 import { CommonNativeFacade } from "../../native/common/generatedipc/CommonNativeFacade.js"
 import { LanguageViewModel } from "../../misc/LanguageViewModel.js"
+import { DesktopCredentialsMode } from "./CredentialCommons.js"
 
 export class AppPassHandler {
 	constructor(

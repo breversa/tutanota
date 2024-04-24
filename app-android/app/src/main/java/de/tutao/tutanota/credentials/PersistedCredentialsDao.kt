@@ -8,7 +8,7 @@ import androidx.room.Query
 @Dao
 interface PersistedCredentialsDao {
 	@Insert(onConflict = OnConflictStrategy.REPLACE)
-	fun insertPersistedCredentials(PersistedCredentials: PersistedCredentialsEntity)
+	fun insertPersistedCredentials(persistedCredentials: PersistedCredentialsEntity)
 
 	@get:Query("SELECT * FROM PersistedCredentials")
 	val allPersistedCredentials: List<PersistedCredentialsEntity>

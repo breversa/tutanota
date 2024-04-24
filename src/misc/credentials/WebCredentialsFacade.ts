@@ -3,6 +3,7 @@ import { NativeCredentialsFacade } from "../../native/common/generatedipc/Native
 import { DeviceConfig } from "../DeviceConfig.js"
 import { CredentialEncryptionMode } from "./CredentialEncryptionMode.js"
 import { UnencryptedCredentials } from "../../native/common/generatedipc/UnencryptedCredentials.js"
+import { stringToUtf8Uint8Array, utf8Uint8ArrayToString } from "@tutao/tutanota-utils"
 
 /**
  * This is a temporary stub that we will replace soon by some mechanism that will be able to utilize fingerprint/pin on mobile devices
@@ -38,7 +39,7 @@ export class WebCredentialsFacade implements NativeCredentialsFacade {
 		return {
 			credentialInfo: persistedCredentials.credentialInfo,
 			encryptedPassword: persistedCredentials.encryptedPassword,
-			accessToken: persistedCredentials.accessToken,
+			accessToken: utf8Uint8ArrayToString(persistedCredentials.accessToken),
 			databaseKey: null,
 		}
 	}
@@ -49,7 +50,7 @@ export class WebCredentialsFacade implements NativeCredentialsFacade {
 		const persistedCredentials: PersistedCredentials = {
 			credentialInfo: credentials.credentialInfo,
 			encryptedPassword: credentials.encryptedPassword,
-			accessToken: credentials.accessToken,
+			accessToken: stringToUtf8Uint8Array(credentials.accessToken),
 			databaseKey: null,
 		}
 		this.deviceConfig.storeCredentials(persistedCredentials)

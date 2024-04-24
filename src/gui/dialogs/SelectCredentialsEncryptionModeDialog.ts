@@ -1,4 +1,4 @@
-import { CredentialEncryptionMode } from "../../misc/credentials/CredentialEncryptionMode"
+import { CredentialEncryptionMode } from "../../misc/credentials/CredentialEncryptionMode.js"
 import { Dialog, DialogType } from "../base/Dialog"
 import type { CredentialsProvider } from "../../misc/credentials/CredentialsProvider.js"
 import m, { Children, Component, Vnode } from "mithril"

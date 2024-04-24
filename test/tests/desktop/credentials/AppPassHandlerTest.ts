@@ -7,7 +7,7 @@ import { function as fn, matchers, object, verify, when } from "testdouble"
 import { CommonNativeFacade } from "../../../../src/native/common/generatedipc/CommonNativeFacade.js"
 import { DesktopConfigKey } from "../../../../src/desktop/config/ConfigKeys.js"
 import { defer, delay, stringToBase64 } from "@tutao/tutanota-utils"
-import { CredentialEncryptionMode } from "../../../../src/native/common/generatedipc/CredentialEncryptionMode.js"
+import { CredentialsEncryptionMode } from "../../../../src/native/common/generatedipc/CredentialEncryptionMode.js"
 import { CancelledError } from "../../../../src/api/common/error/CancelledError.js"
 import { assertThrows } from "@tutao/tutanota-test-utils"
 import { KeyPermanentlyInvalidatedError } from "../../../../src/api/common/error/KeyPermanentlyInvalidatedError.js"
@@ -43,8 +43,8 @@ o.spec("AppPassHandler", () => {
 			cb("saltsalt2")
 			return conf
 		}
-		const promise1 = appPassHandler.removeAppPassWrapper(Uint8Array.from([1, 2, 3, 4]), CredentialEncryptionMode.APP_PASSWORD)
-		const promise2 = appPassHandler.removeAppPassWrapper(Uint8Array.from([1, 2, 3, 4]), CredentialEncryptionMode.APP_PASSWORD)
+		const promise1 = appPassHandler.removeAppPassWrapper(Uint8Array.from([1, 2, 3, 4]), CredentialsEncryptionMode.APP_PASSWORD)
+		const promise2 = appPassHandler.removeAppPassWrapper(Uint8Array.from([1, 2, 3, 4]), CredentialsEncryptionMode.APP_PASSWORD)
 
 		verify(commonNativeFacade.showAlertDialog(matchers.anything()), { times: 0 })
 
@@ -62,7 +62,7 @@ o.spec("AppPassHandler", () => {
 		when(commonNativeFacade.promptForPassword(matchers.anything())).thenReturn(pwPromise.promise)
 
 		await assertThrows(KeyPermanentlyInvalidatedError, () =>
-			appPassHandler.removeAppPassWrapper(Uint8Array.from([1, 2, 3, 4]), CredentialEncryptionMode.APP_PASSWORD),
+			appPassHandler.removeAppPassWrapper(Uint8Array.from([1, 2, 3, 4]), CredentialsEncryptionMode.APP_PASSWORD),
 		)
 	})
 })

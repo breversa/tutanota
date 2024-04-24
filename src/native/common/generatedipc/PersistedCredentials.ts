@@ -6,7 +6,7 @@ import { CredentialsInfo } from "./CredentialsInfo.js"
  */
 export interface PersistedCredentials {
 	readonly credentialInfo: CredentialsInfo
-	readonly accessToken: string
-	readonly databaseKey: string | null
+	readonly accessToken: Uint8Array
+	readonly databaseKey: Uint8Array | null
 	readonly encryptedPassword: string
 }

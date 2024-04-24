@@ -9,15 +9,15 @@ import { SqlValue } from "../../api/worker/offline/SqlValue.js"
 import { PersistedCredentials } from "../../native/common/generatedipc/PersistedCredentials.js"
 import { UntaggedQuery, usql } from "../../api/worker/offline/Sql.js"
 import { CredentialType } from "../../misc/credentials/CredentialType.js"
-import { CredentialEncryptionMode } from "../../native/common/generatedipc/CredentialEncryptionMode.js"
 import { Base64 } from "@tutao/tutanota-utils"
+import { CredentialEncryptionMode } from "../../misc/credentials/CredentialEncryptionMode.js"
 
 const TableDefinitions = Object.freeze({
 	credentials:
-		"login TEXT NOT NULL, userId TEXT NOT NULL, type TEXT NOT NULL, accessToken TEXT NOT NULL, databaseKey TEXT," +
+		"login TEXT NOT NULL, userId TEXT NOT NULL, type TEXT NOT NULL, accessToken BLOB NOT NULL, databaseKey BLOB," +
 		" encryptedPassword TEXT NOT NULL, PRIMARY KEY (userId), UNIQUE(login)",
 	credentialEncryptionMode: "credentialEncryptionMode TEXT, FOREIGN KEY(credentialEncryptionMode) REFERENCES credentialEncryptionModeEnum(mode)",
-	credentialsEncryptionKey: "credentialsEncryptionKey TEXT",
+	credentialEncryptionKey: "credentialEncryptionKey BLOB",
 } as const)
 
 /**
@@ -143,8 +143,8 @@ ${credentials.accessToken}, ${credentials.databaseKey}, ${credentials.encryptedP
 				type: credentialType,
 			},
 			encryptedPassword: row.encryptedPassword as string,
-			accessToken: row.accessToken as string,
-			databaseKey: row.databaseKey as string,
+			accessToken: row.accessToken as Uint8Array,
+			databaseKey: row.databaseKey as Uint8Array,
 		}
 	}
 
@@ -174,7 +174,7 @@ ${credentials.accessToken}, ${credentials.databaseKey}, ${credentials.encryptedP
 		return row.credentialEncryptionMode as string
 	}
 
-	getCredentialsEncryptionKey(): Base64 | null {
+	getCredentialEncryptionKey(): Base64 | null {
 		const row = this.get(usql`SELECT credentialEncryptionKey FROM credentialEncryptionKey LIMIT 1`)
 		if (!row) return null
 		return row.credentialEncryptionKey as string
@@ -187,7 +187,7 @@ ${credentials.accessToken}, ${credentials.databaseKey}, ${credentials.encryptedP
 		}
 	}
 
-	setCredentialsEncryptionKey(encryptionKey: Base64 | null) {
+	setCredentialEncryptionKey(encryptionKey: Base64 | null) {
 		this.run(usql`DELETE FROM credentialEncryptionKey`)
 		if (encryptionKey != null) {
 			this.run(usql`INSERT INTO credentialEncryptionKey (credentialEncryptionKey) VALUES (${encryptionKey})`)

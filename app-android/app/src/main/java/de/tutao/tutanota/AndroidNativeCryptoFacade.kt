@@ -25,9 +25,9 @@ import javax.crypto.spec.SecretKeySpec
 
 class AndroidNativeCryptoFacade
 constructor(
-		private val context: Context,
-		private val tempDir: TempDir = TempDir(context),
-		val randomizer: SecureRandom = SecureRandom(),
+	private val context: Context,
+	private val tempDir: TempDir = TempDir(context),
+	val randomizer: SecureRandom = SecureRandom(),
 ) : NativeCryptoFacade {
 
 	companion object {
@@ -46,10 +46,10 @@ constructor(
 		 * See https://issuetracker.google.com/issues/37075898#comment7
 		 */
 		private val OAEP_PARAMETER_SPEC = OAEPParameterSpec(
-				"SHA-256",
-				"MGF1",
-				MGF1ParameterSpec.SHA256,
-				PSource.PSpecified.DEFAULT
+			"SHA-256",
+			"MGF1",
+			MGF1ParameterSpec.SHA256,
+			PSource.PSpecified.DEFAULT
 		)
 		private const val AES_MODE_PADDING = "AES/CBC/PKCS5Padding"
 		const val AES_MODE_NO_PADDING = "AES/CBC/NoPadding"
@@ -84,16 +84,16 @@ constructor(
 				val hash = digest.digest(key.encoded)
 				val hashLen = hash.size
 				SubKeys(
-						cKey = SecretKeySpec(hash.copyOfRange(0, hashLen / 2), "AES"),
-						mKey = hash.copyOfRange(hashLen / 2, hashLen)
+					cKey = SecretKeySpec(hash.copyOfRange(0, hashLen / 2), "AES"),
+					mKey = hash.copyOfRange(hashLen / 2, hashLen)
 				)
 			} else {
 				if (keyLength == AesKeyLength.Aes256) {
 					throw java.lang.IllegalArgumentException("must use mac with AES-256")
 				}
 				SubKeys(
-						cKey = key,
-						mKey = null
+					cKey = key,
+					mKey = null
 				)
 			}
 		}
@@ -148,24 +148,47 @@ constructor(
 	private external fun kyberDecapsulateImpl(ciphertext: ByteArray, privateKey: ByteArray): ByteArray
 
 	@Throws(CryptoError::class)
-	override suspend fun argon2idHashRaw(password: DataWrapper, salt: DataWrapper, timeCost: Int, memoryCost: Int, parallelism: Int, hashLength: Int): DataWrapper {
-		return DataWrapper(this.argon2idHashRawImpl(password.data, salt.data, timeCost, memoryCost, parallelism, hashLength))
+	override suspend fun argon2idHashRaw(
+		password: DataWrapper,
+		salt: DataWrapper,
+		timeCost: Int,
+		memoryCost: Int,
+		parallelism: Int,
+		hashLength: Int
+	): DataWrapper {
+		return DataWrapper(
+			this.argon2idHashRawImpl(
+				password.data,
+				salt.data,
+				timeCost,
+				memoryCost,
+				parallelism,
+				hashLength
+			)
+		)
 	}
 
 	@Throws(CryptoError::class)
-	external fun argon2idHashRawImpl(password: ByteArray, salt: ByteArray, timeCost: Int, memoryCost: Int, parallelism: Int, hashLength: Int): ByteArray
+	external fun argon2idHashRawImpl(
+		password: ByteArray,
+		salt: ByteArray,
+		timeCost: Int,
+		memoryCost: Int,
+		parallelism: Int,
+		hashLength: Int
+	): ByteArray
 
 	@Throws(CryptoError::class)
 	override suspend fun rsaEncrypt(
-			publicKey: RsaPublicKey,
-			data: DataWrapper,
-			seed: DataWrapper,
+		publicKey: RsaPublicKey,
+		data: DataWrapper,
+		seed: DataWrapper,
 	): DataWrapper {
 		try {
 			return this.rsaEncrypt(
-					javaPublicKey(publicKey),
-					data.data,
-					seed.data
+				javaPublicKey(publicKey),
+				data.data,
+				seed.data
 			).wrap()
 		} catch (e: InvalidKeySpecException) {
 			// These types of errors can happen and that's okay, they should be handled gracefully.
@@ -201,8 +224,8 @@ constructor(
 	override suspend fun rsaDecrypt(privateKey: RsaPrivateKey, data: DataWrapper): DataWrapper {
 		try {
 			return rsaDecrypt(
-					javaPrivateKey(privateKey),
-					data.data,
+				javaPrivateKey(privateKey),
+				data.data,
 			).wrap()
 		} catch (e: InvalidKeySpecException) {
 			// These types of errors can happen and that's okay, they should be handled gracefully.
@@ -231,13 +254,29 @@ constructor(
 		val outputFile = File(tempDir.encrypt, getFileInfo(context, parsedFileUri).name)
 		val inputStream = CountingInputStream(context.contentResolver.openInputStream(parsedFileUri))
 		val out: OutputStream = FileOutputStream(outputFile)
-		aesEncrypt(key.data, inputStream, out, iv.data, useMac = true, usePadding = true)
+		aesEncryptData(key.data, inputStream, out, iv.data)
 		return EncryptedFileInfo(outputFile.toUri(), inputStream.byteCount.toInt())
+	}
+
+	fun aesEncryptData(
+		key: ByteArray,
+		inputStream: InputStream,
+		out: OutputStream,
+		iv: ByteArray = generateIv()
+	) {
+		aesEncrypt(key, inputStream, out, iv, usePadding = true, useMac = true)
 	}
 
 	@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 	@Throws(CryptoError::class, IOException::class)
-	fun aesEncrypt(key: ByteArray, input: InputStream, out: OutputStream, iv: ByteArray, useMac: Boolean = true, usePadding: Boolean = true) {
+	fun aesEncrypt(
+		key: ByteArray,
+		input: InputStream,
+		out: OutputStream,
+		iv: ByteArray,
+		useMac: Boolean = true,
+		usePadding: Boolean = true
+	) {
 		var encrypted: InputStream? = null
 		try {
 			val cipher = if (usePadding) {
@@ -291,12 +330,23 @@ constructor(
 	}
 
 	private fun aes256EncryptKey(encryptionKey: Key, keyToEncryptWithoutIv: ByteArray): ByteArray {
-		val iv = ByteArray(AES_BLOCK_SIZE_BYTES)
-		randomizer.nextBytes(iv)
+		val iv = generateIv()
 		val keyToEncryptStream = ByteArrayInputStream(keyToEncryptWithoutIv)
 		val output = ByteArrayOutputStream()
 		this.aesEncrypt(encryptionKey.encoded, keyToEncryptStream, output, iv, true, false)
 		return output.toByteArray()
+	}
+
+	private fun generateIv(): ByteArray {
+		val iv = ByteArray(AES_BLOCK_SIZE_BYTES)
+		randomizer.nextBytes(iv)
+		return iv
+	}
+
+	fun generateAes256Key(): ByteArray {
+		val key = ByteArray(AES256_KEY_LENGTH_BYTES)
+		randomizer.nextBytes(key)
+		return key
 	}
 
 	private fun aes128EncryptKey(encryptionKey: Key, keyToEncryptWithoutIv: ByteArray): ByteArray {
@@ -319,11 +369,25 @@ constructor(
 		val outputStream = ByteArrayOutputStream()
 		when (getAesKeyLength(encryptionKey)) {
 			AesKeyLength.Aes128 -> {
-				val fullInput = FIXED_IV + encryptedKey // concatenate with fixed IVs since it isn't in the key in the legacy case
-				aesDecrypt(encryptionKey.encoded, ByteArrayInputStream(fullInput), outputStream, fullInput.size.toLong(), false)
+				val fullInput =
+					FIXED_IV + encryptedKey // concatenate with fixed IVs since it isn't in the key in the legacy case
+				aesDecrypt(
+					encryptionKey.encoded,
+					ByteArrayInputStream(fullInput),
+					outputStream,
+					fullInput.size.toLong(),
+					false
+				)
 			}
+
 			AesKeyLength.Aes256 -> {
-				aesDecrypt(encryptionKey.encoded, ByteArrayInputStream(encryptedKey), outputStream, encryptedKey.size.toLong(), false)
+				aesDecrypt(
+					encryptionKey.encoded,
+					ByteArrayInputStream(encryptedKey),
+					outputStream,
+					encryptedKey.size.toLong(),
+					false
+				)
 			}
 		}
 		return outputStream.toByteArray()
@@ -356,7 +420,14 @@ constructor(
 	}
 
 	@Throws(IOException::class, CryptoError::class)
-	private fun aesDecryptImpl(key: ByteArray, input: InputStream, out: OutputStream, inputSize: Long, padding: Boolean, enforceMac: Boolean) {
+	private fun aesDecryptImpl(
+		key: ByteArray,
+		input: InputStream,
+		out: OutputStream,
+		inputSize: Long,
+		padding: Boolean,
+		enforceMac: Boolean
+	) {
 		var inputWithoutMac = input
 		var decrypted: InputStream? = null
 		try {
@@ -419,23 +490,23 @@ constructor(
 	private fun BigInteger.toBase64() = toByteArray().toBase64()
 
 	private fun PrivateKey(javaKey: RSAPrivateCrtKey) = RsaPrivateKey(
-			version = 0,
-			// TODO: is this correct?
-			keyLength = RSA_KEY_LENGTH_IN_BITS,
-			modulus = javaKey.modulus.toBase64(),
-			privateExponent = javaKey.privateExponent.toBase64(),
-			primeP = javaKey.primeP.toBase64(),
-			primeQ = javaKey.primeQ.toBase64(),
-			primeExponentP = javaKey.primeExponentP.toBase64(),
-			primeExponentQ = javaKey.primeExponentQ.toBase64(),
-			crtCoefficient = javaKey.crtCoefficient.toBase64(),
+		version = 0,
+		// TODO: is this correct?
+		keyLength = RSA_KEY_LENGTH_IN_BITS,
+		modulus = javaKey.modulus.toBase64(),
+		privateExponent = javaKey.privateExponent.toBase64(),
+		primeP = javaKey.primeP.toBase64(),
+		primeQ = javaKey.primeQ.toBase64(),
+		primeExponentP = javaKey.primeExponentP.toBase64(),
+		primeExponentQ = javaKey.primeExponentQ.toBase64(),
+		crtCoefficient = javaKey.crtCoefficient.toBase64(),
 	)
 
 	private fun PublicKey(javaKey: RSAPublicKey) = RsaPublicKey(
-			version = 0,
-			keyLength = RSA_KEY_LENGTH_IN_BITS,
-			modulus = javaKey.modulus.toBase64(),
-			publicExponent = RSA_PUBLIC_EXPONENT,
+		version = 0,
+		keyLength = RSA_KEY_LENGTH_IN_BITS,
+		modulus = javaKey.modulus.toBase64(),
+		publicExponent = RSA_PUBLIC_EXPONENT,
 	)
 
 	private fun hasMac(dataLength: Long): Boolean {
@@ -445,8 +516,8 @@ constructor(
 
 
 private class SubKeys(
-		var cKey: SecretKeySpec?,
-		var mKey: ByteArray?,
+	var cKey: SecretKeySpec?,
+	var mKey: ByteArray?,
 )
 
 

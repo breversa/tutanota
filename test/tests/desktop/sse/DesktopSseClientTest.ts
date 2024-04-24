@@ -25,7 +25,7 @@ import { DesktopNativeCredentialsFacade } from "../../../../src/desktop/credenti
 import { fetch, Headers } from "undici"
 import { func, matchers, object, when } from "testdouble"
 import { RequestInit } from "undici/types/fetch.js"
-import { CredentialEncryptionMode } from "../../../../src/native/common/generatedipc/CredentialEncryptionMode.js"
+import { CredentialsEncryptionMode } from "../../../../src/native/common/generatedipc/CredentialEncryptionMode.js"
 import { ExtendedNotificationMode } from "../../../../src/native/common/generatedipc/ExtendedNotificationMode.js"
 
 o.spec("DEPRECATED Test", function () {
@@ -196,7 +196,7 @@ o.spec("DEPRECATED Test", function () {
 		langMock = n.mock<LanguageViewModel>("__lang", lang).set()
 
 		credentialsFacade = object()
-		when(credentialsFacade.getCredentialEncryptionMode()).thenResolve(CredentialEncryptionMode.DEVICE_LOCK)
+		when(credentialsFacade.getCredentialEncryptionMode()).thenResolve(CredentialsEncryptionMode.DEVICE_LOCK)
 		fetchMock = func<typeof fetch>()
 	})
 

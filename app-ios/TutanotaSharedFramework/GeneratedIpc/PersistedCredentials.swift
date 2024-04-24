@@ -7,8 +7,8 @@
 public struct PersistedCredentials : Codable {
 	public init(
 		credentialInfo: CredentialsInfo,
-		accessToken: String,
-		databaseKey: String?,
+		accessToken: DataWrapper,
+		databaseKey: DataWrapper?,
 		encryptedPassword: String
 	) {
 		self.credentialInfo = credentialInfo
@@ -17,7 +17,7 @@ public struct PersistedCredentials : Codable {
 		self.encryptedPassword = encryptedPassword
 	}
 	public let credentialInfo: CredentialsInfo
-	public let accessToken: String
-	public let databaseKey: String?
+	public let accessToken: DataWrapper
+	public let databaseKey: DataWrapper?
 	public let encryptedPassword: String
 }

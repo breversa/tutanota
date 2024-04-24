@@ -13,7 +13,7 @@ import kotlinx.serialization.json.*
 @Serializable
 data class PersistedCredentials(
 	val credentialInfo: CredentialsInfo,
-	val accessToken: String,
-	val databaseKey: String?,
+	val accessToken: DataWrapper,
+	val databaseKey: DataWrapper?,
 	val encryptedPassword: String,
 )

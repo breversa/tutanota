@@ -8,6 +8,7 @@ import androidx.biometric.BiometricPrompt
 import androidx.biometric.BiometricPrompt.PromptInfo
 import androidx.fragment.app.FragmentActivity
 import de.tutao.tutanota.AndroidKeyStoreFacade
+import de.tutao.tutanota.AndroidNativeCryptoFacade
 import de.tutao.tutanota.CredentialAuthenticationException
 import de.tutao.tutanota.CryptoError
 import de.tutao.tutanota.R
@@ -18,8 +19,9 @@ import javax.crypto.Cipher
 class CredentialsEncryptionBeforeAPI30(
 	private val keyStoreFacade: AndroidKeyStoreFacade,
 	private val activity: Context,
+	private val crypto: AndroidNativeCryptoFacade,
 	private val authenticationPrompt: AuthenticationPrompt,
-) : AndroidNativeCredentialsFacade(keyStoreFacade, activity, authenticationPrompt) {
+) : AndroidNativeCredentialsFacade(activity, crypto) {
 	@Throws(
 		KeyStoreException::class,
 		CryptoError::class,
@@ -27,16 +29,13 @@ class CredentialsEncryptionBeforeAPI30(
 		KeyPermanentlyInvalidatedException::class
 	)
 	override suspend fun encryptUsingKeychain(data: ByteArray, encryptionMode: CredentialEncryptionMode): ByteArray {
-
 		var cipher: Cipher
 		try {
 			cipher = keyStoreFacade.getCipherForEncryptionMode(encryptionMode)
 			if (encryptionMode == CredentialEncryptionMode.BIOMETRICS) {
 				val cryptoObject = BiometricPrompt.CryptoObject(cipher)
 				authenticationPrompt.authenticateCryptoObject(
-					activity as FragmentActivity,
-					createPromptInfo(encryptionMode),
-					cryptoObject
+					activity as FragmentActivity, createPromptInfo(encryptionMode), cryptoObject
 				)
 			}
 		} catch (e: KeyStoreException) {
@@ -57,8 +56,7 @@ class CredentialsEncryptionBeforeAPI30(
 		KeyPermanentlyInvalidatedException::class
 	)
 	override suspend fun decryptUsingKeychain(
-		encryptedData: ByteArray,
-		encryptionMode: CredentialEncryptionMode
+		encryptedData: ByteArray, encryptionMode: CredentialEncryptionMode
 	): ByteArray {
 		var cipher: Cipher
 		val dataToDecrypt = encryptedData
@@ -67,9 +65,7 @@ class CredentialsEncryptionBeforeAPI30(
 			if (encryptionMode == CredentialEncryptionMode.BIOMETRICS) {
 				val cryptoObject = BiometricPrompt.CryptoObject(cipher)
 				authenticationPrompt.authenticateCryptoObject(
-					activity as FragmentActivity,
-					createPromptInfo(encryptionMode),
-					cryptoObject
+					activity as FragmentActivity, createPromptInfo(encryptionMode), cryptoObject
 				)
 			}
 		} catch (e: KeyStoreException) {

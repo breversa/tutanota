@@ -4,6 +4,7 @@ import de.tutao.tutanota.MainActivity
 import de.tutao.tutanota.alarms.AlarmNotificationsManager
 import de.tutao.tutanota.ipc.DataWrapper
 import de.tutao.tutanota.ipc.EncryptedAlarmNotification
+import de.tutao.tutanota.ipc.ExtendedNotificationMode
 import de.tutao.tutanota.ipc.NativePushFacade
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -52,6 +53,14 @@ class AndroidNativePushFacade(
 
 	override suspend fun invalidateAlarmsForUser(userId: String) {
 		alarmNotificationsManager.unscheduleAlarms(userId)
+	}
+
+	override suspend fun setExtendedNotificationConfig(mode: ExtendedNotificationMode) {
+		this.sseStorage.setExtendedNotificationConfig(mode)
+	}
+
+	override suspend fun getExtendedNotificationConfig(): ExtendedNotificationMode {
+		return this.sseStorage.getExtendedNotificationConfig()
 	}
 
 	override suspend fun removeUser(userId: String) {

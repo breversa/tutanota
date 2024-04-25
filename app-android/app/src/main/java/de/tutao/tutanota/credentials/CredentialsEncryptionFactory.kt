@@ -13,9 +13,9 @@ object CredentialsEncryptionFactory {
 		val authenticationPrompt = AuthenticationPrompt()
 		val keyStoreFacade = de.tutao.tutanota.createAndroidKeyStoreFacade(crypto)
 		return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-			CredentialsEncryptionBeforeAPI30(keyStoreFacade, activity, authenticationPrompt)
+			CredentialsEncryptionBeforeAPI30(keyStoreFacade, activity, crypto, authenticationPrompt)
 		} else {
-			CredentialsEncryptionFromAPI30(keyStoreFacade, activity, authenticationPrompt)
+			CredentialsEncryptionFromAPI30(keyStoreFacade, activity, crypto, authenticationPrompt)
 		}
 	}
 }

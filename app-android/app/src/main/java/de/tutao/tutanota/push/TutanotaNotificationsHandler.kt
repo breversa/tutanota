@@ -236,22 +236,18 @@ class TutanotaNotificationsHandler(
 	private suspend fun downloadEmailMetadata(sseInfo: SseInfo, notificationInfo: NotificationInfo): MailMetadata? {
 		val url = makeEmailMetaDownloadUrl(sseInfo, notificationInfo)
 
-		// accessToken
-		val accessToken = appDatabase.PersistedCredentialsDao().allPersistedCredentials.firstOrNull {
-			it.userId == notificationInfo.userId
-		}?.accessToken ?: return null
-
-		val encryptedCredentialsKey = credentialsEncryption.getCredentialsEncryptionKey() ?: return null
-		val credentialsKey =
-			credentialsEncryption.decryptUsingKeychain(encryptedCredentialsKey, CredentialEncryptionMode.DEVICE_LOCK)
-		val decryptedAccessToken = crypto.decryptString(accessToken, credentialsKey.data)
+		val credentials = credentialsEncryption.loadByUserId(notificationInfo.userId)
+		if (credentials == null) {
+			Log.w(TAG, "Not found credentials to download notification, userId ${notificationInfo.userId}")
+			return null
+		}
 
 		val requestBuilder = Request.Builder()
 			.url(url)
 			.method("GET", null)
 			.header("Content-Type", "application/json")
 			.header("userIds", notificationInfo.userId ?: "")
-			.header("accessToken", decryptedAccessToken)
+			.header("accessToken", credentials.accessToken)
 		// why here v is sys model version but on ios it is entity model version?
 		addCommonHeadersWithTutanotaModelVersion(requestBuilder)
 

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 2,
-    "identityHash": "a8f85d2d981f38438ec8413baa24fd54",
+    "identityHash": "e9180b1d7a22f61d1b733c5a2c293ebc",
     "entities": [
       {
         "tableName": "KeyValue",
@@ -18,6 +18,32 @@
             "fieldPath": "value",
             "columnName": "value",
             "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "key"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "KeyBlob",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`key` TEXT NOT NULL, `value` BLOB, PRIMARY KEY(`key`))",
+        "fields": [
+          {
+            "fieldPath": "key",
+            "columnName": "key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "BLOB",
             "notNull": false
           }
         ],
@@ -168,18 +194,18 @@
       },
       {
         "tableName": "PersistedCredentials",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`accessToken` TEXT NOT NULL, `databaseKey` TEXT, `encryptedPassword` TEXT NOT NULL, `login` TEXT NOT NULL, `userId` TEXT NOT NULL, `type` TEXT NOT NULL, PRIMARY KEY(`userId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`accessToken` BLOB NOT NULL, `databaseKey` BLOB, `encryptedPassword` TEXT NOT NULL, `login` TEXT NOT NULL, `userId` TEXT NOT NULL, `type` TEXT NOT NULL, PRIMARY KEY(`userId`))",
         "fields": [
           {
             "fieldPath": "accessToken",
             "columnName": "accessToken",
-            "affinity": "TEXT",
+            "affinity": "BLOB",
             "notNull": true
           },
           {
             "fieldPath": "databaseKey",
             "columnName": "databaseKey",
-            "affinity": "TEXT",
+            "affinity": "BLOB",
             "notNull": false
           },
           {
@@ -240,7 +266,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a8f85d2d981f38438ec8413baa24fd54')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e9180b1d7a22f61d1b733c5a2c293ebc')"
     ]
   }
 }

@@ -2,17 +2,9 @@ package de.tutao.tutanota.credentials
 
 import android.content.Context
 import android.security.keystore.KeyPermanentlyInvalidatedException
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.emptyPreferences
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
-import de.tutao.tutanota.AndroidKeyStoreFacade
 import de.tutao.tutanota.AndroidNativeCryptoFacade
 import de.tutao.tutanota.AndroidNativeCryptoFacade.Companion.bytesToKey
 import de.tutao.tutanota.CryptoError
-import de.tutao.tutanota.base64ToBytes
 import de.tutao.tutanota.data.AppDatabase
 import de.tutao.tutanota.ipc.CredentialEncryptionMode
 import de.tutao.tutanota.ipc.DataWrapper
@@ -20,30 +12,17 @@ import de.tutao.tutanota.ipc.NativeCredentialsFacade
 import de.tutao.tutanota.ipc.PersistedCredentials
 import de.tutao.tutanota.ipc.UnencryptedCredentials
 import de.tutao.tutanota.ipc.wrap
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.firstOrNull
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.IOException
 
 abstract class AndroidNativeCredentialsFacade(
-	private val keyStoreFacade: AndroidKeyStoreFacade,
 	private val activity: Context,
 	private val crypto: AndroidNativeCryptoFacade,
-	private val authenticationPrompt: AuthenticationPrompt
 ) : NativeCredentialsFacade {
 	private val db: AppDatabase = AppDatabase.getDatabase(activity, false)
-	private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 	companion object {
 		// FIXME Can we move this to somewhere all platforms can read?
-		private val ENCRYPTION_MODE_KEY = "credentialEncryptionMode"
-		private val CREDENTIALS_ENCRYPTION_KEY_KEY = "credentialsEncryptionKey"
-	}
-
-	private object PreferencesKeys {
-		val ENCRYPTION_MODE_KEY_PREF = stringPreferencesKey(ENCRYPTION_MODE_KEY)
-		val CREDENTIALS_ENCRYPTION_KEY_KEY_PREF = stringPreferencesKey(CREDENTIALS_ENCRYPTION_KEY_KEY)
+		private const val CREDENTIALS_ENCRYPTION_MODE_KEY = "credentialEncryptionMode"
+		private const val CREDENTIALS_ENCRYPTION_KEY_KEY = "credentialsEncryptionKey"
 	}
 
 	override suspend fun loadAll(): List<PersistedCredentials> {
@@ -53,11 +32,11 @@ abstract class AndroidNativeCredentialsFacade(
 	override suspend fun store(credentials: UnencryptedCredentials) {
 		val credentialsEncryptionKey = this.getOrCreateCredentialEncryptionKey()
 		val encryptedCredentials: PersistedCredentials = this.encryptCredentials(credentials, credentialsEncryptionKey)
-		db.PersistedCredentialsDao().insertPersistedCredentials(encryptedCredentials.toEntity())
+		this.storeEncrypted(encryptedCredentials)
 	}
 
 	override suspend fun storeEncrypted(credentials: PersistedCredentials) {
-		TODO("Not yet implemented")
+		db.PersistedCredentialsDao().insertPersistedCredentials(credentials.toEntity())
 	}
 
 	override suspend fun loadByUserId(id: String): UnencryptedCredentials? {
@@ -72,58 +51,44 @@ abstract class AndroidNativeCredentialsFacade(
 	}
 
 	override suspend fun clear() {
-		TODO("Not yet implemented")
+		db.PersistedCredentialsDao().clear()
+		this.setCredentialsEncryptionKey(null)
+		this.setCredentialEncryptionMode(null)
 	}
 
 	override suspend fun migrateToNativeCredentials(
 		credentials: List<PersistedCredentials>, encryptionMode: CredentialEncryptionMode, credentialsKey: DataWrapper
 	) {
-		TODO("Not yet implemented")
-	}
-
-	override suspend fun getCredentialEncryptionMode(): CredentialEncryptionMode? {
-		val encryptionModeStr = activity.dataStore.data.catch { exception ->
-			if (exception is IOException) {
-				emit(emptyPreferences())
-			} else {
-				throw exception
-			}
-		}.firstOrNull()?.get(PreferencesKeys.ENCRYPTION_MODE_KEY_PREF)
-
-		return if (encryptionModeStr != null) enumValueOf<CredentialEncryptionMode>(encryptionModeStr) else null
-	}
-
-	override suspend fun setCredentialEncryptionMode(encryptionMode: CredentialEncryptionMode?) {
-		activity.dataStore.edit { preferences ->
-			if (encryptionMode != null) preferences[PreferencesKeys.ENCRYPTION_MODE_KEY_PREF] = encryptionMode.name
+		this.setCredentialEncryptionMode(encryptionMode)
+		this.setCredentialsEncryptionKey(credentialsKey.data)
+		for (credential: PersistedCredentials in credentials) {
+			this.storeEncrypted(credential)
 		}
 	}
 
-	suspend fun getCredentialsEncryptionKey(): DataWrapper? {
-		val credentialsEncryptionKey = activity.dataStore.data.catch { exception ->
-			if (exception is IOException) {
-				emit(emptyPreferences())
-			} else {
-				throw exception
-			}
-		}.firstOrNull()?.get(PreferencesKeys.CREDENTIALS_ENCRYPTION_KEY_KEY_PREF)
-
-		return credentialsEncryptionKey?.base64ToBytes()?.wrap()
+	override suspend fun getCredentialEncryptionMode(): CredentialEncryptionMode? {
+		return enumValues<CredentialEncryptionMode>().firstOrNull {
+			it.name == (db.keyValueDao().getString(CREDENTIALS_ENCRYPTION_MODE_KEY) ?: "")
+		}
 	}
 
-	suspend fun setCredentialsEncryptionKey(credentialsEncryptionKey: ByteArray?) {
-		TODO("Not yet implemented")
-//		activity.dataStore.edit { preferences ->
-//			if (credentialsEncryptionKey != null) preferences[PreferencesKeys.CREDENTIALS_ENCRYPTION_KEY_KEY_PREF] =
-//				credentialsEncryptionKey
-//		}
+	override suspend fun setCredentialEncryptionMode(encryptionMode: CredentialEncryptionMode?) {
+		db.keyValueDao().putString(CREDENTIALS_ENCRYPTION_MODE_KEY, encryptionMode?.name)
+	}
+
+	private fun getCredentialsEncryptionKey(): ByteArray? {
+		return db.keyBlobDao().get(CREDENTIALS_ENCRYPTION_KEY_KEY)
+	}
+
+	private fun setCredentialsEncryptionKey(credentialsEncryptionKey: ByteArray?) {
+		db.keyBlobDao().put(CREDENTIALS_ENCRYPTION_KEY_KEY, credentialsEncryptionKey)
 	}
 
 	private suspend fun getOrCreateCredentialEncryptionKey(): ByteArray {
 		val encryptionMode = this.getCredentialEncryptionMode() ?: CredentialEncryptionMode.DEVICE_LOCK
 		val exisingKey = this.getCredentialsEncryptionKey()
 		if (exisingKey != null) {
-			return decryptUsingKeychain(exisingKey.data, encryptionMode)
+			return decryptUsingKeychain(exisingKey, encryptionMode)
 		} else {
 			val newKey = this.crypto.generateAes256Key()
 			val encryptedKey = this.encryptUsingKeychain(newKey, encryptionMode)
@@ -146,10 +111,9 @@ abstract class AndroidNativeCredentialsFacade(
 			return UnencryptedCredentials(
 				credentialInfo = persistedCredentials.credentialInfo,
 				encryptedPassword = persistedCredentials.encryptedPassword,
-				accessToken =
-				this.crypto.aesDecryptData(
-					credentialsKey, persistedCredentials.accessToken
-				),
+				accessToken = this.crypto.aesDecryptData(
+					credentialsKey, persistedCredentials.accessToken.data
+				).decodeToString(),
 				databaseKey = databaseKey,
 			)
 		} catch (e: KeyPermanentlyInvalidatedException) {
@@ -161,10 +125,8 @@ abstract class AndroidNativeCredentialsFacade(
 	private fun encryptCredentials(
 		unencryptedCredentials: UnencryptedCredentials, credentialsEncryptionKey: ByteArray
 	): PersistedCredentials {
-		val bais = ByteArrayInputStream(unencryptedCredentials.accessToken.encodeToByteArray())
-		val baos = ByteArrayOutputStream()
-		this.crypto.aesEncryptData(credentialsEncryptionKey, bais, baos)
-		val accessToken = baos.toByteArray()
+		val accessToken =
+			this.crypto.aesEncryptData(credentialsEncryptionKey, unencryptedCredentials.accessToken.encodeToByteArray())
 
 		val databaseKey = if (unencryptedCredentials.databaseKey != null) {
 			this.crypto.encryptKey(

@@ -12,6 +12,7 @@ import de.tutao.tutanota.credentials.PersistedCredentialsEntity
 @Database(
 	version = 2, entities = [
 		KeyValue::class,
+		KeyBlob::class,
 		PushIdentifierKey::class,
 		AlarmNotificationEntity::class,
 		PersistedCredentialsEntity::class,
@@ -22,6 +23,7 @@ import de.tutao.tutanota.credentials.PersistedCredentialsEntity
 )
 abstract class AppDatabase : RoomDatabase() {
 	abstract fun keyValueDao(): KeyValueDao
+	abstract fun keyBlobDao(): KeyBlobDao
 	abstract fun userInfoDao(): UserInfoDao
 	abstract fun alarmInfoDao(): AlarmInfoDao
 	abstract fun PersistedCredentialsDao(): PersistedCredentialsDao

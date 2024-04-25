@@ -254,17 +254,20 @@ constructor(
 		val outputFile = File(tempDir.encrypt, getFileInfo(context, parsedFileUri).name)
 		val inputStream = CountingInputStream(context.contentResolver.openInputStream(parsedFileUri))
 		val out: OutputStream = FileOutputStream(outputFile)
-		aesEncryptData(key.data, inputStream, out, iv.data)
+		aesEncrypt(key.data, inputStream, out, iv.data, usePadding = true, useMac = true)
 		return EncryptedFileInfo(outputFile.toUri(), inputStream.byteCount.toInt())
 	}
 
+	@Throws(IOException::class, CryptoError::class)
 	fun aesEncryptData(
 		key: ByteArray,
-		inputStream: InputStream,
-		out: OutputStream,
+		input: ByteArray,
 		iv: ByteArray = generateIv()
-	) {
-		aesEncrypt(key, inputStream, out, iv, usePadding = true, useMac = true)
+	): ByteArray {
+		val bais = ByteArrayInputStream(input)
+		val baos = ByteArrayOutputStream()
+		aesEncrypt(key, bais, baos, iv, usePadding = true, useMac = true)
+		return baos.toByteArray()
 	}
 
 	@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -319,6 +322,17 @@ constructor(
 		val out: OutputStream = FileOutputStream(outputFile)
 		aesDecrypt(key.data, input, out, file.size, true)
 		return Uri.fromFile(outputFile).toString()
+	}
+
+	@Throws(IOException::class, CryptoError::class)
+	fun aesDecryptData(
+		key: ByteArray,
+		input: ByteArray,
+	): ByteArray {
+		val bais = ByteArrayInputStream(input)
+		val baos = ByteArrayOutputStream()
+		aesDecrypt(key, bais, baos, input.count().toLong(), padding = true)
+		return baos.toByteArray()
 	}
 
 	@Throws(CryptoError::class)

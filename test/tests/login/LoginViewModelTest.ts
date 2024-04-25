@@ -22,7 +22,7 @@ import { NativePushServiceApp } from "../../../src/native/main/NativePushService
 import { PersistedCredentials } from "../../../src/native/common/generatedipc/PersistedCredentials.js"
 import { CredentialType } from "../../../src/misc/credentials/CredentialType.js"
 import { UnencryptedCredentials } from "../../../src/native/common/generatedipc/UnencryptedCredentials.js"
-import { base64ToUint8Array, uint8ArrayToBase64 } from "@tutao/tutanota-utils"
+import { stringToUtf8Uint8Array, utf8Uint8ArrayToString } from "@tutao/tutanota-utils"
 
 const { anything } = matchers
 
@@ -54,9 +54,9 @@ function getCredentialsProviderStub(): CredentialsProvider {
 				login: storedCredentials.credentialInfo.login,
 				type: storedCredentials.credentialInfo.type,
 			},
-			accessToken: storedCredentials.accessToken,
+			accessToken: utf8Uint8ArrayToString(storedCredentials.accessToken),
 			encryptedPassword: storedCredentials.encryptedPassword,
-			databaseKey: storedCredentials.databaseKey ? base64ToUint8Array(storedCredentials.databaseKey) : null,
+			databaseKey: storedCredentials.databaseKey,
 		}
 	}) satisfies CredentialsProvider["getDecryptedCredentialsByUserId"])
 
@@ -67,9 +67,9 @@ function getCredentialsProviderStub(): CredentialsProvider {
 				login: credential.credentialInfo.login,
 				type: credential.credentialInfo.type,
 			},
-			accessToken: credential.accessToken,
+			accessToken: stringToUtf8Uint8Array(credential.accessToken),
 			encryptedPassword: credential.encryptedPassword,
-			databaseKey: credential.databaseKey ? uint8ArrayToBase64(credential.databaseKey) : null,
+			databaseKey: credential.databaseKey,
 		})
 	}) satisfies CredentialsProvider["store"])
 
@@ -98,7 +98,7 @@ o.spec("LoginViewModelTest", () => {
 			type: CredentialType.internal,
 		},
 		encryptedPassword: "encryptedPassword",
-		accessToken: "accessToken",
+		accessToken: stringToUtf8Uint8Array("accessToken"),
 		databaseKey: null,
 	} as const)
 

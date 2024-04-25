@@ -1,9 +1,8 @@
 import o from "@tutao/otest"
-import { DeviceConfig, ListAutoSelectBehavior, migrateConfig, migrateConfigV2to3 } from "../../../src/misc/DeviceConfig.js"
+import { DeviceConfig, DeviceConfigCredentials, ListAutoSelectBehavior, migrateConfig, migrateConfigV2to3 } from "../../../src/misc/DeviceConfig.js"
 import { matchers, object, when } from "testdouble"
 import { verify } from "@tutao/tutanota-test-utils"
 import { CredentialEncryptionMode } from "../../../src/misc/credentials/CredentialEncryptionMode.js"
-import { PersistedCredentials } from "../../../src/native/common/generatedipc/PersistedCredentials.js"
 import { CredentialType } from "../../../src/misc/credentials/CredentialType.js"
 
 o.spec("DeviceConfig", function () {
@@ -29,7 +28,7 @@ o.spec("DeviceConfig", function () {
 
 			migrateConfigV2to3(oldConfig)
 
-			const expectedCredentialsAfterMigration: Record<string, Omit<PersistedCredentials, "databaseKey">> = {
+			const expectedCredentialsAfterMigration: Record<string, Omit<DeviceConfigCredentials, "databaseKey">> = {
 				internalUserId: {
 					credentialInfo: {
 						login: "internal@example.com",

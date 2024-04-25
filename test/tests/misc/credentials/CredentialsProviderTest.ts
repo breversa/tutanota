@@ -1,6 +1,6 @@
 import o from "@tutao/otest"
 import { CredentialsProvider } from "../../../../src/misc/credentials/CredentialsProvider.js"
-import { assertNotNull } from "@tutao/tutanota-utils"
+import { assertNotNull, stringToUtf8Uint8Array } from "@tutao/tutanota-utils"
 import { CredentialEncryptionMode } from "../../../../src/misc/credentials/CredentialEncryptionMode.js"
 import { object, when } from "testdouble"
 import { verify } from "@tutao/tutanota-test-utils"
@@ -11,8 +11,6 @@ import { UnencryptedCredentials } from "../../../../src/native/common/generatedi
 import { CredentialType } from "../../../../src/misc/credentials/CredentialType.js"
 import { NativeCredentialsFacade } from "../../../../src/native/common/generatedipc/NativeCredentialsFacade.js"
 import { CredentialsInfo } from "../../../../src/native/common/generatedipc/CredentialsInfo.js"
-
-const encryptionKey = new Uint8Array([1, 2, 5, 8])
 
 o.spec("CredentialsProvider", function () {
 	let credentialsProvider: CredentialsProvider
@@ -63,8 +61,8 @@ o.spec("CredentialsProvider", function () {
 				type: internalCredentials.credentialInfo.type,
 			},
 			encryptedPassword: assertNotNull(internalCredentials.encryptedPassword),
-			accessToken: internalCredentials.accessToken,
-			databaseKey: "SSBhbSBhIGtleQo=",
+			accessToken: stringToUtf8Uint8Array(internalCredentials.accessToken),
+			databaseKey: new Uint8Array([1, 2, 3]),
 		}
 		encryptedExternalCredentials = {
 			credentialInfo: {
@@ -73,8 +71,8 @@ o.spec("CredentialsProvider", function () {
 				type: externalCredentials.credentialInfo.type,
 			},
 			encryptedPassword: assertNotNull(externalCredentials.encryptedPassword),
-			accessToken: externalCredentials.accessToken,
-			databaseKey: "SSBhbSBhIGtleQo=",
+			accessToken: stringToUtf8Uint8Array(externalCredentials.accessToken),
+			databaseKey: new Uint8Array([1, 2, 3]),
 		}
 		encryptedInternalCredentialsWithoutDatabaseKey = {
 			credentialInfo: {
@@ -83,7 +81,7 @@ o.spec("CredentialsProvider", function () {
 				type: internalCredentials.credentialInfo.type,
 			},
 			encryptedPassword: assertNotNull(internalCredentials2.encryptedPassword),
-			accessToken: internalCredentials2.accessToken,
+			accessToken: stringToUtf8Uint8Array(internalCredentials2.accessToken),
 		}
 		sqlCipherFacadeMock = object()
 		interWindowEventSenderMock = object()
@@ -173,8 +171,8 @@ o.spec("CredentialsProvider", function () {
 		}
 		const persistentCredentials: PersistedCredentials = {
 			credentialInfo: credentials,
-			accessToken: "accessToken",
-			databaseKey: "databaseKey",
+			accessToken: stringToUtf8Uint8Array("accessToken"),
+			databaseKey: new Uint8Array([1, 2, 3]),
 			encryptedPassword: "old encrypted password",
 		}
 		const newEncryptedPassword = "uhagre2"
@@ -188,8 +186,8 @@ o.spec("CredentialsProvider", function () {
 			verify(
 				nativeCredentialFacadeMock.storeEncrypted({
 					credentialInfo: credentials,
-					accessToken: "accessToken",
-					databaseKey: "databaseKey",
+					accessToken: stringToUtf8Uint8Array("accessToken"),
+					databaseKey: new Uint8Array([1, 2, 3]),
 					encryptedPassword: newEncryptedPassword,
 				}),
 			)

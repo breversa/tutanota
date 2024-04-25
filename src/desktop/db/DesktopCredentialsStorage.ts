@@ -17,7 +17,7 @@ const TableDefinitions = Object.freeze({
 		"login TEXT NOT NULL, userId TEXT NOT NULL, type TEXT NOT NULL, accessToken BLOB NOT NULL, databaseKey BLOB," +
 		" encryptedPassword TEXT NOT NULL, PRIMARY KEY (userId), UNIQUE(login)",
 	credentialsEncryptionMode: "credentialsEncryptionMode TEXT, FOREIGN KEY(credentialsEncryptionMode) REFERENCES credentialsEncryptionModeEnum(mode)",
-	credentialEncryptionKey: "credentialEncryptionKey BLOB",
+	credentialsEncryptionKey: "credentialsEncryptionKey BLOB",
 } as const)
 
 /**

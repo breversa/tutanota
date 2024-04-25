@@ -1,5 +1,12 @@
-import type { Base64 } from "@tutao/tutanota-utils"
-import { base64ToUint8Array, typedEntries, uint8ArrayToBase64 } from "@tutao/tutanota-utils"
+import {
+	Base64,
+	base64ToUint8Array,
+	mapNullable,
+	stringToUtf8Uint8Array,
+	typedEntries,
+	uint8ArrayToBase64,
+	utf8Uint8ArrayToString,
+} from "@tutao/tutanota-utils"
 import type { LanguageCode } from "./LanguageViewModel"
 import type { ThemePreference } from "../gui/theme"
 import { ProgrammingError } from "../api/common/error/ProgrammingError"
@@ -10,6 +17,7 @@ import { client } from "./ClientDetector"
 import { NewsItemStorage } from "./news/NewsModel.js"
 import { CalendarViewType } from "../calendar/gui/CalendarGuiUtils.js"
 import { PersistedCredentials } from "../native/common/generatedipc/PersistedCredentials.js"
+import { CredentialsInfo } from "../native/common/generatedipc/CredentialsInfo.js"
 
 assertMainOrNodeBoot()
 export const defaultThemePreference: ThemePreference = "auto:light|dark"
@@ -25,7 +33,7 @@ export enum ListAutoSelectBehavior {
  */
 interface ConfigObject {
 	_version: number
-	_credentials: Map<Id, PersistedCredentials>
+	_credentials: Map<Id, DeviceConfigCredentials>
 	scheduledAlarmModelVersionPerUser: Record<Id, number>
 	_themeId: ThemePreference
 	_language: LanguageCode | null
@@ -141,26 +149,24 @@ export class DeviceConfig implements UsageTestStorage, NewsItemStorage {
 	}
 
 	storeCredentials(persistentCredentials: PersistedCredentials) {
-		const existing = this.config._credentials.get(persistentCredentials.credentialInfo.userId)
+		const deviceConfigCredentials = persistedCredentialsToDeviceConfig(persistentCredentials)
 
-		let credentialsWithKey
-		if (existing?.databaseKey) {
-			credentialsWithKey = { ...persistentCredentials, databaseKey: existing.databaseKey }
-		} else {
-			credentialsWithKey = { ...persistentCredentials }
-		}
-
-		this.config._credentials.set(persistentCredentials.credentialInfo.userId, persistentCredentials)
+		this.config._credentials.set(persistentCredentials.credentialInfo.userId, deviceConfigCredentials)
 
 		this.writeToStorage()
 	}
 
 	getCredentialsByUserId(userId: Id): PersistedCredentials | null {
-		return this.config._credentials.get(userId) ?? null
+		const deviceConfigCredentials = this.config._credentials.get(userId)
+		if (deviceConfigCredentials) {
+			return deviceConfigCredentialsToPersisted(deviceConfigCredentials)
+		} else {
+			return null
+		}
 	}
 
 	getCredentials(): Array<PersistedCredentials> {
-		return Array.from(this.config._credentials.values())
+		return Array.from(this.config._credentials.values()).map(deviceConfigCredentialsToPersisted)
 	}
 
 	async deleteByUserId(userId: Id): Promise<void> {
@@ -427,6 +433,35 @@ export function migrateConfigV2to3(loadedConfig: any) {
 			encryptedPassword: credential.encryptedPassword,
 			accessToken: credential.accessToken,
 		}
+	}
+}
+
+/**
+ * Credentials as they are stored in DeviceConfig (byte arrays replaced with strings as DeviceConfig can only deal with strings).
+ * @private visibleForTesting
+ */
+export interface DeviceConfigCredentials {
+	readonly credentialInfo: CredentialsInfo
+	readonly accessToken: string
+	readonly databaseKey: Base64 | null
+	readonly encryptedPassword: string
+}
+
+function persistedCredentialsToDeviceConfig(persistentCredentials: PersistedCredentials): DeviceConfigCredentials {
+	return {
+		credentialInfo: persistentCredentials.credentialInfo,
+		encryptedPassword: persistentCredentials.encryptedPassword,
+		accessToken: utf8Uint8ArrayToString(persistentCredentials.accessToken),
+		databaseKey: mapNullable(persistentCredentials.databaseKey, uint8ArrayToBase64),
+	}
+}
+
+function deviceConfigCredentialsToPersisted(deviceConfigCredentials: DeviceConfigCredentials): PersistedCredentials {
+	return {
+		credentialInfo: deviceConfigCredentials.credentialInfo,
+		encryptedPassword: deviceConfigCredentials.encryptedPassword,
+		accessToken: stringToUtf8Uint8Array(deviceConfigCredentials.accessToken),
+		databaseKey: mapNullable(deviceConfigCredentials.databaseKey, base64ToUint8Array),
 	}
 }
 

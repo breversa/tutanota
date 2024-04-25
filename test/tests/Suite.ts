@@ -121,6 +121,8 @@ import "./api/worker/pdf/PdfObjectTest.js"
 import "./api/worker/invoicegen/PdfInvoiceGeneratorTest.js"
 import "./subscription/SignupFormTest.js"
 import "./api/worker/facades/ContactFacadeTest.js"
+import "./mail/view/ConversationViewModelTest.js"
+import "./mail/view/MailViewerViewModelTest.js"
 
 import * as td from "testdouble"
 import { random } from "@tutao/tutanota-crypto"
@@ -176,14 +178,14 @@ async function setupSuite({ integration }: { integration?: boolean }) {
 		await import("./api/worker/offline/OfflineStorageMigratorTest.js")
 		await import("./api/worker/offline/OfflineStorageMigrationsTest.js")
 		await import("./api/worker/offline/OfflineStorageTest.js")
-		await import("./mail/view/ConversationViewModelTest.js")
-		await import("./mail/view/MailViewerViewModelTest.js")
+
 		await import("./desktop/config/DesktopConfigTest.js")
 		await import("./api/worker/rest/RestClientTest.js")
 		await import("./desktop/files/TempFsTest.js")
 		await import("./desktop/sse/SseClientTest.js")
 		await import("./desktop/sse/TutaSseFacadeTest.js")
 		await import("./desktop/sse/TutaNotificationHandlerTest.js")
+		await import("./desktop/credentials/KeychainEncryptionTest.js")
 	}
 
 	// testdouble complains about certain mocking related code smells, and also prints a warning whenever you replace a property on an object.

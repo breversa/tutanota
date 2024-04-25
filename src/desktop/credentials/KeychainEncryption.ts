@@ -5,7 +5,7 @@ import { AppPassHandler } from "./AppPassHandler.js"
 import { DesktopNativeCryptoFacade } from "../DesktopNativeCryptoFacade.js"
 import { CryptoError } from "@tutao/tutanota-crypto/error.js"
 
-export class KeychainManager {
+export class KeychainEncryption {
 	constructor(
 		private readonly appPassHandler: AppPassHandler,
 		private readonly crypto: DesktopNativeCryptoFacade,

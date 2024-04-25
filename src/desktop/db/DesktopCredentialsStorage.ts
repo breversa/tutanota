@@ -106,7 +106,7 @@ ${credentials.accessToken}, ${credentials.databaseKey}, ${credentials.encryptedP
 		return this.run(formattedQuery)
 	}
 
-	getAllCredentials() {
+	getAllCredentials(): PersistedCredentials[] {
 		const records = this.all(usql`SELECT * FROM credentials`)
 		return records.map((row) => this.unmapCredentials(row))
 	}
@@ -133,7 +133,7 @@ ${credentials.accessToken}, ${credentials.databaseKey}, ${credentials.encryptedP
 		}
 	}
 
-	private unmapCredentials(row: Record<string, string | number | Uint8Array | null>) {
+	private unmapCredentials(row: Record<string, string | number | Uint8Array | null>): PersistedCredentials {
 		const credentialType = CredentialType[row.type as keyof typeof CredentialType]
 		if (!credentialType) throw Error() // FIXME different error
 		return {
@@ -168,16 +168,16 @@ ${credentials.accessToken}, ${credentials.databaseKey}, ${credentials.encryptedP
 		return this.db.prepare(query).all(params)
 	}
 
-	getCredentialEncryptionMode(): string | null {
+	getCredentialEncryptionMode(): CredentialEncryptionMode | null {
 		const row = this.get(usql`SELECT credentialsEncryptionMode FROM credentialsEncryptionMode LIMIT 1`)
 		if (!row) return null
-		return row.credentialsEncryptionMode as string
+		return row.credentialsEncryptionMode as CredentialEncryptionMode
 	}
 
-	getCredentialEncryptionKey(): Base64 | null {
+	getCredentialEncryptionKey(): Uint8Array | null {
 		const row = this.get(usql`SELECT credentialsEncryptionKey FROM credentialsEncryptionKey LIMIT 1`)
 		if (!row) return null
-		return row.credentialsEncryptionKey as string
+		return row.credentialsEncryptionKey as Uint8Array
 	}
 
 	setCredentialEncryptionMode(encryptionMode: CredentialEncryptionMode | null) {
@@ -187,7 +187,7 @@ ${credentials.accessToken}, ${credentials.databaseKey}, ${credentials.encryptedP
 		}
 	}
 
-	setCredentialEncryptionKey(encryptionKey: Base64 | null) {
+	setCredentialEncryptionKey(encryptionKey: Uint8Array | null) {
 		this.run(usql`DELETE FROM credentialsEncryptionKey`)
 		if (encryptionKey != null) {
 			this.run(usql`INSERT INTO credentialsEncryptionKey (credentialsEncryptionKey) VALUES (${encryptionKey})`)

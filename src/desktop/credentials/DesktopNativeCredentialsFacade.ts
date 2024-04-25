@@ -1,6 +1,6 @@
 import { CredentialEncryptionMode } from "../../misc/credentials/CredentialEncryptionMode.js"
 import { DesktopNativeCryptoFacade } from "../DesktopNativeCryptoFacade"
-import { base64ToUint8Array, stringToUtf8Uint8Array, uint8ArrayToBase64, utf8Uint8ArrayToString } from "@tutao/tutanota-utils"
+import { stringToUtf8Uint8Array, utf8Uint8ArrayToString } from "@tutao/tutanota-utils"
 import { NativeCredentialsFacade } from "../../native/common/generatedipc/NativeCredentialsFacade.js"
 import { bitArrayToUint8Array, uint8ArrayToBitArray } from "@tutao/tutanota-crypto"
 import { KeyPermanentlyInvalidatedError } from "../../api/common/error/KeyPermanentlyInvalidatedError.js"
@@ -8,7 +8,7 @@ import { PersistedCredentials } from "../../native/common/generatedipc/Persisted
 import { DesktopCredentialsStorage } from "../db/DesktopCredentialsStorage.js"
 import { UnencryptedCredentials } from "../../native/common/generatedipc/UnencryptedCredentials.js"
 import { assertSupportedEncryptionMode, DesktopCredentialsMode, SUPPORTED_MODES } from "./CredentialCommons.js"
-import { KeychainManager } from "./KeychainManager.js"
+import { KeychainEncryption } from "./KeychainEncryption.js"
 
 /**
  * Native storage will transparently encrypt and decrypt database key and access token during load and store calls.
@@ -17,7 +17,7 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 	constructor(
 		private readonly crypto: DesktopNativeCryptoFacade,
 		private readonly credentialDb: DesktopCredentialsStorage,
-		private readonly keychainManager: KeychainManager,
+		private readonly keychainEncryption: KeychainEncryption,
 	) {}
 
 	async getSupportedEncryptionModes(): Promise<ReadonlyArray<DesktopCredentialsMode>> {
@@ -29,8 +29,7 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 	}
 
 	async getCredentialEncryptionMode(): Promise<CredentialEncryptionMode | null> {
-		const retVal = this.credentialDb.getCredentialEncryptionMode()
-		return retVal ? CredentialEncryptionMode[retVal as keyof typeof CredentialEncryptionMode] : null
+		return this.credentialDb.getCredentialEncryptionMode()
 	}
 
 	private getDesktopCredentialEncryptionMode(): DesktopCredentialsMode | null {
@@ -38,17 +37,15 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 		return retVal ? CredentialEncryptionMode[retVal as DesktopCredentialsMode] : null
 	}
 
-	private getCredentialsEncryptionKey(): Uint8Array | null {
-		const credentialsEncryptionKey = this.credentialDb.getCredentialEncryptionKey()
-		return credentialsEncryptionKey ? base64ToUint8Array(credentialsEncryptionKey) : null
-	}
-
 	async loadAll(): Promise<ReadonlyArray<PersistedCredentials>> {
 		return this.credentialDb.getAllCredentials()
 	}
 
 	async loadByUserId(id: string): Promise<UnencryptedCredentials | null> {
-		const credentialsKey = await this.getOrCreateCredentialEncryptionKey()
+		const credentialsKey = await this.getCredentialsEncryptionKey()
+		if (credentialsKey == null) {
+			throw new KeyPermanentlyInvalidatedError("Credentials key is missing, cannot decrypt credentials")
+		}
 		const encryptedCredentials = this.credentialDb.getCredentialsByUserId(id)
 		return encryptedCredentials ? this.decryptCredentials(encryptedCredentials, credentialsKey) : null
 	}
@@ -81,7 +78,7 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 	}
 
 	private setCredentialsEncryptionKey(credentialsEncryptionKey: Uint8Array | null) {
-		this.credentialDb.setCredentialEncryptionKey(credentialsEncryptionKey ? uint8ArrayToBase64(credentialsEncryptionKey) : null)
+		this.credentialDb.setCredentialEncryptionKey(credentialsEncryptionKey ? credentialsEncryptionKey : null)
 	}
 
 	async store(credentials: UnencryptedCredentials): Promise<void> {
@@ -111,16 +108,26 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 	}
 
 	private async getOrCreateCredentialEncryptionKey(): Promise<BitArray> {
-		const encryptionMode = this.getDesktopCredentialEncryptionMode() ?? CredentialEncryptionMode.DEVICE_LOCK
-		const exisingKey = this.getCredentialsEncryptionKey()
-		if (exisingKey != null) {
-			const decryptedKey = await this.keychainManager.decryptUsingKeychain(exisingKey, encryptionMode)
-			return uint8ArrayToBitArray(decryptedKey)
+		const existingKey = await this.getCredentialsEncryptionKey()
+		if (existingKey != null) {
+			return existingKey
 		} else {
+			const encryptionMode = this.getDesktopCredentialEncryptionMode() ?? CredentialEncryptionMode.DEVICE_LOCK
 			const newKey = bitArrayToUint8Array(this.crypto.generateDeviceKey())
-			const encryptedKey = await this.keychainManager.encryptUsingKeychain(newKey, encryptionMode)
+			const encryptedKey = await this.keychainEncryption.encryptUsingKeychain(newKey, encryptionMode)
 			this.setCredentialsEncryptionKey(encryptedKey)
 			return uint8ArrayToBitArray(newKey)
+		}
+	}
+
+	private async getCredentialsEncryptionKey(): Promise<BitArray | null> {
+		const encryptionMode = this.getDesktopCredentialEncryptionMode() ?? CredentialEncryptionMode.DEVICE_LOCK
+		const exisingKey = this.credentialDb.getCredentialEncryptionKey()
+		if (exisingKey != null) {
+			const decryptedKey = await this.keychainEncryption.decryptUsingKeychain(exisingKey, encryptionMode)
+			return uint8ArrayToBitArray(decryptedKey)
+		} else {
+			return null
 		}
 	}
 }

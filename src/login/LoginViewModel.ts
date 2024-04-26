@@ -23,6 +23,7 @@ import { CredentialsInfo } from "../native/common/generatedipc/CredentialsInfo.j
 import { PersistedCredentials } from "../native/common/generatedipc/PersistedCredentials.js"
 import { credentialsToUnencrypted } from "../misc/credentials/Credentials.js"
 import { UnencryptedCredentials } from "../native/common/generatedipc/UnencryptedCredentials.js"
+import { AppLock } from "./AppLock.js"
 
 assertMainOrNode()
 
@@ -148,6 +149,7 @@ export class LoginViewModel implements ILoginViewModel {
 		private readonly domainConfig: DomainConfig,
 		private readonly credentialRemovalHandler: CredentialRemovalHandler,
 		private readonly pushServiceApp: NativePushServiceApp | null,
+		private readonly appLock: AppLock,
 	) {
 		this.state = LoginState.NotAuthenticated
 		this.displayMode = DisplayMode.Form
@@ -221,7 +223,7 @@ export class LoginViewModel implements ILoginViewModel {
 			 * 2. It is used as a session ID
 			 * Since we want to also delete the session from the server, we need the (decrypted) accessToken in its function as a session id.
 			 */
-			credentials = await this.credentialsProvider.getDecryptedCredentialsByUserId(encryptedCredentials.userId)
+			credentials = await this.unlockAppAndGetCredentials(encryptedCredentials.userId)
 		} catch (e) {
 			if (e instanceof KeyPermanentlyInvalidatedError) {
 				await this.credentialsProvider.clearCredentials(e)
@@ -246,6 +248,12 @@ export class LoginViewModel implements ILoginViewModel {
 			await this.credentialRemovalHandler.onCredentialsRemoved(credentials)
 			await this.updateCachedCredentials()
 		}
+	}
+
+	/** @throws CredentialAuthenticationError */
+	private async unlockAppAndGetCredentials(userId: Id): Promise<UnencryptedCredentials | null> {
+		await this.appLock.enforce()
+		return await this.credentialsProvider.getDecryptedCredentialsByUserId(userId)
 	}
 
 	/** get the origin that the current domain should open to start the credentials migration */
@@ -346,7 +354,7 @@ export class LoginViewModel implements ILoginViewModel {
 			// we don't want to auto-login on the legacy domain, there's a banner
 			// there to move people to the new domain.
 			if (this.autoLoginCredentials) {
-				credentials = await this.credentialsProvider.getDecryptedCredentialsByUserId(this.autoLoginCredentials.userId)
+				credentials = await this.unlockAppAndGetCredentials(this.autoLoginCredentials.userId)
 
 				if (credentials) {
 					const offlineTimeRange = this.deviceConfig.getOfflineTimeRangeDays(this.autoLoginCredentials.userId)
@@ -404,6 +412,8 @@ export class LoginViewModel implements ILoginViewModel {
 
 			const { credentials, databaseKey } = await this.loginController.createSession(mailAddress, password, sessionType)
 			await this.onLogin()
+			// enforce app lock always, even if we don't access stored credentials
+			await this.appLock.enforce()
 
 			// we don't want to have multiple credentials that
 			// * share the same userId with different mail addresses (may happen if a user chooses a different alias to log in than the one they saved)

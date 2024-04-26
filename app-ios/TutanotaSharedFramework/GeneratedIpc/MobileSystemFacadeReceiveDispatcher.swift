@@ -40,6 +40,26 @@ public class MobileSystemFacadeReceiveDispatcher {
 				permission
 			)
 			return "null"
+		case "getAppLockMethod":
+			let result = try await self.facade.getAppLockMethod(
+			)
+			return toJson(result)
+		case "setAppLockMethod":
+			let method = try! JSONDecoder().decode(AppLockMethod.self, from: arg[0].data(using: .utf8)!)
+			try await self.facade.setAppLockMethod(
+				method
+			)
+			return "null"
+		case "enforceAppLock":
+			let method = try! JSONDecoder().decode(AppLockMethod.self, from: arg[0].data(using: .utf8)!)
+			try await self.facade.enforceAppLock(
+				method
+			)
+			return "null"
+		case "getSupportedAppLockMethods":
+			let result = try await self.facade.getSupportedAppLockMethods(
+			)
+			return toJson(result)
 		default:
 			fatalError("licc messed up! \(method)")
 		}

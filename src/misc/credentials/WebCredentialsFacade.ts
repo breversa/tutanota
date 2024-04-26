@@ -44,7 +44,7 @@ export class WebCredentialsFacade implements NativeCredentialsFacade {
 		}
 	}
 
-	async setCredentialEncryptionMode(_: CredentialEncryptionMode | null): Promise<void> {}
+	async setCredentialEncryptionMode(_: CredentialEncryptionMode): Promise<void> {}
 
 	async store(credentials: UnencryptedCredentials): Promise<void> {
 		const deviceConfigCredentials: DeviceConfigCredentials = {

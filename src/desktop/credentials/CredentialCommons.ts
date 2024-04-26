@@ -8,3 +8,7 @@ export type DesktopCredentialsMode = typeof SUPPORTED_MODES[number]
 export function assertSupportedEncryptionMode(encryptionMode: DesktopCredentialsMode) {
 	assert(SUPPORTED_MODES.includes(encryptionMode), `should not use unsupported encryption mode ${encryptionMode}`)
 }
+
+export function assertDesktopEncryptionMode(encryptionMode: CredentialEncryptionMode): asserts encryptionMode is DesktopCredentialsMode {
+	assertSupportedEncryptionMode(encryptionMode as DesktopCredentialsMode)
+}

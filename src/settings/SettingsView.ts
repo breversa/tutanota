@@ -118,7 +118,7 @@ export class SettingsView extends BaseTopLevelView implements TopLevelView<Setti
 				"login_label",
 				() => BootIcons.Contacts,
 				"login",
-				() => new LoginSettingsViewer(locator.credentialsProvider),
+				() => new LoginSettingsViewer(locator.credentialsProvider, isApp() ? locator.systemFacade : null),
 				undefined,
 			),
 			new SettingsFolder(

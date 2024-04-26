@@ -58,7 +58,7 @@ class NativeCredentialsFacadeReceiveDispatcher(
 				return json.encodeToString(result)
 			}
 			"setCredentialEncryptionMode" -> {
-				val encryptionMode: CredentialEncryptionMode? = json.decodeFromString(arg[0])
+				val encryptionMode: CredentialEncryptionMode = json.decodeFromString(arg[0])
 				val result: Unit = this.facade.setCredentialEncryptionMode(
 					encryptionMode,
 				)

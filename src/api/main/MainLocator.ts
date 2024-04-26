@@ -10,7 +10,7 @@ import { LoginController } from "./LoginController"
 import type { ContactModel } from "../../contacts/model/ContactModel"
 import { EntityClient } from "../common/EntityClient"
 import type { CalendarInfo, CalendarModel } from "../../calendar/model/CalendarModel"
-import { assert, defer, DeferredObject, lazy, lazyAsync, lazyMemoized, noOp, ofClass } from "@tutao/tutanota-utils"
+import { assert, assertNotNull, defer, DeferredObject, lazy, lazyAsync, lazyMemoized, noOp, ofClass } from "@tutao/tutanota-utils"
 import { ProgressTracker } from "./ProgressTracker"
 import { MinimizedMailEditorViewModel } from "../../mail/model/MinimizedMailEditorViewModel"
 import { SchedulerImpl } from "../common/utils/Scheduler.js"
@@ -112,6 +112,7 @@ import { CredentialFormatMigrator } from "../../misc/credentials/CredentialForma
 import { NativeCredentialsFacade } from "../../native/common/generatedipc/NativeCredentialsFacade.js"
 import { SqlCipherFacade } from "../../native/common/generatedipc/SqlCipherFacade.js"
 import { AddNotificationEmailDialog } from "../../settings/AddNotificationEmailDialog.js"
+import { MobileAppLock, NoOpAppLock } from "../../login/AppLock.js"
 
 assertMainOrNode()
 
@@ -555,6 +556,7 @@ class MainLocator {
 				domainConfig,
 				credentialsRemovalHandler,
 				isBrowser() ? null : this.pushService,
+				isApp() ? new MobileAppLock(assertNotNull(this.nativeInterfaces).mobileSystemFacade) : new NoOpAppLock(),
 			)
 		}
 	}
@@ -851,10 +853,12 @@ class MainLocator {
 
 	readonly credentialFormatMigrator: () => Promise<CredentialFormatMigrator> = lazyMemoized(async () => {
 		const { CredentialFormatMigrator } = await import("../../misc/credentials/CredentialFormatMigrator.js")
-		if (isDesktop() || isApp()) {
-			return new CredentialFormatMigrator(deviceConfig, this.nativeCredentialsFacade)
+		if (isDesktop()) {
+			return new CredentialFormatMigrator(deviceConfig, this.nativeCredentialsFacade, null)
+		} else if (isApp()) {
+			return new CredentialFormatMigrator(deviceConfig, this.nativeCredentialsFacade, this.systemFacade)
 		} else {
-			return new CredentialFormatMigrator(deviceConfig, null)
+			return new CredentialFormatMigrator(deviceConfig, null, null)
 		}
 	})
 

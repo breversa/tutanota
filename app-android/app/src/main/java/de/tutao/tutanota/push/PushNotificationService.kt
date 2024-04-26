@@ -81,7 +81,7 @@ class PushNotificationService : LifecycleJobService() {
 		val appDatabase: AppDatabase = AppDatabase.getDatabase(this, allowMainThreadAccess = true)
 		val crypto = AndroidNativeCryptoFacade(this)
 		val keyStoreFacade = createAndroidKeyStoreFacade(crypto)
-		val nativeCredentialsFacade = CredentialsEncryptionFactory.create(this, crypto)
+		val nativeCredentialsFacade = CredentialsEncryptionFactory.create(this, crypto, appDatabase)
 		val sseStorage = SseStorage(appDatabase, keyStoreFacade)
 		val alarmNotificationsManager = AlarmNotificationsManager(
 			sseStorage,

@@ -35,7 +35,7 @@ export class NativeCredentialsFacadeReceiveDispatcher {
 				return this.facade.getCredentialEncryptionMode()
 			}
 			case "setCredentialEncryptionMode": {
-				const encryptionMode: CredentialEncryptionMode | null = arg[0]
+				const encryptionMode: CredentialEncryptionMode = arg[0]
 				return this.facade.setCredentialEncryptionMode(encryptionMode)
 			}
 			case "clear": {

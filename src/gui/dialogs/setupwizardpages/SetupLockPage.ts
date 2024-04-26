@@ -2,19 +2,16 @@ import m, { Children, Component, Vnode } from "mithril"
 import { WizardPageAttrs } from "../../base/WizardDialog.js"
 import { lang } from "../../../misc/LanguageViewModel.js"
 import { SetupPageLayout } from "./SetupPageLayout.js"
-import { Dialog } from "../../base/Dialog.js"
-import { DEFAULT_CREDENTIAL_ENCRYPTION_MODE, SelectCredentialsEncryptionModeView } from "../SelectCredentialsEncryptionModeDialog.js"
 import { CredentialAuthenticationError } from "../../../api/common/error/CredentialAuthenticationError.js"
-import { KeyPermanentlyInvalidatedError } from "../../../api/common/error/KeyPermanentlyInvalidatedError.js"
-import { windowFacade } from "../../../misc/WindowFacade.js"
 import { CancelledError } from "../../../api/common/error/CancelledError.js"
-import { CredentialsProvider } from "../../../misc/credentials/CredentialsProvider.js"
-import { CredentialEncryptionMode } from "../../../misc/credentials/CredentialEncryptionMode.js"
+import { SelectAppLockMethodView } from "../../../native/main/SelectAppLockMethodDialog.js"
+import { AppLockMethod } from "../../../native/common/generatedipc/AppLockMethod.js"
+import { MobileSystemFacade } from "../../../native/common/generatedipc/MobileSystemFacade.js"
 
 export class SetupLockPage implements Component<SetupLockPageAttrs> {
 	view({ attrs }: Vnode<SetupLockPageAttrs>): Children {
 		return m(SetupPageLayout, { image: "lock", buttonLabel: "finish_action" }, [
-			m(SelectCredentialsEncryptionModeView, {
+			m(SelectAppLockMethodView, {
 				class: "mt",
 				error: attrs.error,
 				supportedModes: attrs.supportedModes,
@@ -31,16 +28,17 @@ export class SetupLockPageAttrs implements WizardPageAttrs<null> {
 	data: null = null
 
 	error: string | null = null
-	supportedModes: ReadonlyArray<CredentialEncryptionMode> = []
-	currentMode: CredentialEncryptionMode = DEFAULT_CREDENTIAL_ENCRYPTION_MODE
+	supportedModes: ReadonlyArray<AppLockMethod> = []
+	currentMode: AppLockMethod = AppLockMethod.None
 
-	constructor(public readonly credentialsProvider: CredentialsProvider) {
-		credentialsProvider.getSupportedEncryptionModes().then((supportedModes) => {
-			this.supportedModes = supportedModes
-			m.redraw
+	constructor(public readonly mobileSystemFacade: MobileSystemFacade) {
+		mobileSystemFacade.getSupportedAppLockMethods().then((supportedMethods) => {
+			this.supportedModes = supportedMethods
+			m.redraw()
 		})
-		this.credentialsProvider.getCredentialEncryptionMode().then((encryptionMode) => {
-			this.currentMode = encryptionMode ?? DEFAULT_CREDENTIAL_ENCRYPTION_MODE
+		this.mobileSystemFacade.getAppLockMethod().then((appLockMethod) => {
+			this.currentMode = appLockMethod
+			m.redraw()
 		})
 	}
 
@@ -50,17 +48,13 @@ export class SetupLockPageAttrs implements WizardPageAttrs<null> {
 
 	async nextAction(showDialogs: boolean): Promise<boolean> {
 		try {
-			await this.credentialsProvider.setCredentialEncryptionMode(this.currentMode)
+			await this.mobileSystemFacade.enforceAppLock(this.currentMode)
+			await this.mobileSystemFacade.setAppLockMethod(this.currentMode)
 		} catch (e) {
 			if (e instanceof CredentialAuthenticationError) {
 				this.error = e.message
 				m.redraw()
 				return false
-			} else if (e instanceof KeyPermanentlyInvalidatedError) {
-				await this.credentialsProvider.clearCredentials(e)
-
-				await Dialog.message("credentialsKeyInvalidated_msg")
-				windowFacade.reload({})
 			} else if (e instanceof CancelledError) {
 				// ignore. this can happen if we switch app pin -> device lock and the user cancels the pin prompt.
 			} else {

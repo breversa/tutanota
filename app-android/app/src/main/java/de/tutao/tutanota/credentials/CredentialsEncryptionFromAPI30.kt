@@ -25,7 +25,7 @@ class CredentialsEncryptionFromAPI30(
 	private val activity: Context,
 	private val crypto: AndroidNativeCryptoFacade,
 	private val authenticationPrompt: AuthenticationPrompt,
-) : AndroidNativeCredentialsFacade(activity, crypto) {
+) : KeychainEncryption {
 	@Throws(
 		KeyStoreException::class,
 		CryptoError::class,
@@ -52,19 +52,6 @@ class CredentialsEncryptionFromAPI30(
 	): ByteArray {
 		val cipher = this.getAuthenticatedCipherForDecryptionModelWithFallback(encryptedData, encryptionMode)
 		return keyStoreFacade.decryptData(encryptedData, cipher)
-	}
-
-	override suspend fun getSupportedEncryptionModes(): List<CredentialEncryptionMode> {
-		val supportedModes: MutableList<CredentialEncryptionMode> = ArrayList()
-		supportedModes.add(CredentialEncryptionMode.DEVICE_LOCK)
-		val biometricManager = from(activity)
-		if (biometricManager.canAuthenticate(Authenticators.BIOMETRIC_STRONG) == BIOMETRIC_SUCCESS) {
-			supportedModes.add(CredentialEncryptionMode.BIOMETRICS)
-		}
-		if (biometricManager.canAuthenticate(Authenticators.DEVICE_CREDENTIAL or Authenticators.BIOMETRIC_STRONG) == BIOMETRIC_SUCCESS) {
-			supportedModes.add(CredentialEncryptionMode.SYSTEM_PASSWORD)
-		}
-		return supportedModes
 	}
 
 	@Throws(CredentialAuthenticationException::class)

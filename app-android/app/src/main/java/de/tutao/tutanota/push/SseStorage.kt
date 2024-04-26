@@ -5,7 +5,6 @@ import androidx.lifecycle.LiveData
 import de.tutao.tutanota.AndroidKeyStoreFacade
 import de.tutao.tutanota.CryptoError
 import de.tutao.tutanota.alarms.AlarmNotificationEntity
-import de.tutao.tutanota.credentials.AndroidNativeCredentialsFacade
 import de.tutao.tutanota.data.AppDatabase
 import de.tutao.tutanota.data.PushIdentifierKey
 import de.tutao.tutanota.data.User
@@ -80,8 +79,7 @@ class SseStorage(
 
 	@WorkerThread
 	fun setLastMissedNotificationCheckTime(date: Date?) = db.keyValueDao().putLong(
-		LAST_MISSED_NOTIFICATION_CHECK_TIME, date?.time
-			?: 0L
+		LAST_MISSED_NOTIFICATION_CHECK_TIME, date?.time ?: 0L
 	)
 
 	fun getSseOrigin() = db.keyValueDao().getString(SSE_ORIGIN)
@@ -95,14 +93,13 @@ class SseStorage(
 	}
 
 	fun setExtendedNotificationConfig(mode: ExtendedNotificationMode) {
-		db.keyValueDao().putString(EXTENDED_NOTIFICATION_MODE, mode.name)
+		db.keyValueDao().putString(EXTENDED_NOTIFICATION_MODE, mode.value)
 	}
 
 	fun getExtendedNotificationConfig(): ExtendedNotificationMode {
 		// FIXME Do we need to check old config here too?
-		return enumValues<ExtendedNotificationMode>().firstOrNull {
-			it.name == db.keyValueDao().getString(EXTENDED_NOTIFICATION_MODE)
-		} ?: ExtendedNotificationMode.NO_SENDER_OR_SUBJECT
+		return db.keyValueDao().getString(EXTENDED_NOTIFICATION_MODE)?.let { ExtendedNotificationMode.fromValue(it) }
+			?: ExtendedNotificationMode.NO_SENDER_OR_SUBJECT
 	}
 
 	fun getUsers(): List<User> = db.userInfoDao().users

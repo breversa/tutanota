@@ -3,9 +3,28 @@ import type { NativeCredentialsFacade } from "../../native/common/generatedipc/N
 import { Dialog } from "../../gui/base/Dialog.js"
 import { PersistedCredentials } from "../../native/common/generatedipc/PersistedCredentials.js"
 import { base64ToUint8Array, mapNullable } from "@tutao/tutanota-utils"
+import { MobileSystemFacade } from "../../native/common/generatedipc/MobileSystemFacade.js"
+import { CredentialEncryptionMode } from "./CredentialEncryptionMode.js"
+import { AppLockMethod } from "../../native/common/generatedipc/AppLockMethod.js"
+
+function credentialEncryptionModeToAppLockMethod(mode: CredentialEncryptionMode): AppLockMethod {
+	switch (mode) {
+		case CredentialEncryptionMode.APP_PASSWORD:
+		case CredentialEncryptionMode.DEVICE_LOCK:
+			return AppLockMethod.None
+		case CredentialEncryptionMode.BIOMETRICS:
+			return AppLockMethod.Biometrics
+		case CredentialEncryptionMode.SYSTEM_PASSWORD:
+			return AppLockMethod.SystemPassOrBiometrics
+	}
+}
 
 export class CredentialFormatMigrator {
-	constructor(private readonly deviceConfig: DeviceConfig, private readonly nativeCredentialFacade: NativeCredentialsFacade | null) {}
+	constructor(
+		private readonly deviceConfig: DeviceConfig,
+		private readonly nativeCredentialFacade: NativeCredentialsFacade | null,
+		private readonly mobileSystemFacade: MobileSystemFacade | null,
+	) {}
 
 	async migrate(): Promise<void> {
 		try {
@@ -30,6 +49,9 @@ ${e.stack}`,
 			const encryptionMode = await this.deviceConfig.getCredentialEncryptionMode()
 			const credentialsKey = await this.deviceConfig.getCredentialsEncryptionKey()
 			if (encryptionMode != null && credentialsKey != null) {
+				if (this.mobileSystemFacade != null) {
+					await this.mobileSystemFacade.setAppLockMethod(credentialEncryptionModeToAppLockMethod(encryptionMode))
+				}
 				console.log("migrating credentials", allPersistedCredentials)
 				await this.nativeCredentialFacade.migrateToNativeCredentials(allPersistedCredentials, encryptionMode, credentialsKey)
 			} else {

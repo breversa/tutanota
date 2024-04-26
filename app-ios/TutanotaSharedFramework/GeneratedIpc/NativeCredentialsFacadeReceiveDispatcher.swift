@@ -47,7 +47,7 @@ public class NativeCredentialsFacadeReceiveDispatcher {
 			)
 			return toJson(result)
 		case "setCredentialEncryptionMode":
-			let encryptionMode = try! JSONDecoder().decode(CredentialEncryptionMode?.self, from: arg[0].data(using: .utf8)!)
+			let encryptionMode = try! JSONDecoder().decode(CredentialEncryptionMode.self, from: arg[0].data(using: .utf8)!)
 			try await self.facade.setCredentialEncryptionMode(
 				encryptionMode
 			)

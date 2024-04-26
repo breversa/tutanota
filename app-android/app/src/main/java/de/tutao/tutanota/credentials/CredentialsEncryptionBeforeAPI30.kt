@@ -21,7 +21,7 @@ class CredentialsEncryptionBeforeAPI30(
 	private val activity: Context,
 	private val crypto: AndroidNativeCryptoFacade,
 	private val authenticationPrompt: AuthenticationPrompt,
-) : AndroidNativeCredentialsFacade(activity, crypto) {
+) : KeychainEncryption {
 	@Throws(
 		KeyStoreException::class,
 		CryptoError::class,
@@ -77,19 +77,6 @@ class CredentialsEncryptionBeforeAPI30(
 			}
 		}
 		return keyStoreFacade.decryptData(dataToDecrypt, cipher)
-	}
-
-	override suspend fun getSupportedEncryptionModes(): List<CredentialEncryptionMode> = buildList {
-		add(CredentialEncryptionMode.DEVICE_LOCK)
-
-		val biometricManager = BiometricManager.from(activity)
-		if (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS) {
-			add(CredentialEncryptionMode.BIOMETRICS)
-		}
-
-		if (biometricManager.canAuthenticate(BiometricManager.Authenticators.DEVICE_CREDENTIAL or BiometricManager.Authenticators.BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS) {
-			add(CredentialEncryptionMode.SYSTEM_PASSWORD)
-		}
 	}
 
 	private fun createPromptInfo(mode: CredentialEncryptionMode): PromptInfo {

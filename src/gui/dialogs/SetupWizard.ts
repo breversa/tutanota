@@ -51,7 +51,7 @@ export async function showSetupWizard(): Promise<void> {
 			SetupContactsPage,
 			new SetupContactsPageAttrs(locator.nativeContactsSyncManager(), await locator.contactImporter(), locator.systemFacade),
 		),
-		wizardPageWrapper(SetupLockPage, new SetupLockPageAttrs(locator.credentialsProvider)),
+		wizardPageWrapper(SetupLockPage, new SetupLockPageAttrs(locator.systemFacade)),
 	]
 	const deferred = defer<void>()
 

@@ -27,7 +27,7 @@ export interface NativeCredentialsFacade {
 
 	getCredentialEncryptionMode(): Promise<CredentialEncryptionMode | null>
 
-	setCredentialEncryptionMode(encryptionMode: CredentialEncryptionMode | null): Promise<void>
+	setCredentialEncryptionMode(encryptionMode: CredentialEncryptionMode): Promise<void>
 
 	clear(): Promise<void>
 

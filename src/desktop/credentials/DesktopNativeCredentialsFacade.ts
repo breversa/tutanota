@@ -7,7 +7,7 @@ import { KeyPermanentlyInvalidatedError } from "../../api/common/error/KeyPerman
 import { PersistedCredentials } from "../../native/common/generatedipc/PersistedCredentials.js"
 import { DesktopCredentialsStorage } from "../db/DesktopCredentialsStorage.js"
 import { UnencryptedCredentials } from "../../native/common/generatedipc/UnencryptedCredentials.js"
-import { assertSupportedEncryptionMode, DesktopCredentialsMode, SUPPORTED_MODES } from "./CredentialCommons.js"
+import { assertDesktopEncryptionMode, assertSupportedEncryptionMode, DesktopCredentialsMode, SUPPORTED_MODES } from "./CredentialCommons.js"
 import { KeychainEncryption } from "./KeychainEncryption.js"
 
 /**
@@ -74,7 +74,11 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 	}
 
 	async setCredentialEncryptionMode(encryptionMode: CredentialEncryptionMode): Promise<void> {
+		assertDesktopEncryptionMode(encryptionMode)
+		const decryptedKey = await this.getOrCreateCredentialEncryptionKey()
+		const encryptedKey = await this.keychainEncryption.encryptUsingKeychain(bitArrayToUint8Array(decryptedKey), encryptionMode)
 		this.credentialDb.setCredentialEncryptionMode(encryptionMode)
+		this.credentialDb.setCredentialEncryptionKey(encryptedKey)
 	}
 
 	async store(credentials: UnencryptedCredentials): Promise<void> {

@@ -7,24 +7,24 @@ import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 
 @Serializable
-enum class PermissionType(val value: String) {
+enum class AppLockMethod(val value: String) {
 	@SerialName("0")
-	CONTACTS("0"),
+	NONE("0"),
 	
 	@SerialName("1")
-	IGNORE_BATTERY_OPTIMIZATION("1"),
+	SYSTEM_PASS_OR_BIOMETRICS("1"),
 	
 	@SerialName("2")
-	NOTIFICATION("2");
+	BIOMETRICS("2");
 	
 	companion object {
 		 fun fromValue(
 			value: String,
-		): PermissionType?
+		): AppLockMethod?
 			= when (value) {
-			"0" -> CONTACTS
-			"1" -> IGNORE_BATTERY_OPTIMIZATION
-			"2" -> NOTIFICATION
+			"0" -> NONE
+			"1" -> SYSTEM_PASS_OR_BIOMETRICS
+			"2" -> BIOMETRICS
 			else -> null
 		}
 	}

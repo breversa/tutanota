@@ -37,4 +37,14 @@ public protocol MobileSystemFacade {
 	func requestPermission(
 		_ permission: PermissionType
 	) async throws -> Void
+	func getAppLockMethod(
+	) async throws -> AppLockMethod
+	func setAppLockMethod(
+		_ method: AppLockMethod
+	) async throws -> Void
+	func enforceAppLock(
+		_ method: AppLockMethod
+	) async throws -> Void
+	func getSupportedAppLockMethods(
+	) async throws -> [AppLockMethod]
 }

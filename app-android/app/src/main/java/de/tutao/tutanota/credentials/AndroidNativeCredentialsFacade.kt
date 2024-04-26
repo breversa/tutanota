@@ -2,6 +2,7 @@ package de.tutao.tutanota.credentials
 
 import android.content.Context
 import android.security.keystore.KeyPermanentlyInvalidatedException
+import android.util.Log
 import de.tutao.tutanota.AndroidNativeCryptoFacade
 import de.tutao.tutanota.AndroidNativeCryptoFacade.Companion.bytesToKey
 import de.tutao.tutanota.CryptoError
@@ -13,8 +14,10 @@ import de.tutao.tutanota.ipc.PersistedCredentials
 import de.tutao.tutanota.ipc.UnencryptedCredentials
 import de.tutao.tutanota.ipc.wrap
 
+private const val TAG = "Credentials"
+
 abstract class AndroidNativeCredentialsFacade(
-	private val activity: Context,
+	activity: Context,
 	private val crypto: AndroidNativeCryptoFacade,
 ) : NativeCredentialsFacade {
 	private val db: AppDatabase = AppDatabase.getDatabase(activity, false)
@@ -43,9 +46,12 @@ abstract class AndroidNativeCredentialsFacade(
 		val credentialsKey = this.getCredentialsEncryptionKey()
 			?: throw KeyPermanentlyInvalidatedException("Credentials key is missing, cannot decrypt credentials")
 		if (this.getCredentialEncryptionMode() != CredentialEncryptionMode.DEVICE_LOCK) {
+			Log.d(TAG, "Migrating encryption mode to DEVICE_LOCK")
 			// re-encrypt credentials here
 			val encryptedKey = this.encryptUsingKeychain(credentialsKey, CredentialEncryptionMode.DEVICE_LOCK)
 			db.keyBinaryDao().put(CREDENTIALS_ENCRYPTION_KEY_KEY, encryptedKey)
+			setCredentialEncryptionMode(CredentialEncryptionMode.DEVICE_LOCK)
+			Log.d(TAG, "Encryption mode migration complete")
 		}
 		val encryptedCredentials =
 			db.persistedCredentialsDao().allPersistedCredentials.firstOrNull { e -> e.userId == id }?.toObject()
@@ -81,7 +87,14 @@ abstract class AndroidNativeCredentialsFacade(
 	}
 
 	override suspend fun setCredentialEncryptionMode(encryptionMode: CredentialEncryptionMode?) {
+		require(encryptionMode == null || this.getSupportedEncryptionModes().contains(encryptionMode)) {
+			"Invalid encryption mode: ${encryptionMode?.name}"
+		}
 		db.keyValueDao().putString(CREDENTIALS_ENCRYPTION_MODE_KEY, encryptionMode?.name)
+	}
+
+	override suspend fun getSupportedEncryptionModes(): List<CredentialEncryptionMode> {
+		return listOf(CredentialEncryptionMode.DEVICE_LOCK)
 	}
 
 	private suspend fun getCredentialsEncryptionKey(): ByteArray? {
@@ -112,8 +125,8 @@ abstract class AndroidNativeCredentialsFacade(
 	): UnencryptedCredentials {
 		try {
 			val databaseKey = if (persistedCredentials.databaseKey != null) {
-				this.crypto.decryptKey(
-					bytesToKey(credentialsKey), persistedCredentials.databaseKey.data
+				this.crypto.aesDecryptData(
+					credentialsKey, persistedCredentials.databaseKey.data
 				).wrap()
 			} else {
 				null

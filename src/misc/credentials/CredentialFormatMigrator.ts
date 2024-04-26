@@ -1,6 +1,8 @@
-import { DeviceConfig } from "../DeviceConfig.js"
+import { DeviceConfig, DeviceConfigCredentials } from "../DeviceConfig.js"
 import type { NativeCredentialsFacade } from "../../native/common/generatedipc/NativeCredentialsFacade.js"
 import { Dialog } from "../../gui/base/Dialog.js"
+import { PersistedCredentials } from "../../native/common/generatedipc/PersistedCredentials.js"
+import { base64ToUint8Array, mapNullable } from "@tutao/tutanota-utils"
 
 export class CredentialFormatMigrator {
 	constructor(private readonly deviceConfig: DeviceConfig, private readonly nativeCredentialFacade: NativeCredentialsFacade | null) {}
@@ -24,7 +26,7 @@ ${e.stack}`,
 	private async migrateToNativeCredentials() {
 		if (this.nativeCredentialFacade != null && !this.deviceConfig.getIsCredentialsMigratedToNative()) {
 			console.log("Migrating credentials to native")
-			const allPersistedCredentials = await this.deviceConfig.getCredentials()
+			const allPersistedCredentials = this.deviceConfig.getCredentials().map(deviceConfigCredentialsToPersisted)
 			const encryptionMode = await this.deviceConfig.getCredentialEncryptionMode()
 			const credentialsKey = await this.deviceConfig.getCredentialsEncryptionKey()
 			if (encryptionMode != null && credentialsKey != null) {
@@ -41,5 +43,14 @@ ${e.stack}`,
 
 			this.deviceConfig.setIsCredentialsMigratedToNative(true)
 		}
+	}
+}
+
+function deviceConfigCredentialsToPersisted(deviceConfigCredentials: DeviceConfigCredentials): PersistedCredentials {
+	return {
+		credentialInfo: deviceConfigCredentials.credentialInfo,
+		encryptedPassword: deviceConfigCredentials.encryptedPassword,
+		accessToken: base64ToUint8Array(deviceConfigCredentials.accessToken),
+		databaseKey: mapNullable(deviceConfigCredentials.databaseKey, base64ToUint8Array),
 	}
 }

@@ -1,12 +1,4 @@
-import {
-	Base64,
-	base64ToUint8Array,
-	mapNullable,
-	stringToUtf8Uint8Array,
-	typedEntries,
-	uint8ArrayToBase64,
-	utf8Uint8ArrayToString,
-} from "@tutao/tutanota-utils"
+import { Base64, base64ToUint8Array, typedEntries, uint8ArrayToBase64 } from "@tutao/tutanota-utils"
 import type { LanguageCode } from "./LanguageViewModel"
 import type { ThemePreference } from "../gui/theme"
 import { ProgrammingError } from "../api/common/error/ProgrammingError"
@@ -16,7 +8,6 @@ import { PersistedAssignmentData, UsageTestStorage } from "./UsageTestModel"
 import { client } from "./ClientDetector"
 import { NewsItemStorage } from "./news/NewsModel.js"
 import { CalendarViewType } from "../calendar/gui/CalendarGuiUtils.js"
-import { PersistedCredentials } from "../native/common/generatedipc/PersistedCredentials.js"
 import { CredentialsInfo } from "../native/common/generatedipc/CredentialsInfo.js"
 
 assertMainOrNodeBoot()
@@ -148,25 +139,18 @@ export class DeviceConfig implements UsageTestStorage, NewsItemStorage {
 		}
 	}
 
-	storeCredentials(persistentCredentials: PersistedCredentials) {
-		const deviceConfigCredentials = persistedCredentialsToDeviceConfig(persistentCredentials)
-
-		this.config._credentials.set(persistentCredentials.credentialInfo.userId, deviceConfigCredentials)
+	storeCredentials(credentials: DeviceConfigCredentials) {
+		this.config._credentials.set(credentials.credentialInfo.userId, credentials)
 
 		this.writeToStorage()
 	}
 
-	getCredentialsByUserId(userId: Id): PersistedCredentials | null {
-		const deviceConfigCredentials = this.config._credentials.get(userId)
-		if (deviceConfigCredentials) {
-			return deviceConfigCredentialsToPersisted(deviceConfigCredentials)
-		} else {
-			return null
-		}
+	getCredentialsByUserId(userId: Id): DeviceConfigCredentials | null {
+		return this.config._credentials.get(userId) ?? null
 	}
 
-	getCredentials(): Array<PersistedCredentials> {
-		return Array.from(this.config._credentials.values()).map(deviceConfigCredentialsToPersisted)
+	getCredentials(): Array<DeviceConfigCredentials> {
+		return Array.from(this.config._credentials.values())
 	}
 
 	async deleteByUserId(userId: Id): Promise<void> {
@@ -445,24 +429,6 @@ export interface DeviceConfigCredentials {
 	readonly accessToken: string
 	readonly databaseKey: Base64 | null
 	readonly encryptedPassword: string
-}
-
-function persistedCredentialsToDeviceConfig(persistentCredentials: PersistedCredentials): DeviceConfigCredentials {
-	return {
-		credentialInfo: persistentCredentials.credentialInfo,
-		encryptedPassword: persistentCredentials.encryptedPassword,
-		accessToken: utf8Uint8ArrayToString(persistentCredentials.accessToken),
-		databaseKey: mapNullable(persistentCredentials.databaseKey, uint8ArrayToBase64),
-	}
-}
-
-function deviceConfigCredentialsToPersisted(deviceConfigCredentials: DeviceConfigCredentials): PersistedCredentials {
-	return {
-		credentialInfo: deviceConfigCredentials.credentialInfo,
-		encryptedPassword: deviceConfigCredentials.encryptedPassword,
-		accessToken: stringToUtf8Uint8Array(deviceConfigCredentials.accessToken),
-		databaseKey: mapNullable(deviceConfigCredentials.databaseKey, base64ToUint8Array),
-	}
 }
 
 export const deviceConfig: DeviceConfig = new DeviceConfig(DeviceConfig.Version, client.localStorage() ? localStorage : null)

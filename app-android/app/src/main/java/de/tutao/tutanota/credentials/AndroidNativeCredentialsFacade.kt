@@ -26,7 +26,7 @@ abstract class AndroidNativeCredentialsFacade(
 	}
 
 	override suspend fun loadAll(): List<PersistedCredentials> {
-		return db.PersistedCredentialsDao().allPersistedCredentials.map { e -> e.toObject() }
+		return db.persistedCredentialsDao().allPersistedCredentials.map { e -> e.toObject() }
 	}
 
 	override suspend fun store(credentials: UnencryptedCredentials) {
@@ -36,23 +36,29 @@ abstract class AndroidNativeCredentialsFacade(
 	}
 
 	override suspend fun storeEncrypted(credentials: PersistedCredentials) {
-		db.PersistedCredentialsDao().insertPersistedCredentials(credentials.toEntity())
+		db.persistedCredentialsDao().insertPersistedCredentials(credentials.toEntity())
 	}
 
 	override suspend fun loadByUserId(id: String): UnencryptedCredentials? {
-		val credentialsKey = this.getOrCreateCredentialEncryptionKey()
+		val credentialsKey = this.getCredentialsEncryptionKey()
+			?: throw KeyPermanentlyInvalidatedException("Credentials key is missing, cannot decrypt credentials")
+		if (this.getCredentialEncryptionMode() != CredentialEncryptionMode.DEVICE_LOCK) {
+			// re-encrypt credentials here
+			val encryptedKey = this.encryptUsingKeychain(credentialsKey, CredentialEncryptionMode.DEVICE_LOCK)
+			db.keyBinaryDao().put(CREDENTIALS_ENCRYPTION_KEY_KEY, encryptedKey)
+		}
 		val encryptedCredentials =
-			db.PersistedCredentialsDao().allPersistedCredentials.firstOrNull { e -> e.userId == id }?.toObject()
+			db.persistedCredentialsDao().allPersistedCredentials.firstOrNull { e -> e.userId == id }?.toObject()
 		return if (encryptedCredentials != null) this.decryptCredentials(encryptedCredentials, credentialsKey) else null
 	}
 
 	override suspend fun deleteByUserId(id: String) {
-		db.PersistedCredentialsDao().deletePersistedCredentials(id)
+		db.persistedCredentialsDao().deletePersistedCredentials(id)
 	}
 
 	override suspend fun clear() {
-		db.PersistedCredentialsDao().clear()
-		this.setCredentialsEncryptionKey(null)
+		db.persistedCredentialsDao().clear()
+		db.keyBinaryDao().put(CREDENTIALS_ENCRYPTION_KEY_KEY, null)
 		this.setCredentialEncryptionMode(null)
 	}
 
@@ -60,7 +66,9 @@ abstract class AndroidNativeCredentialsFacade(
 		credentials: List<PersistedCredentials>, encryptionMode: CredentialEncryptionMode, credentialsKey: DataWrapper
 	) {
 		this.setCredentialEncryptionMode(encryptionMode)
-		this.setCredentialsEncryptionKey(credentialsKey.data)
+		db.keyBinaryDao().put(
+			CREDENTIALS_ENCRYPTION_KEY_KEY, credentialsKey.data
+		)
 		for (credential: PersistedCredentials in credentials) {
 			this.storeEncrypted(credential)
 		}
@@ -76,24 +84,26 @@ abstract class AndroidNativeCredentialsFacade(
 		db.keyValueDao().putString(CREDENTIALS_ENCRYPTION_MODE_KEY, encryptionMode?.name)
 	}
 
-	private fun getCredentialsEncryptionKey(): ByteArray? {
-		return db.keyBlobDao().get(CREDENTIALS_ENCRYPTION_KEY_KEY)
-	}
-
-	private fun setCredentialsEncryptionKey(credentialsEncryptionKey: ByteArray?) {
-		db.keyBlobDao().put(CREDENTIALS_ENCRYPTION_KEY_KEY, credentialsEncryptionKey)
+	private suspend fun getCredentialsEncryptionKey(): ByteArray? {
+		val encryptionMode = this.getCredentialEncryptionMode() ?: CredentialEncryptionMode.DEVICE_LOCK
+		val existingKey = db.keyBinaryDao().get(CREDENTIALS_ENCRYPTION_KEY_KEY)
+		return if (existingKey != null) {
+			this.decryptUsingKeychain(existingKey, encryptionMode)
+		} else {
+			null
+		}
 	}
 
 	private suspend fun getOrCreateCredentialEncryptionKey(): ByteArray {
 		val encryptionMode = this.getCredentialEncryptionMode() ?: CredentialEncryptionMode.DEVICE_LOCK
-		val exisingKey = this.getCredentialsEncryptionKey()
-		if (exisingKey != null) {
-			return decryptUsingKeychain(exisingKey, encryptionMode)
+		val existingKey = this.getCredentialsEncryptionKey()
+		return if (existingKey != null) {
+			decryptUsingKeychain(existingKey, encryptionMode)
 		} else {
 			val newKey = this.crypto.generateAes256Key()
 			val encryptedKey = this.encryptUsingKeychain(newKey, encryptionMode)
-			this.setCredentialsEncryptionKey(encryptedKey)
-			return newKey
+			db.keyBinaryDao().put(CREDENTIALS_ENCRYPTION_KEY_KEY, encryptedKey)
+			newKey
 		}
 	}
 

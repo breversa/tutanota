@@ -4,4 +4,4 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity
-class KeyBlob(@field:PrimaryKey val key: String, val value: ByteArray?)
+class KeyBinary(@field:PrimaryKey val key: String, val value: ByteArray?)

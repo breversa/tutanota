@@ -77,10 +77,6 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 		this.credentialDb.setCredentialEncryptionMode(encryptionMode)
 	}
 
-	private setCredentialsEncryptionKey(credentialsEncryptionKey: Uint8Array | null) {
-		this.credentialDb.setCredentialEncryptionKey(credentialsEncryptionKey ? credentialsEncryptionKey : null)
-	}
-
 	async store(credentials: UnencryptedCredentials): Promise<void> {
 		const credentialsEncryptionKey = await this.getOrCreateCredentialEncryptionKey()
 		const encryptedCredentials: PersistedCredentials = this.encryptCredentials(credentials, credentialsEncryptionKey)
@@ -89,7 +85,7 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 
 	async clear(): Promise<void> {
 		this.credentialDb.deleteAllCredentials()
-		this.setCredentialsEncryptionKey(null)
+		this.credentialDb.setCredentialEncryptionKey(null)
 		this.credentialDb.setCredentialEncryptionMode(null)
 	}
 
@@ -97,7 +93,7 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 		// store persistedCredentials, key & mode
 		assertSupportedEncryptionMode(encryptionMode as DesktopCredentialsMode)
 		await this.setCredentialEncryptionMode(encryptionMode)
-		this.setCredentialsEncryptionKey(credentialsKey)
+		this.credentialDb.setCredentialEncryptionKey(credentialsKey)
 		for (const credential of credentials) {
 			await this.storeEncrypted(credential)
 		}
@@ -115,16 +111,16 @@ export class DesktopNativeCredentialsFacade implements NativeCredentialsFacade {
 			const encryptionMode = this.getDesktopCredentialEncryptionMode() ?? CredentialEncryptionMode.DEVICE_LOCK
 			const newKey = bitArrayToUint8Array(this.crypto.generateDeviceKey())
 			const encryptedKey = await this.keychainEncryption.encryptUsingKeychain(newKey, encryptionMode)
-			this.setCredentialsEncryptionKey(encryptedKey)
+			this.credentialDb.setCredentialEncryptionKey(encryptedKey)
 			return uint8ArrayToBitArray(newKey)
 		}
 	}
 
 	private async getCredentialsEncryptionKey(): Promise<BitArray | null> {
 		const encryptionMode = this.getDesktopCredentialEncryptionMode() ?? CredentialEncryptionMode.DEVICE_LOCK
-		const exisingKey = this.credentialDb.getCredentialEncryptionKey()
-		if (exisingKey != null) {
-			const decryptedKey = await this.keychainEncryption.decryptUsingKeychain(exisingKey, encryptionMode)
+		const existingKey = this.credentialDb.getCredentialEncryptionKey()
+		if (existingKey != null) {
+			const decryptedKey = await this.keychainEncryption.decryptUsingKeychain(existingKey, encryptionMode)
 			return uint8ArrayToBitArray(decryptedKey)
 		} else {
 			return null

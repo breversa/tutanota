@@ -10,23 +10,24 @@ import de.tutao.tutanota.credentials.PersistedCredentialsDao
 import de.tutao.tutanota.credentials.PersistedCredentialsEntity
 
 @Database(
-	version = 2, entities = [
+	version = 3, entities = [
 		KeyValue::class,
-		KeyBlob::class,
+		KeyBinary::class,
 		PushIdentifierKey::class,
 		AlarmNotificationEntity::class,
 		PersistedCredentialsEntity::class,
 		User::class
 	], autoMigrations = [
-		AutoMigration(from = 1, to = 2)
+		AutoMigration(from = 1, to = 2),
+		AutoMigration(from = 2, to = 3)
 	]
 )
 abstract class AppDatabase : RoomDatabase() {
 	abstract fun keyValueDao(): KeyValueDao
-	abstract fun keyBlobDao(): KeyBlobDao
+	abstract fun keyBinaryDao(): KeyBinaryDao
 	abstract fun userInfoDao(): UserInfoDao
 	abstract fun alarmInfoDao(): AlarmInfoDao
-	abstract fun PersistedCredentialsDao(): PersistedCredentialsDao
+	abstract fun persistedCredentialsDao(): PersistedCredentialsDao
 
 	companion object {
 		fun getDatabase(context: Context, allowMainThreadAccess: Boolean): AppDatabase {

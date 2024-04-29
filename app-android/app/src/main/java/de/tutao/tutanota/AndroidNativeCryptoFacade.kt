@@ -291,7 +291,7 @@ constructor(
 				Cipher.getInstance(AES_MODE_NO_PADDING)
 			}
 			val params = IvParameterSpec(iv)
-			getSubKeys(bytesToKey(key), useMac).use { subKeys ->
+			val subKeys = getSubKeys(bytesToKey(key), useMac)
 				cipher.init(Cipher.ENCRYPT_MODE, subKeys.cKey, params)
 				encrypted = CipherInputStream(input, cipher)
 				val tempOut = ByteArrayOutputStream()
@@ -306,7 +306,6 @@ constructor(
 				} else {
 					out.write(tempOut.toByteArray())
 				}
-			}
 		} catch (e: InvalidKeyException) {
 			throw CryptoError(e)
 		} finally {
@@ -456,8 +455,8 @@ constructor(
 			}
 
 			if (hasMac) {
-				getSubKeys(bytesToKey(key), hasMac).use { subKeys ->
-					cKey = subKeys.cKey.encoded
+				val subKeys = getSubKeys(bytesToKey(key), hasMac)
+				cKey = subKeys.cKey.encoded
 					val tempOut = ByteArrayOutputStream()
 					IOUtils.copyLarge(inputWithoutMac, tempOut)
 					val cipherText = tempOut.toByteArray()
@@ -469,7 +468,6 @@ constructor(
 					}
 					inputWithoutMac = ByteArrayInputStream(cipherTextWithoutMac)
 				}
-			}
 			val iv = ByteArray(AES_BLOCK_SIZE_BYTES)
 			IOUtils.read(inputWithoutMac, iv)
 			val aesMode = if (padding) {
@@ -538,15 +536,6 @@ private class SubKeys(
 	var cKey: SecretKeySpec,
 	var mKey: ByteArray?,
 )
-
-private inline fun SubKeys.use(block: (keys: SubKeys) -> Unit) {
-	try {
-		block(this)
-	} finally {
-		this.cKey.destroy()
-		this.mKey?.fill(0)
-	}
-}
 
 
 @Keep

@@ -83,10 +83,13 @@ constructor(
 				}
 				val hash = digest.digest(key.encoded)
 				val hashLen = hash.size
-				SubKeys(
-					cKey = SecretKeySpec(hash.copyOfRange(0, hashLen / 2), "AES"),
+				val firstHashPart = hash.copyOfRange(0, hashLen / 2)
+				val subkeys = SubKeys(
+					cKey = SecretKeySpec(firstHashPart, "AES"),
 					mKey = hash.copyOfRange(hashLen / 2, hashLen)
 				)
+				firstHashPart.fill(0)
+				subkeys
 			} else {
 				if (keyLength == AesKeyLength.Aes256) {
 					throw java.lang.IllegalArgumentException("must use mac with AES-256")
@@ -288,20 +291,21 @@ constructor(
 				Cipher.getInstance(AES_MODE_NO_PADDING)
 			}
 			val params = IvParameterSpec(iv)
-			val subKeys = getSubKeys(bytesToKey(key), useMac)
-			cipher.init(Cipher.ENCRYPT_MODE, subKeys.cKey, params)
-			encrypted = CipherInputStream(input, cipher)
-			val tempOut = ByteArrayOutputStream()
-			tempOut.write(iv)
-			IOUtils.copy(encrypted, tempOut)
-			if (useMac) {
-				val data = tempOut.toByteArray()
-				out.write(byteArrayOf(1))
-				out.write(data)
-				val macBytes = hmac256(subKeys.mKey!!, data)
-				out.write(macBytes)
-			} else {
-				out.write(tempOut.toByteArray())
+			getSubKeys(bytesToKey(key), useMac).use { subKeys ->
+				cipher.init(Cipher.ENCRYPT_MODE, subKeys.cKey, params)
+				encrypted = CipherInputStream(input, cipher)
+				val tempOut = ByteArrayOutputStream()
+				tempOut.write(iv)
+				IOUtils.copy(encrypted, tempOut)
+				if (useMac) {
+					val data = tempOut.toByteArray()
+					out.write(byteArrayOf(1))
+					out.write(data)
+					val macBytes = hmac256(subKeys.mKey!!, data)
+					out.write(macBytes)
+				} else {
+					out.write(tempOut.toByteArray())
+				}
 			}
 		} catch (e: InvalidKeyException) {
 			throw CryptoError(e)
@@ -452,18 +456,19 @@ constructor(
 			}
 
 			if (hasMac) {
-				val subKeys = getSubKeys(bytesToKey(key), hasMac)
-				cKey = subKeys.cKey!!.encoded
-				val tempOut = ByteArrayOutputStream()
-				IOUtils.copyLarge(inputWithoutMac, tempOut)
-				val cipherText = tempOut.toByteArray()
-				val cipherTextWithoutMac = cipherText.copyOfRange(1, cipherText.size - 32)
-				val providedMacBytes = cipherText.copyOfRange(cipherText.size - 32, cipherText.size)
-				val computedMacBytes = hmac256(subKeys.mKey!!, cipherTextWithoutMac)
-				if (!Arrays.equals(computedMacBytes, providedMacBytes)) {
-					throw CryptoError("invalid mac")
+				getSubKeys(bytesToKey(key), hasMac).use { subKeys ->
+					cKey = subKeys.cKey.encoded
+					val tempOut = ByteArrayOutputStream()
+					IOUtils.copyLarge(inputWithoutMac, tempOut)
+					val cipherText = tempOut.toByteArray()
+					val cipherTextWithoutMac = cipherText.copyOfRange(1, cipherText.size - 32)
+					val providedMacBytes = cipherText.copyOfRange(cipherText.size - 32, cipherText.size)
+					val computedMacBytes = hmac256(subKeys.mKey!!, cipherTextWithoutMac)
+					if (!Arrays.equals(computedMacBytes, providedMacBytes)) {
+						throw CryptoError("invalid mac")
+					}
+					inputWithoutMac = ByteArrayInputStream(cipherTextWithoutMac)
 				}
-				inputWithoutMac = ByteArrayInputStream(cipherTextWithoutMac)
 			}
 			val iv = ByteArray(AES_BLOCK_SIZE_BYTES)
 			IOUtils.read(inputWithoutMac, iv)
@@ -530,9 +535,18 @@ constructor(
 
 
 private class SubKeys(
-	var cKey: SecretKeySpec?,
+	var cKey: SecretKeySpec,
 	var mKey: ByteArray?,
 )
+
+private inline fun SubKeys.use(block: (keys: SubKeys) -> Unit) {
+	try {
+		block(this)
+	} finally {
+		this.cKey.destroy()
+		this.mKey?.fill(0)
+	}
+}
 
 
 @Keep

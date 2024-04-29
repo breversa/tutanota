@@ -31,7 +31,11 @@ class AndroidNativeCredentialsFacade(
 
 	override suspend fun store(credentials: UnencryptedCredentials) {
 		val credentialsEncryptionKey = this.getOrCreateCredentialEncryptionKey()
-		val encryptedCredentials: PersistedCredentials = this.encryptCredentials(credentials, credentialsEncryptionKey)
+		val encryptedCredentials: PersistedCredentials = try {
+			this.encryptCredentials(credentials, credentialsEncryptionKey)
+		} finally {
+			credentialsEncryptionKey.fill(0)
+		}
 		this.storeEncrypted(encryptedCredentials)
 	}
 
@@ -42,18 +46,25 @@ class AndroidNativeCredentialsFacade(
 	override suspend fun loadByUserId(id: String): UnencryptedCredentials? {
 		val credentialsKey = this.getCredentialsEncryptionKey()
 			?: throw KeyPermanentlyInvalidatedException("Credentials key is missing, cannot decrypt credentials")
-		if (this.getCredentialEncryptionMode() != CredentialEncryptionMode.DEVICE_LOCK) {
-			Log.d(TAG, "Migrating encryption mode to DEVICE_LOCK")
-			// re-encrypt credentials here
-			val encryptedKey =
-				this.keychainEncryption.encryptUsingKeychain(credentialsKey, CredentialEncryptionMode.DEVICE_LOCK)
-			db.keyBinaryDao().put(CREDENTIALS_ENCRYPTION_KEY_KEY, encryptedKey)
-			setCredentialEncryptionMode(CredentialEncryptionMode.DEVICE_LOCK)
-			Log.d(TAG, "Encryption mode migration complete")
+		try {
+			if (this.getCredentialEncryptionMode() != CredentialEncryptionMode.DEVICE_LOCK) {
+				Log.d(TAG, "Migrating encryption mode to DEVICE_LOCK")
+				// re-encrypt credentials here
+				val encryptedKey =
+					this.keychainEncryption.encryptUsingKeychain(credentialsKey, CredentialEncryptionMode.DEVICE_LOCK)
+				db.keyBinaryDao().put(CREDENTIALS_ENCRYPTION_KEY_KEY, encryptedKey)
+				setCredentialEncryptionMode(CredentialEncryptionMode.DEVICE_LOCK)
+				Log.d(TAG, "Encryption mode migration complete")
+			}
+			val encryptedCredentials =
+				db.persistedCredentialsDao().allPersistedCredentials.firstOrNull { e -> e.userId == id }?.toObject()
+			return if (encryptedCredentials != null) this.decryptCredentials(
+				encryptedCredentials,
+				credentialsKey
+			) else null
+		} finally {
+			credentialsKey.fill(0)
 		}
-		val encryptedCredentials =
-			db.persistedCredentialsDao().allPersistedCredentials.firstOrNull { e -> e.userId == id }?.toObject()
-		return if (encryptedCredentials != null) this.decryptCredentials(encryptedCredentials, credentialsKey) else null
 	}
 
 	override suspend fun deleteByUserId(id: String) {

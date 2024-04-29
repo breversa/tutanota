@@ -17,6 +17,7 @@ import { Mail } from "../../api/entities/tutanota/TypeRefs.js"
 import { NativeAlarmScheduler } from "./DesktopAlarmScheduler.js"
 import { DesktopAlarmStorage } from "./DesktopAlarmStorage.js"
 import { SseInfo } from "./SseInfo.js"
+import { SseStorage } from "./SseStorage.js"
 
 const TAG = "[notifications]"
 
@@ -26,7 +27,7 @@ export class TutaNotificationHandler {
 	constructor(
 		private readonly wm: WindowManager,
 		private readonly nativeCredentialFacade: NativeCredentialsFacade,
-		private readonly conf: DesktopConfig,
+		private readonly sseStorage: SseStorage,
 		private readonly notifier: DesktopNotifier,
 		private readonly alarmScheduler: NativeAlarmScheduler,
 		private readonly alarmStorage: DesktopAlarmStorage,
@@ -46,7 +47,7 @@ export class TutaNotificationHandler {
 		// we can't download the email if we don't have access to credentials
 		const canShowExtendedNotification =
 			(await this.nativeCredentialFacade.getCredentialEncryptionMode()) === CredentialEncryptionMode.DEVICE_LOCK &&
-			(await this.conf.getVar(DesktopConfigKey.extendedNotificationMode)) !== ExtendedNotificationMode.NoSenderOrSubject
+			(await this.sseStorage.getExtendedNotificationConfig()) !== ExtendedNotificationMode.NoSenderOrSubject
 		if (!canShowExtendedNotification) {
 			const notificationId = notificationInfo.mailId
 				? `${notificationInfo.mailId.listId},${notificationInfo.mailId?.listElementId}`

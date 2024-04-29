@@ -12,17 +12,18 @@ import { CredentialsProvider } from "../../../src/misc/credentials/CredentialsPr
 import { SessionType } from "../../../src/api/common/SessionType.js"
 import { instance, matchers, object, replace, verify, when } from "testdouble"
 import { AccessExpiredError, NotAuthenticatedError } from "../../../src/api/common/error/RestError"
-import { DatabaseKeyFactory } from "../../../src/misc/credentials/DatabaseKeyFactory"
 import { DeviceConfig } from "../../../src/misc/DeviceConfig"
 import { ResumeSessionErrorReason } from "../../../src/api/worker/facades/LoginFacade"
 import { Mode } from "../../../src/api/common/Env.js"
-import { createTestEntity, domainConfigStub } from "../TestUtils.js"
+import { createTestEntity, domainConfigStub, textIncludes } from "../TestUtils.js"
 import { CredentialRemovalHandler } from "../../../src/login/CredentialRemovalHandler.js"
 import { NativePushServiceApp } from "../../../src/native/main/NativePushServiceApp.js"
 import { PersistedCredentials } from "../../../src/native/common/generatedipc/PersistedCredentials.js"
 import { CredentialType } from "../../../src/misc/credentials/CredentialType.js"
 import { UnencryptedCredentials } from "../../../src/native/common/generatedipc/UnencryptedCredentials.js"
 import { stringToUtf8Uint8Array, utf8Uint8ArrayToString } from "@tutao/tutanota-utils"
+import { AppLock } from "../../../src/login/AppLock.js"
+import { lang } from "../../../src/misc/LanguageViewModel.js"
 
 const { anything } = matchers
 
@@ -113,10 +114,10 @@ o.spec("LoginViewModelTest", () => {
 	let loginControllerMock: LoginController
 	let credentialsProviderMock: CredentialsProvider
 	let secondFactorHandlerMock: SecondFactorHandler
-	let databaseKeyFactory: DatabaseKeyFactory
 	let deviceConfigMock: DeviceConfig
 	let credentialRemovalHandler: CredentialRemovalHandler
 	let pushServiceApp: NativePushServiceApp
+	let appLock: AppLock
 
 	o.beforeEach(async () => {
 		loginControllerMock = object<LoginController>()
@@ -134,15 +135,11 @@ o.spec("LoginViewModelTest", () => {
 		when(loginControllerMock.getUserController()).thenReturn(userControllerMock)
 
 		credentialsProviderMock = getCredentialsProviderStub()
-
 		secondFactorHandlerMock = instance(SecondFactorHandler)
-		databaseKeyFactory = instance(DatabaseKeyFactory)
-
 		deviceConfigMock = instance(DeviceConfig)
-
 		credentialRemovalHandler = object()
-
 		pushServiceApp = object()
+		appLock = object()
 	})
 
 	/**
@@ -158,6 +155,7 @@ o.spec("LoginViewModelTest", () => {
 			domainConfigStub,
 			credentialRemovalHandler,
 			pushServiceApp,
+			appLock,
 		)
 		await viewModel.init()
 		return viewModel
@@ -272,6 +270,7 @@ o.spec("LoginViewModelTest", () => {
 			await viewModel.useCredentials(encryptedTestCredentials.credentialInfo)
 			await viewModel.login()
 			o(viewModel.state).equals(LoginState.LoggedIn)
+			verify(appLock.enforce())
 		})
 		o("login should succeed with valid stored credentials in DeleteCredentials display mode", async function () {
 			await credentialsProviderMock.store(credentialsToUnencrypted(testCredentials, null))
@@ -335,6 +334,20 @@ o.spec("LoginViewModelTest", () => {
 			await viewModel.login()
 			o(viewModel.state).equals(LoginState.NotAuthenticated)
 		})
+		o("handles CredentialAuthenticationError", async () => {
+			const unencryptedCredentials = credentialsToUnencrypted(testCredentials, null)
+			await credentialsProviderMock.store(unencryptedCredentials)
+			when(credentialsProviderMock.getDecryptedCredentialsByUserId(testCredentials.userId)).thenReject(new KeyPermanentlyInvalidatedError("oh no"))
+			const viewModel = await getViewModel()
+			when(appLock.enforce()).thenReject(new CredentialAuthenticationError("test"))
+
+			await viewModel.useCredentials(encryptedTestCredentials.credentialInfo)
+			await viewModel.login()
+			o(viewModel.state).equals(LoginState.UnknownError)
+			o(viewModel.displayMode).equals(DisplayMode.Credentials)
+			o(viewModel.getSavedCredentials()).deepEquals([unencryptedCredentials.credentialInfo])
+			o(lang.getMaybeLazy(viewModel.helpText)).satisfies(textIncludes("test"))
+		})
 	})
 	o.spec("Login with email and password", function () {
 		const credentialsWithoutPassword: Credentials = {
@@ -344,7 +357,6 @@ o.spec("LoginViewModelTest", () => {
 			userId: testCredentials.userId,
 			type: CredentialType.internal,
 		}
-		const dbKey = new Uint8Array([1, 2, 3])
 		const password = "password"
 		o("should login and not store password", async function () {
 			const viewModel = await getViewModel()
@@ -376,6 +388,7 @@ o.spec("LoginViewModelTest", () => {
 				),
 				{ times: 1 },
 			)
+			verify(appLock.enforce())
 		})
 		o("should login and overwrite existing stored credentials", async function () {
 			const oldCredentials: UnencryptedCredentials = {

@@ -3,8 +3,6 @@ import { EncryptedAlarmNotification } from "../../native/common/EncryptedAlarmNo
 import { NativeAlarmScheduler } from "./DesktopAlarmScheduler.js"
 import { DesktopAlarmStorage } from "./DesktopAlarmStorage.js"
 import { ExtendedNotificationMode } from "../../native/common/generatedipc/ExtendedNotificationMode.js"
-import { DesktopConfig } from "../config/DesktopConfig.js"
-import { DesktopConfigKey } from "../config/ConfigKeys.js"
 import { SseStorage } from "./SseStorage.js"
 import { TutaSseFacade } from "./TutaSseFacade.js"
 
@@ -13,16 +11,16 @@ export class DesktopNativePushFacade implements NativePushFacade {
 		private readonly sse: TutaSseFacade,
 		private readonly alarmScheduler: NativeAlarmScheduler,
 		private readonly alarmStorage: DesktopAlarmStorage,
-		private readonly desktopConfig: DesktopConfig,
 		private readonly sseStorage: SseStorage,
 	) {}
 
+	// FIXME should be per-user
 	getExtendedNotificationConfig(): Promise<ExtendedNotificationMode> {
-		return this.desktopConfig.getVar(DesktopConfigKey.extendedNotificationMode)
+		return this.sseStorage.getExtendedNotificationConfig()
 	}
 
-	setExtendedNotificationConfig(type: ExtendedNotificationMode): Promise<void> {
-		return this.desktopConfig.setVar(DesktopConfigKey.extendedNotificationMode, type)
+	setExtendedNotificationConfig(mode: ExtendedNotificationMode): Promise<void> {
+		return this.sseStorage.setExtendedNotificationConfig(mode)
 	}
 
 	async closePushNotifications(addressesArray: ReadonlyArray<string>): Promise<void> {

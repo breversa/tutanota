@@ -2,6 +2,9 @@ import { DesktopConfig } from "../config/DesktopConfig.js"
 import { DesktopConfigEncKey, DesktopConfigKey } from "../config/ConfigKeys.js"
 import { remove } from "@tutao/tutanota-utils"
 import { SseInfo } from "./SseInfo.js"
+import { ExtendedNotificationMode } from "../../native/common/generatedipc/ExtendedNotificationMode.js"
+
+const DEFAULT_EXTENDED_NOTIFICATION_MODE = ExtendedNotificationMode.NoSenderOrSubject
 
 export class SseStorage {
 	constructor(private readonly conf: DesktopConfig) {}
@@ -24,6 +27,12 @@ export class SseStorage {
 			newSseInfo.userIds.push(userId)
 		}
 		await this.conf.setVar(DesktopConfigEncKey.sseInfo, newSseInfo)
+		// Provide right defaults for extended notification mode.
+		//  - Start with "nothing" as a conservative default
+		//  - If notifications were not used before, enable extended notifications
+		if (previousSseInfo == null) {
+			await this.setExtendedNotificationConfig(ExtendedNotificationMode.SenderAndSubject)
+		}
 	}
 
 	async removeUser(userId: Id): Promise<SseInfo | null> {
@@ -62,6 +71,14 @@ export class SseStorage {
 
 	async setHeartbeatTimeoutSec(timeout: number) {
 		await this.conf.setVar(DesktopConfigKey.heartbeatTimeoutInSeconds, timeout)
+	}
+
+	async getExtendedNotificationConfig(): Promise<ExtendedNotificationMode> {
+		return (await this.conf.getVar(DesktopConfigKey.extendedNotificationMode)) ?? DEFAULT_EXTENDED_NOTIFICATION_MODE
+	}
+
+	setExtendedNotificationConfig(mode: ExtendedNotificationMode): Promise<void> {
+		return this.conf.setVar(DesktopConfigKey.extendedNotificationMode, mode)
 	}
 
 	async clear() {

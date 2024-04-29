@@ -2,15 +2,13 @@ import o from "@tutao/otest"
 import { MailMetadata, TutaNotificationHandler } from "../../../../src/desktop/sse/TutaNotificationHandler.js"
 import { WindowManager } from "../../../../src/desktop/DesktopWindowManager.js"
 import { NativeCredentialsFacade } from "../../../../src/native/common/generatedipc/NativeCredentialsFacade.js"
-import { DesktopConfig } from "../../../../src/desktop/config/DesktopConfig.js"
 import { DesktopNotifier, NotificationResult } from "../../../../src/desktop/DesktopNotifier.js"
 import { DesktopAlarmScheduler } from "../../../../src/desktop/sse/DesktopAlarmScheduler.js"
 import { DesktopAlarmStorage } from "../../../../src/desktop/sse/DesktopAlarmStorage.js"
 import { LanguageViewModel } from "../../../../src/misc/LanguageViewModel.js"
 import { fetch as undiciFetch } from "undici"
 import { func, matchers, object, verify, when } from "testdouble"
-import { CredentialEncryptionMode } from "../../../../src/native/common/generatedipc/CredentialEncryptionMode.js"
-import { DesktopConfigKey } from "../../../../src/desktop/config/ConfigKeys.js"
+import { CredentialEncryptionMode } from "../../../../src/misc/credentials/CredentialEncryptionMode.js"
 import { ExtendedNotificationMode } from "../../../../src/native/common/generatedipc/ExtendedNotificationMode.js"
 import { createIdTupleWrapper, createNotificationInfo } from "../../../../src/api/entities/sys/TypeRefs.js"
 import { createTestEntity, mockFetchRequest } from "../../TestUtils.js"
@@ -22,13 +20,14 @@ import { EncryptedAlarmNotification } from "../../../../src/native/common/Encryp
 import { OperationType } from "../../../../src/api/common/TutanotaConstants.js"
 import { ApplicationWindow } from "../../../../src/desktop/ApplicationWindow.js"
 import { SseInfo } from "../../../../src/desktop/sse/SseInfo.js"
+import { SseStorage } from "../../../../src/desktop/sse/SseStorage.js"
 
 type UndiciFetch = typeof undiciFetch
 
 o.spec("TutaNotificationHandler", () => {
 	let wm: WindowManager
 	let nativeCredentialsFacade: NativeCredentialsFacade
-	let conf: DesktopConfig
+	let conf: SseStorage
 	let notifier: DesktopNotifier
 	let alarmScheduler: DesktopAlarmScheduler
 	let alarmStorage: DesktopAlarmStorage
@@ -54,7 +53,7 @@ o.spec("TutaNotificationHandler", () => {
 		o.test("displays simple notification if preview is off", async () => {
 			when(wm.getAll()).thenReturn([])
 			when(nativeCredentialsFacade.getCredentialEncryptionMode()).thenResolve(CredentialEncryptionMode.DEVICE_LOCK)
-			when(conf.getVar(DesktopConfigKey.extendedNotificationMode)).thenResolve(ExtendedNotificationMode.NoSenderOrSubject)
+			when(conf.getExtendedNotificationConfig()).thenResolve(ExtendedNotificationMode.NoSenderOrSubject)
 			const mailId = createIdTupleWrapper({
 				listId: "mailListId",
 				listElementId: "mailElementId",
@@ -82,7 +81,7 @@ o.spec("TutaNotificationHandler", () => {
 				} as Partial<ApplicationWindow> as ApplicationWindow,
 			])
 			when(nativeCredentialsFacade.getCredentialEncryptionMode()).thenResolve(CredentialEncryptionMode.DEVICE_LOCK)
-			when(conf.getVar(DesktopConfigKey.extendedNotificationMode)).thenResolve(ExtendedNotificationMode.NoSenderOrSubject)
+			when(conf.getExtendedNotificationConfig()).thenResolve(ExtendedNotificationMode.NoSenderOrSubject)
 			const mailId = createIdTupleWrapper({
 				listId: "mailListId",
 				listElementId: "mailElementId",
@@ -103,7 +102,7 @@ o.spec("TutaNotificationHandler", () => {
 		o.test("displays simple notification if app pass is on", async () => {
 			when(wm.getAll()).thenReturn([])
 			when(nativeCredentialsFacade.getCredentialEncryptionMode()).thenResolve(CredentialEncryptionMode.APP_PASSWORD)
-			when(conf.getVar(DesktopConfigKey.extendedNotificationMode)).thenResolve(ExtendedNotificationMode.OnlySender)
+			when(conf.getExtendedNotificationConfig()).thenResolve(ExtendedNotificationMode.OnlySender)
 			const mailId = createIdTupleWrapper({
 				listId: "mailListId",
 				listElementId: "mailElementId",
@@ -139,7 +138,7 @@ o.spec("TutaNotificationHandler", () => {
 		o.test("downloads and displays extended notifications", async () => {
 			when(wm.getAll()).thenReturn([])
 			when(nativeCredentialsFacade.getCredentialEncryptionMode()).thenResolve(CredentialEncryptionMode.DEVICE_LOCK)
-			when(conf.getVar(DesktopConfigKey.extendedNotificationMode)).thenResolve(ExtendedNotificationMode.OnlySender)
+			when(conf.getExtendedNotificationConfig()).thenResolve(ExtendedNotificationMode.OnlySender)
 			const mailId = createIdTupleWrapper({
 				listId: "mailListId",
 				listElementId: "mailElementId",

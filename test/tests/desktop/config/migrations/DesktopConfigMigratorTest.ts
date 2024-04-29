@@ -50,7 +50,7 @@ o.spec("DesktopConfigMigrator", function () {
 			defaultDownloadPath: null,
 			enableAutoUpdate: true,
 			runAsTrayApp: true,
-			desktopConfigVersion: 9,
+			desktopConfigVersion: 8,
 			showAutoUpdateOption: true,
 			spellcheck: "de-DE",
 			offlineStorageEnabled: false,
@@ -61,7 +61,6 @@ o.spec("DesktopConfigMigrator", function () {
 				fullscreen: false,
 				scale: 1,
 			},
-			extendedNotificationMode: "0",
 		}
 
 		o(await migrator.applyMigrations("migrateClient", oldConfig)).deepEquals(requiredResult)
@@ -74,7 +73,7 @@ o.spec("DesktopConfigMigrator", function () {
 		const requiredResult = {
 			appPassSalt: null,
 			runAsTrayApp: true,
-			desktopConfigVersion: 9,
+			desktopConfigVersion: 8,
 			showAutoUpdateOption: true,
 			mailExportMode: "eml",
 			spellcheck: "",
@@ -84,7 +83,6 @@ o.spec("DesktopConfigMigrator", function () {
 				fullscreen: false,
 				scale: 1,
 			},
-			extendedNotificationMode: "2",
 		}
 
 		o(await migrator.applyMigrations("migrateAdmin", oldConfig)).deepEquals(requiredResult)

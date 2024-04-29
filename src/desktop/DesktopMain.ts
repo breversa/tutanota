@@ -224,10 +224,12 @@ async function createComponents(): Promise<Components> {
 	})
 
 	tray.setWindowManager(wm)
+
+	const sseStorage = new SseStorage(conf)
 	const notificationHandler = new TutaNotificationHandler(
 		wm,
 		nativeCredentialsFacade,
-		conf,
+		sseStorage,
 		notifier,
 		desktopAlarmScheduler,
 		alarmStorage,
@@ -235,7 +237,6 @@ async function createComponents(): Promise<Components> {
 		suspensionAwareFetch,
 		app.getVersion(),
 	)
-	const sseStorage = new SseStorage(conf)
 	const sseClient = new SseClient(desktopNet, new DesktopSseDelay(), schedulerImpl)
 	const sse = new TutaSseFacade(sseStorage, notificationHandler, sseClient, desktopCrypto, app.getVersion(), suspensionAwareFetch, dateProvider)
 	// It should be ok to await this, all we are waiting for is dynamic imports
@@ -245,7 +246,7 @@ async function createComponents(): Promise<Components> {
 		eml: desktopUtils.getIconByName("eml.png"),
 		msg: desktopUtils.getIconByName("msg.png"),
 	}
-	const pushFacade = new DesktopNativePushFacade(sse, desktopAlarmScheduler, alarmStorage, conf, sseStorage)
+	const pushFacade = new DesktopNativePushFacade(sse, desktopAlarmScheduler, alarmStorage, sseStorage)
 	const settingsFacade = new DesktopSettingsFacade(conf, desktopUtils, integrator, updater, lang)
 
 	const dispatcherFactory = (window: ApplicationWindow) => {

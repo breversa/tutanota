@@ -23,8 +23,7 @@ import javax.crypto.spec.OAEPParameterSpec
 import javax.crypto.spec.PSource
 import javax.crypto.spec.SecretKeySpec
 
-class AndroidNativeCryptoFacade
-constructor(
+class AndroidNativeCryptoFacade(
 	private val context: Context,
 	private val tempDir: TempDir = TempDir(context),
 	val randomizer: SecureRandom = SecureRandom(),
@@ -354,7 +353,8 @@ constructor(
 		return output.toByteArray()
 	}
 
-	private fun generateIv(): ByteArray {
+	@VisibleForTesting
+	fun generateIv(): ByteArray {
 		val iv = ByteArray(AES_BLOCK_SIZE_BYTES)
 		randomizer.nextBytes(iv)
 		return iv

@@ -2,6 +2,7 @@ package de.tutao.tutanota.credentials
 
 import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import de.tutao.tutanota.AndroidNativeCryptoFacade
 import de.tutao.tutanota.CryptoError
 import de.tutao.tutanota.data.AppDatabase
@@ -21,8 +22,10 @@ class AndroidNativeCredentialsFacade(
 ) : NativeCredentialsFacade {
 
 	companion object {
-		private const val CREDENTIALS_ENCRYPTION_MODE_KEY = "credentialEncryptionMode"
-		private const val CREDENTIALS_ENCRYPTION_KEY_KEY = "credentialsEncryptionKey"
+		@VisibleForTesting
+		const val CREDENTIALS_ENCRYPTION_MODE_KEY = "credentialEncryptionMode"
+		@VisibleForTesting
+		const val CREDENTIALS_ENCRYPTION_KEY_KEY = "credentialsEncryptionKey"
 	}
 
 	override suspend fun loadAll(): List<PersistedCredentials> {

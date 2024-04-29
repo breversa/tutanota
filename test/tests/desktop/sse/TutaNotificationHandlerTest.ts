@@ -53,7 +53,7 @@ o.spec("TutaNotificationHandler", () => {
 		o.test("displays simple notification if preview is off", async () => {
 			when(wm.getAll()).thenReturn([])
 			when(nativeCredentialsFacade.getCredentialEncryptionMode()).thenResolve(CredentialEncryptionMode.DEVICE_LOCK)
-			when(conf.getExtendedNotificationConfig()).thenResolve(ExtendedNotificationMode.NoSenderOrSubject)
+			when(conf.getExtendedNotificationConfig("user1")).thenResolve(ExtendedNotificationMode.NoSenderOrSubject)
 			const mailId = createIdTupleWrapper({
 				listId: "mailListId",
 				listElementId: "mailElementId",
@@ -81,7 +81,7 @@ o.spec("TutaNotificationHandler", () => {
 				} as Partial<ApplicationWindow> as ApplicationWindow,
 			])
 			when(nativeCredentialsFacade.getCredentialEncryptionMode()).thenResolve(CredentialEncryptionMode.DEVICE_LOCK)
-			when(conf.getExtendedNotificationConfig()).thenResolve(ExtendedNotificationMode.NoSenderOrSubject)
+			when(conf.getExtendedNotificationConfig("user1")).thenResolve(ExtendedNotificationMode.NoSenderOrSubject)
 			const mailId = createIdTupleWrapper({
 				listId: "mailListId",
 				listElementId: "mailElementId",
@@ -102,7 +102,7 @@ o.spec("TutaNotificationHandler", () => {
 		o.test("displays simple notification if app pass is on", async () => {
 			when(wm.getAll()).thenReturn([])
 			when(nativeCredentialsFacade.getCredentialEncryptionMode()).thenResolve(CredentialEncryptionMode.APP_PASSWORD)
-			when(conf.getExtendedNotificationConfig()).thenResolve(ExtendedNotificationMode.OnlySender)
+			when(conf.getExtendedNotificationConfig("user1")).thenResolve(ExtendedNotificationMode.OnlySender)
 			const mailId = createIdTupleWrapper({
 				listId: "mailListId",
 				listElementId: "mailElementId",
@@ -138,7 +138,7 @@ o.spec("TutaNotificationHandler", () => {
 		o.test("downloads and displays extended notifications", async () => {
 			when(wm.getAll()).thenReturn([])
 			when(nativeCredentialsFacade.getCredentialEncryptionMode()).thenResolve(CredentialEncryptionMode.DEVICE_LOCK)
-			when(conf.getExtendedNotificationConfig()).thenResolve(ExtendedNotificationMode.OnlySender)
+			when(conf.getExtendedNotificationConfig("user1")).thenResolve(ExtendedNotificationMode.OnlySender)
 			const mailId = createIdTupleWrapper({
 				listId: "mailListId",
 				listElementId: "mailElementId",

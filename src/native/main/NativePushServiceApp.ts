@@ -141,10 +141,11 @@ export class NativePushServiceApp {
 	}
 
 	getExtendedNotificationMode(): Promise<ExtendedNotificationMode> {
-		return this.nativePushFacade.getExtendedNotificationConfig()
+		return this.nativePushFacade.getExtendedNotificationConfig(this.logins.getUserController().userId)
 	}
+
 	async setExtendedNotificationMode(type: ExtendedNotificationMode) {
-		await this.nativePushFacade.setExtendedNotificationConfig(type)
+		await this.nativePushFacade.setExtendedNotificationConfig(this.logins.getUserController().userId, type)
 	}
 
 	private initPushNotifications(): Promise<void> {

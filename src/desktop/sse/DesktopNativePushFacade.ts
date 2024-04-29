@@ -14,13 +14,12 @@ export class DesktopNativePushFacade implements NativePushFacade {
 		private readonly sseStorage: SseStorage,
 	) {}
 
-	// FIXME should be per-user
-	getExtendedNotificationConfig(): Promise<ExtendedNotificationMode> {
-		return this.sseStorage.getExtendedNotificationConfig()
+	getExtendedNotificationConfig(userId: string): Promise<ExtendedNotificationMode> {
+		return this.sseStorage.getExtendedNotificationConfig(userId)
 	}
 
-	setExtendedNotificationConfig(mode: ExtendedNotificationMode): Promise<void> {
-		return this.sseStorage.setExtendedNotificationConfig(mode)
+	setExtendedNotificationConfig(userId: string, mode: ExtendedNotificationMode): Promise<void> {
+		return this.sseStorage.setExtendedNotificationConfig(userId, mode)
 	}
 
 	async closePushNotifications(addressesArray: ReadonlyArray<string>): Promise<void> {

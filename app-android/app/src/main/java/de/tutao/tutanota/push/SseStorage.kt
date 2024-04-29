@@ -39,9 +39,9 @@ class SseStorage(
 		// Provide right defaults for extended notification mode.
 		//  - Start with "nothing" as a conservative default
 		//  - If notifications were not used before, enable extended notifications
-		val previousSseInfo = this.getPushIdentifier()
-		if (previousSseInfo == null) {
-			this.setExtendedNotificationConfig(ExtendedNotificationMode.SENDER_AND_SUBJECT)
+		val users = this.getUsers()
+		if (!users.any { it.userId == userId }) {
+			this.setExtendedNotificationConfig(userId, ExtendedNotificationMode.SENDER_AND_SUBJECT)
 		}
 		val deviceEncSessionKey = keyStoreFacade.encryptKey(pushIdentifierSessionKey)
 		db.userInfoDao().insertPushIdentifierKey(PushIdentifierKey(pushIdentifierId, deviceEncSessionKey))
@@ -99,13 +99,13 @@ class SseStorage(
 		db.userInfoDao().deleteUser(userId)
 	}
 
-	fun setExtendedNotificationConfig(mode: ExtendedNotificationMode) {
-		db.keyValueDao().putString(EXTENDED_NOTIFICATION_MODE, mode.value)
+	fun setExtendedNotificationConfig(userId: String, mode: ExtendedNotificationMode) {
+		db.keyValueDao().putString("$EXTENDED_NOTIFICATION_MODE:$userId", mode.value)
 	}
 
-	fun getExtendedNotificationConfig(): ExtendedNotificationMode {
-		// FIXME Do we need to check old config here too?
-		return db.keyValueDao().getString(EXTENDED_NOTIFICATION_MODE)?.let { ExtendedNotificationMode.fromValue(it) }
+	fun getExtendedNotificationConfig(userId: String): ExtendedNotificationMode {
+		return db.keyValueDao().getString("$EXTENDED_NOTIFICATION_MODE:$userId")
+			?.let { ExtendedNotificationMode.fromValue(it) }
 			?: DEFAULT_EXTENDED_NOTIFCATION_MODE
 	}
 

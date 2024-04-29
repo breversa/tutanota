@@ -68,14 +68,18 @@ class NativePushFacadeReceiveDispatcher(
 				return json.encodeToString(result)
 			}
 			"setExtendedNotificationConfig" -> {
-				val type: ExtendedNotificationMode = json.decodeFromString(arg[0])
+				val userId: String = json.decodeFromString(arg[0])
+				val mode: ExtendedNotificationMode = json.decodeFromString(arg[1])
 				val result: Unit = this.facade.setExtendedNotificationConfig(
-					type,
+					userId,
+					mode,
 				)
 				return json.encodeToString(result)
 			}
 			"getExtendedNotificationConfig" -> {
+				val userId: String = json.decodeFromString(arg[0])
 				val result: ExtendedNotificationMode = this.facade.getExtendedNotificationConfig(
+					userId,
 				)
 				return json.encodeToString(result)
 			}

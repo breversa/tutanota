@@ -226,8 +226,13 @@ class TutanotaNotificationsHandler(
 	private fun handleNotificationInfos(sseInfo: SseInfo, notificationInfos: List<NotificationInfo>) {
 		lifecycleScope.launch(Dispatchers.IO) {
 			val metadatas = notificationInfos.map {
-				// FIXME error handling
-				Pair(it, downloadEmailMetadata(sseInfo, it))
+				try {
+					Pair(it, downloadEmailMetadata(sseInfo, it))
+				} catch (e: Throwable) {
+					Log.w(TAG, e)
+					Pair(it, null)
+				}
+
 			}
 			localNotificationsFacade.sendEmailNotifications(metadatas)
 		}
@@ -251,7 +256,7 @@ class TutanotaNotificationsHandler(
 		// why here v is sys model version but on ios it is entity model version?
 		addCommonHeadersWithTutanotaModelVersion(requestBuilder)
 
-		var req = requestBuilder.build()
+		val req = requestBuilder.build()
 
 		val response = defaultClient
 				.newBuilder()

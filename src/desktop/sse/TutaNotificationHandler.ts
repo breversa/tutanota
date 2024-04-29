@@ -47,7 +47,7 @@ export class TutaNotificationHandler {
 		// we can't download the email if we don't have access to credentials
 		const canShowExtendedNotification =
 			(await this.nativeCredentialFacade.getCredentialEncryptionMode()) === CredentialEncryptionMode.DEVICE_LOCK &&
-			(await this.sseStorage.getExtendedNotificationConfig()) !== ExtendedNotificationMode.NoSenderOrSubject
+			(await this.sseStorage.getExtendedNotificationConfig(notificationInfo.userId)) !== ExtendedNotificationMode.NoSenderOrSubject
 		if (!canShowExtendedNotification) {
 			const notificationId = notificationInfo.mailId
 				? `${notificationInfo.mailId.listId},${notificationInfo.mailId?.listElementId}`

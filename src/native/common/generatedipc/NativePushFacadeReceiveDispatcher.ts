@@ -39,11 +39,13 @@ export class NativePushFacadeReceiveDispatcher {
 				return this.facade.invalidateAlarmsForUser(userId)
 			}
 			case "setExtendedNotificationConfig": {
-				const type: ExtendedNotificationMode = arg[0]
-				return this.facade.setExtendedNotificationConfig(type)
+				const userId: string = arg[0]
+				const mode: ExtendedNotificationMode = arg[1]
+				return this.facade.setExtendedNotificationConfig(userId, mode)
 			}
 			case "getExtendedNotificationConfig": {
-				return this.facade.getExtendedNotificationConfig()
+				const userId: string = arg[0]
+				return this.facade.getExtendedNotificationConfig(userId)
 			}
 		}
 	}

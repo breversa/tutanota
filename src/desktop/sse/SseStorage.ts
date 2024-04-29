@@ -30,8 +30,8 @@ export class SseStorage {
 		// Provide right defaults for extended notification mode.
 		//  - Start with "nothing" as a conservative default
 		//  - If notifications were not used before, enable extended notifications
-		if (previousSseInfo == null) {
-			await this.setExtendedNotificationConfig(ExtendedNotificationMode.SenderAndSubject)
+		if (previousSseInfo == null || !previousSseInfo.userIds.includes(userId)) {
+			await this.setExtendedNotificationConfig(userId, ExtendedNotificationMode.SenderAndSubject)
 		}
 	}
 
@@ -73,12 +73,15 @@ export class SseStorage {
 		await this.conf.setVar(DesktopConfigKey.heartbeatTimeoutInSeconds, timeout)
 	}
 
-	async getExtendedNotificationConfig(): Promise<ExtendedNotificationMode> {
-		return (await this.conf.getVar(DesktopConfigKey.extendedNotificationMode)) ?? DEFAULT_EXTENDED_NOTIFICATION_MODE
+	async getExtendedNotificationConfig(userId: string): Promise<ExtendedNotificationMode> {
+		const object = (await this.conf.getVar(DesktopConfigKey.extendedNotificationMode)) ?? {}
+		return object[userId] ?? DEFAULT_EXTENDED_NOTIFICATION_MODE
 	}
 
-	setExtendedNotificationConfig(mode: ExtendedNotificationMode): Promise<void> {
-		return this.conf.setVar(DesktopConfigKey.extendedNotificationMode, mode)
+	async setExtendedNotificationConfig(userId: string, mode: ExtendedNotificationMode): Promise<void> {
+		const object = (await this.conf.getVar(DesktopConfigKey.extendedNotificationMode)) ?? {}
+		object[userId] = mode
+		return this.conf.setVar(DesktopConfigKey.extendedNotificationMode, object)
 	}
 
 	async clear() {

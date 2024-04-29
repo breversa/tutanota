@@ -57,13 +57,17 @@ public class NativePushFacadeReceiveDispatcher {
 			)
 			return "null"
 		case "setExtendedNotificationConfig":
-			let type = try! JSONDecoder().decode(ExtendedNotificationMode.self, from: arg[0].data(using: .utf8)!)
+			let userId = try! JSONDecoder().decode(String.self, from: arg[0].data(using: .utf8)!)
+			let mode = try! JSONDecoder().decode(ExtendedNotificationMode.self, from: arg[1].data(using: .utf8)!)
 			try await self.facade.setExtendedNotificationConfig(
-				type
+				userId,
+				mode
 			)
 			return "null"
 		case "getExtendedNotificationConfig":
+			let userId = try! JSONDecoder().decode(String.self, from: arg[0].data(using: .utf8)!)
 			let result = try await self.facade.getExtendedNotificationConfig(
+				userId
 			)
 			return toJson(result)
 		default:

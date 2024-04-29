@@ -86,8 +86,8 @@ class LocalNotificationsFacade(private val context: Context, private val sseStor
 	}
 
 	fun sendEmailNotifications(mailMetadatas: List<Pair<NotificationInfo, MailMetadata?>>) {
-		val notificationMode = sseStorage.getExtendedNotificationConfig()
 		for ((notificationInfo, metadata) in mailMetadatas) {
+			val notificationMode = sseStorage.getExtendedNotificationConfig(notificationInfo.userId)
 			val notificationId = 1 + SecureRandom().nextInt(Int.MAX_VALUE - 1)
 
 			@ColorInt val redColor = context.resources.getColor(R.color.red, context.theme)

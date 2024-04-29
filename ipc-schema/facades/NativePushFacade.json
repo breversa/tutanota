@@ -70,13 +70,20 @@
 		"setExtendedNotificationConfig": {
 			"arg": [
 				{
-					"type": "ExtendedNotificationMode"
+					"userId": "string"
+				},
+				{
+					"mode": "ExtendedNotificationMode"
 				}
 			],
 			"ret": "void"
 		},
 		"getExtendedNotificationConfig": {
-			"arg": [],
+			"arg": [
+				{
+					"userId": "string"
+				}
+			],
 			"ret": "ExtendedNotificationMode"
 		}
 	}

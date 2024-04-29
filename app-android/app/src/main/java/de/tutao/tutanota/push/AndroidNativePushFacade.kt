@@ -49,13 +49,12 @@ class AndroidNativePushFacade(
 		alarmNotificationsManager.unscheduleAlarms(userId)
 	}
 
-	// FIXME should be per-user
-	override suspend fun setExtendedNotificationConfig(mode: ExtendedNotificationMode) {
-		this.sseStorage.setExtendedNotificationConfig(mode)
+	override suspend fun setExtendedNotificationConfig(userId: String, mode: ExtendedNotificationMode) {
+		this.sseStorage.setExtendedNotificationConfig(userId, mode)
 	}
 
-	override suspend fun getExtendedNotificationConfig(): ExtendedNotificationMode {
-		return this.sseStorage.getExtendedNotificationConfig()
+	override suspend fun getExtendedNotificationConfig(userId: String): ExtendedNotificationMode {
+		return this.sseStorage.getExtendedNotificationConfig(userId)
 	}
 
 	override suspend fun removeUser(userId: String) {

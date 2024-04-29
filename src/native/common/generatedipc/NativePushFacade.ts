@@ -32,7 +32,7 @@ export interface NativePushFacade {
 	 */
 	invalidateAlarmsForUser(userId: string): Promise<void>
 
-	setExtendedNotificationConfig(type: ExtendedNotificationMode): Promise<void>
+	setExtendedNotificationConfig(userId: string, mode: ExtendedNotificationMode): Promise<void>
 
-	getExtendedNotificationConfig(): Promise<ExtendedNotificationMode>
+	getExtendedNotificationConfig(userId: string): Promise<ExtendedNotificationMode>
 }

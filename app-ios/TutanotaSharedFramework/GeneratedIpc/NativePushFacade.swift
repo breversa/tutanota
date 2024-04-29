@@ -37,8 +37,10 @@ public protocol NativePushFacade {
 		_ userId: String
 	) async throws -> Void
 	func setExtendedNotificationConfig(
-		_ type: ExtendedNotificationMode
+		_ userId: String,
+		_ mode: ExtendedNotificationMode
 	) async throws -> Void
 	func getExtendedNotificationConfig(
+		_ userId: String
 	) async throws -> ExtendedNotificationMode
 }

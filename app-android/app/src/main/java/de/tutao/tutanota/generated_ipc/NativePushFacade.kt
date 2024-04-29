@@ -40,8 +40,10 @@ interface NativePushFacade {
 		userId: String,
 	): Unit
 	suspend fun setExtendedNotificationConfig(
-		type: ExtendedNotificationMode,
+		userId: String,
+		mode: ExtendedNotificationMode,
 	): Unit
 	suspend fun getExtendedNotificationConfig(
+		userId: String,
 	): ExtendedNotificationMode
 }

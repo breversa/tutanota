@@ -6,7 +6,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import de.tutao.tutanota.alarms.AlarmNotificationEntity
-import de.tutao.tutanota.credentials.PersistedCredentialsDao
+import de.tutao.tutanota.credentials.CredentialsDao
 import de.tutao.tutanota.credentials.PersistedCredentialsEntity
 
 @Database(
@@ -27,7 +27,7 @@ abstract class AppDatabase : RoomDatabase() {
 	abstract fun keyBinaryDao(): KeyBinaryDao
 	abstract fun userInfoDao(): UserInfoDao
 	abstract fun alarmInfoDao(): AlarmInfoDao
-	abstract fun persistedCredentialsDao(): PersistedCredentialsDao
+	abstract fun credentialsDao(): CredentialsDao
 
 	companion object {
 		fun getDatabase(context: Context, allowMainThreadAccess: Boolean): AppDatabase {

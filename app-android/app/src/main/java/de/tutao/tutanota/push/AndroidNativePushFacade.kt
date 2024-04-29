@@ -10,9 +10,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class AndroidNativePushFacade(
-		private val activity: MainActivity,
-		private val sseStorage: SseStorage,
-		private val alarmNotificationsManager: AlarmNotificationsManager,
+	private val activity: MainActivity,
+	private val sseStorage: SseStorage,
+	private val alarmNotificationsManager: AlarmNotificationsManager,
+	private val localNotificationsFacade: LocalNotificationsFacade,
 ) : NativePushFacade {
 
 	override suspend fun getPushIdentifier(): String? {
@@ -20,11 +21,11 @@ class AndroidNativePushFacade(
 	}
 
 	override suspend fun storePushIdentifierLocally(
-			identifier: String,
-			userId: String,
-			sseOrigin: String,
-			pushIdentifierId: String,
-			pushIdentifierSessionKey: DataWrapper
+		identifier: String,
+		userId: String,
+		sseOrigin: String,
+		pushIdentifierId: String,
+		pushIdentifierSessionKey: DataWrapper
 	) {
 		sseStorage.storePushIdentifier(identifier, sseOrigin)
 		sseStorage.storePushIdentifierSessionKey(userId, pushIdentifierId, pushIdentifierSessionKey.data)
@@ -37,14 +38,7 @@ class AndroidNativePushFacade(
 	}
 
 	override suspend fun closePushNotifications(addressesArray: List<String>) {
-		activity.startService(
-				notificationDismissedIntent(
-						activity,
-						ArrayList(addressesArray),
-						"Native",
-						false
-				)
-		)
+		localNotificationsFacade.dismissNotifications(addressesArray)
 	}
 
 	override suspend fun scheduleAlarms(alarms: List<EncryptedAlarmNotification>) {
@@ -55,6 +49,7 @@ class AndroidNativePushFacade(
 		alarmNotificationsManager.unscheduleAlarms(userId)
 	}
 
+	// FIXME should be per-user
 	override suspend fun setExtendedNotificationConfig(mode: ExtendedNotificationMode) {
 		this.sseStorage.setExtendedNotificationConfig(mode)
 	}

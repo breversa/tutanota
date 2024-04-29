@@ -26,7 +26,7 @@ class AndroidNativeCredentialsFacade(
 	}
 
 	override suspend fun loadAll(): List<PersistedCredentials> {
-		return db.persistedCredentialsDao().allPersistedCredentials.map { e -> e.toObject() }
+		return db.credentialsDao().allPersistedCredentials.map { e -> e.toObject() }
 	}
 
 	override suspend fun store(credentials: UnencryptedCredentials) {
@@ -40,7 +40,7 @@ class AndroidNativeCredentialsFacade(
 	}
 
 	override suspend fun storeEncrypted(credentials: PersistedCredentials) {
-		db.persistedCredentialsDao().insertPersistedCredentials(credentials.toEntity())
+		db.credentialsDao().insertPersistedCredentials(credentials.toEntity())
 	}
 
 	override suspend fun loadByUserId(id: String): UnencryptedCredentials? {
@@ -57,7 +57,7 @@ class AndroidNativeCredentialsFacade(
 				Log.d(TAG, "Encryption mode migration complete")
 			}
 			val encryptedCredentials =
-				db.persistedCredentialsDao().allPersistedCredentials.firstOrNull { e -> e.userId == id }?.toObject()
+				db.credentialsDao().allPersistedCredentials.firstOrNull { e -> e.userId == id }?.toObject()
 			return if (encryptedCredentials != null) this.decryptCredentials(
 				encryptedCredentials,
 				credentialsKey
@@ -68,11 +68,11 @@ class AndroidNativeCredentialsFacade(
 	}
 
 	override suspend fun deleteByUserId(id: String) {
-		db.persistedCredentialsDao().deletePersistedCredentials(id)
+		db.credentialsDao().deletePersistedCredentials(id)
 	}
 
 	override suspend fun clear() {
-		db.persistedCredentialsDao().clear()
+		db.credentialsDao().clear()
 		db.keyBinaryDao().put(CREDENTIALS_ENCRYPTION_KEY_KEY, null)
 		db.keyValueDao().putString(CREDENTIALS_ENCRYPTION_MODE_KEY, null)
 	}

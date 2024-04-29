@@ -226,9 +226,9 @@ class TutanotaNotificationsHandler(
 	private fun handleNotificationInfos(sseInfo: SseInfo, notificationInfos: List<NotificationInfo>) {
 		lifecycleScope.launch(Dispatchers.IO) {
 			val metadatas = notificationInfos.map {
+				// FIXME error handling
 				Pair(it, downloadEmailMetadata(sseInfo, it))
 			}
-			// TODO: translate
 			localNotificationsFacade.sendEmailNotifications(metadatas)
 		}
 	}

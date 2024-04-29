@@ -12,7 +12,7 @@ import de.tutao.tutanota.ipc.NativeCredentialsFacade
 object CredentialsEncryptionFactory {
 	fun create(activity: Context, crypto: AndroidNativeCryptoFacade, db: AppDatabase): NativeCredentialsFacade {
 		val authenticationPrompt = AuthenticationPrompt()
-		val keyStoreFacade = de.tutao.tutanota.createAndroidKeyStoreFacade(crypto)
+		val keyStoreFacade = de.tutao.tutanota.createAndroidKeyStoreFacade()
 		val keychainEncryption = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
 			CredentialsEncryptionBeforeAPI30(keyStoreFacade, activity, crypto, authenticationPrompt)
 		} else {

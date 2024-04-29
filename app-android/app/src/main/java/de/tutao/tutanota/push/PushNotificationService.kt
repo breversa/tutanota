@@ -76,13 +76,13 @@ class PushNotificationService : LifecycleJobService() {
 
 		finishJobThread.start()
 
-		localNotificationsFacade = LocalNotificationsFacade(this)
 
 		val appDatabase: AppDatabase = AppDatabase.getDatabase(this, allowMainThreadAccess = true)
 		val crypto = AndroidNativeCryptoFacade(this)
-		val keyStoreFacade = createAndroidKeyStoreFacade(crypto)
+		val keyStoreFacade = createAndroidKeyStoreFacade()
 		val nativeCredentialsFacade = CredentialsEncryptionFactory.create(this, crypto, appDatabase)
 		val sseStorage = SseStorage(appDatabase, keyStoreFacade)
+		localNotificationsFacade = LocalNotificationsFacade(this, sseStorage)
 		val alarmNotificationsManager = AlarmNotificationsManager(
 			sseStorage,
 			crypto,
@@ -153,15 +153,6 @@ class PushNotificationService : LifecycleJobService() {
 		this.state = when (this.state) {
 			State.STOPPED, State.CREATED, State.STARTED -> State.STARTED
 			State.CONNECTING, State.CONNECTED -> this.state
-		}
-
-		if (intent != null && intent.hasExtra(NOTIFICATION_DISMISSED_ADDR_EXTRA)) {
-			val dismissAddresses =
-				intent.getStringArrayListExtra(NOTIFICATION_DISMISSED_ADDR_EXTRA)
-			localNotificationsFacade.notificationDismissed(
-				dismissAddresses,
-				intent.getBooleanExtra(MainActivity.IS_SUMMARY_EXTRA, false)
-			)
 		}
 
 		// onStartCommand can be called multiple times right after another

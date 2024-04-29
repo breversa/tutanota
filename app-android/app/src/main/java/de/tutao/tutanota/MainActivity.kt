@@ -112,30 +112,33 @@ class MainActivity : FragmentActivity() {
 			intent.putExtra(ALREADY_HANDLED_INTENT, true)
 		}
 
-		val fileFacade =
-			AndroidFileFacade(this, LocalNotificationsFacade(this), SecureRandom(), NetworkUtils.defaultClient)
-		val cryptoFacade = AndroidNativeCryptoFacade(this, fileFacade.tempDir)
 		val db = AppDatabase.getDatabase(this, false)
 		sseStorage = SseStorage(
 			db,
-			createAndroidKeyStoreFacade(cryptoFacade)
+			createAndroidKeyStoreFacade()
 		)
+		val localNotificationsFacade = LocalNotificationsFacade(this, sseStorage)
+		val fileFacade =
+			AndroidFileFacade(this, localNotificationsFacade, SecureRandom(), NetworkUtils.defaultClient)
+		val cryptoFacade = AndroidNativeCryptoFacade(this, fileFacade.tempDir)
+
+
 		val alarmNotificationsManager = AlarmNotificationsManager(
 			sseStorage,
 			cryptoFacade,
 			SystemAlarmFacade(this),
-			LocalNotificationsFacade(this)
+			localNotificationsFacade
 		)
 		val nativePushFacade = AndroidNativePushFacade(
 			this,
 			sseStorage,
-			alarmNotificationsManager
+			alarmNotificationsManager,
+			localNotificationsFacade,
 		)
 
 		val ipcJson = Json { ignoreUnknownKeys = true }
 
 		themeFacade = AndroidThemeFacade(this, this)
-		val androidMobileContactsFacade = AndroidMobileContactsFacade(this)
 
 		sqlCipherFacade = AndroidSqlCipherFacade(this)
 		commonSystemFacade = AndroidCommonSystemFacade(this, sqlCipherFacade, fileFacade.tempDir)

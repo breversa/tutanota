@@ -6,7 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 
 @Dao
-interface PersistedCredentialsDao {
+interface CredentialsDao {
 	@Insert(onConflict = OnConflictStrategy.REPLACE)
 	fun insertPersistedCredentials(persistedCredentials: PersistedCredentialsEntity)
 

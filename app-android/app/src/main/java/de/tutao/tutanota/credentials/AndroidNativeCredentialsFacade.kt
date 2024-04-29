@@ -108,7 +108,7 @@ class AndroidNativeCredentialsFacade(
 		val encryptionMode = this.getCredentialEncryptionMode() ?: CredentialEncryptionMode.DEVICE_LOCK
 		val existingKey = this.getCredentialsEncryptionKey()
 		return if (existingKey != null) {
-			this.keychainEncryption.decryptUsingKeychain(existingKey, encryptionMode)
+			return existingKey
 		} else {
 			val newKey = this.crypto.generateAes256Key()
 			val encryptedKey = this.keychainEncryption.encryptUsingKeychain(newKey, encryptionMode)

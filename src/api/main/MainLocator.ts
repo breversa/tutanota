@@ -556,7 +556,9 @@ class MainLocator {
 				domainConfig,
 				credentialsRemovalHandler,
 				isBrowser() ? null : this.pushService,
-				isApp() ? new MobileAppLock(assertNotNull(this.nativeInterfaces).mobileSystemFacade) : new NoOpAppLock(),
+				isApp()
+					? new MobileAppLock(assertNotNull(this.nativeInterfaces).mobileSystemFacade, assertNotNull(this.nativeInterfaces).nativeCredentialsFacade)
+					: new NoOpAppLock(),
 			)
 		}
 	}

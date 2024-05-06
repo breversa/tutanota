@@ -22,8 +22,9 @@ class NotificationService: UNNotificationServiceExtension {
 		// Init
 		let credentialsDb = try! CredentialsDatabase(db: SqliteDb())
 		let keychainManager = KeychainManager(keyGenerator: KeyGenerator())
+		let keychainEncryption = KeychainEncryption(keychainManager: keychainManager)
 		let credentialsEncryption = IosNativeCredentialsFacade(
-			keychainManager: keychainManager,
+			keychainEncryption: keychainEncryption,
 			credentialsDb: credentialsDb,
 			userDefaults: UserDefaults(suiteName: getAppGroupName())!
 		)

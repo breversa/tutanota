@@ -190,6 +190,8 @@
 		3DEA43312B6D1E2E0037F318 /* lint.sh in Resources */ = {isa = PBXBuildFile; fileRef = 3DEA43302B6D1E2E0037F318 /* lint.sh */; };
 		3DEF18F32924E1F1009C4B55 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DEF18F22924E1F1009C4B55 /* ShareViewController.swift */; };
 		3DEF18FA2924E1F1009C4B55 /* TutanotaShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 3DEF18F02924E1F1009C4B55 /* TutanotaShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3DEFA1C92BE8D99A009460AE /* AppLockMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DEFA1C82BE8D99A009460AE /* AppLockMethod.swift */; };
+		3DEFA1CB2BE8F1C8009460AE /* KeychainEncryption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DEFA1CA2BE8F1C8009460AE /* KeychainEncryption.swift */; };
 		3DF7FA5A2AB2EE3B00DB08D1 /* Argon2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF7FA592AB2EE3B00DB08D1 /* Argon2.swift */; };
 		3DF7FA5E2AB2FBE700DB08D1 /* CompatibilityTestSwift.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF7FA5D2AB2FBE700DB08D1 /* CompatibilityTestSwift.swift */; };
 		3DF973A42BB18ABB00AF3FDE /* TutanotaSharedFramework.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DF9739E2BB18ABA00AF3FDE /* TutanotaSharedFramework.framework */; };
@@ -605,6 +607,8 @@
 		3DEF18F02924E1F1009C4B55 /* TutanotaShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TutanotaShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		3DEF18F22924E1F1009C4B55 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		3DEF18F72924E1F1009C4B55 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		3DEFA1C82BE8D99A009460AE /* AppLockMethod.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppLockMethod.swift; sourceTree = "<group>"; };
+		3DEFA1CA2BE8F1C8009460AE /* KeychainEncryption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainEncryption.swift; sourceTree = "<group>"; };
 		3DF7FA592AB2EE3B00DB08D1 /* Argon2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Argon2.swift; sourceTree = "<group>"; };
 		3DF7FA5D2AB2FBE700DB08D1 /* CompatibilityTestSwift.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompatibilityTestSwift.swift; sourceTree = "<group>"; };
 		3DF9739E2BB18ABA00AF3FDE /* TutanotaSharedFramework.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = TutanotaSharedFramework.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1828,6 +1832,7 @@
 				3DF976562BB1A2B900AF3FDE /* IosNativeCredentialsFacade.swift */,
 				3DF976552BB1A2B900AF3FDE /* KeychainManager.swift */,
 				3DF976542BB1A2B900AF3FDE /* KeyGeneratorSecureEnclave.swift */,
+				3DEFA1CA2BE8F1C8009460AE /* KeychainEncryption.swift */,
 			);
 			path = Keychain;
 			sourceTree = "<group>";
@@ -1835,6 +1840,7 @@
 		3DF976582BB1A2B900AF3FDE /* GeneratedIpc */ = {
 			isa = PBXGroup;
 			children = (
+				3DEFA1C82BE8D99A009460AE /* AppLockMethod.swift */,
 				3D414C9B2BD7AFC70098F018 /* UnencryptedCredentials.swift */,
 				3DF976912BB1A2B900AF3FDE /* CommonNativeFacade.swift */,
 				3DF976872BB1A2B900AF3FDE /* CommonNativeFacadeSendDispatcher.swift */,
@@ -2579,6 +2585,7 @@
 				3DF976AE2BB1A2B900AF3FDE /* TUTLog.m in Sources */,
 				3DF976FE2BB1A2B900AF3FDE /* StructuredContactTypes.swift in Sources */,
 				3DF976D02BB1A2B900AF3FDE /* MobileSystemFacade.swift in Sources */,
+				3DEFA1C92BE8D99A009460AE /* AppLockMethod.swift in Sources */,
 				3DF976D82BB1A2B900AF3FDE /* StructuredAddress.swift in Sources */,
 				3DF976A92BB1A2B900AF3FDE /* SyncCompletion.swift in Sources */,
 				3DF976F72BB1A2B900AF3FDE /* PermissionType.swift in Sources */,
@@ -2649,6 +2656,7 @@
 				3DF976B62BB1A2B900AF3FDE /* EncryptedAlarmNotification.swift in Sources */,
 				3DF976FD2BB1A2B900AF3FDE /* CredentialsDatabase.swift in Sources */,
 				3DF976B52BB1A2B900AF3FDE /* IdTuple.swift in Sources */,
+				3DEFA1CB2BE8F1C8009460AE /* KeychainEncryption.swift in Sources */,
 				3DF976C92BB1A2B900AF3FDE /* RsaKeyPair.swift in Sources */,
 				3DF976D72BB1A2B900AF3FDE /* MobileFacade.swift in Sources */,
 				3DF9769C2BB1A2B900AF3FDE /* ValueEncryption.swift in Sources */,

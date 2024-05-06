@@ -9,12 +9,12 @@ public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 	private static let ENCRYPTION_MODE_KEY = "credentialEncryptionMode"
 	private static let CREDENTIALS_ENCRYPTION_KEY_KEY = "credentialsEncryptionKey"
 
-	private let keychainManager: KeychainManager
+	private let keychainEncryption: KeychainEncryption
 	private let credentialsDb: CredentialsDatabase
 	private let userDefaults: UserDefaults
 
-	public init(keychainManager: KeychainManager, credentialsDb: CredentialsDatabase, userDefaults: UserDefaults) {
-		self.keychainManager = keychainManager
+	public init(keychainEncryption: KeychainEncryption, credentialsDb: CredentialsDatabase, userDefaults: UserDefaults) {
+		self.keychainEncryption = keychainEncryption
 		self.credentialsDb = credentialsDb
 		self.userDefaults = userDefaults
 	}
@@ -28,8 +28,8 @@ public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 	public func storeEncrypted(_ credentials: PersistedCredentials) async throws { try self.credentialsDb.store(credentials: credentials) }
 	public func clear() async throws {
 		try self.credentialsDb.deleteAllCredentials()
-		try self.setCredentialEncryptionMode(nil)
-		try self.setCredentialsEncryptionKey(nil)
+		try self.credentialsDb.setCredentialEncryptionMode(encryptionMode: nil)
+		try self.credentialsDb.setCredentialsEncryptionKey(encryptionKey: nil)
 	}
 	public func migrateToNativeCredentials(_ credentials: [PersistedCredentials], _ encryptionMode: CredentialEncryptionMode, _ credentialsKey: DataWrapper) async throws {
 		// on mobile we alsways use DEVICE_LOCK encryption method but previously it could have been another one
@@ -49,24 +49,17 @@ public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 	public func getCredentialEncryptionMode() throws -> CredentialEncryptionMode? {
 		return try self.credentialsDb.getCredentialEncryptionMode()
 	}
-	public func setCredentialEncryptionMode(_ encryptionMode: CredentialEncryptionMode?) throws {
+	public func setCredentialEncryptionMode(_ encryptionMode: CredentialEncryptionMode) async throws {
 		try self.credentialsDb.setCredentialEncryptionMode(encryptionMode: encryptionMode)
 	}
-	private func getCredentialsEncryptionKey() throws -> Data? {
-		return try self.credentialsDb.getCredentialsEncryptionKey().map { Data(base64Encoded: $0)! }
-	}
-	private func setCredentialsEncryptionKey(_ credentialsEncryptionKey: Data?) throws {
-		let base64 = credentialsEncryptionKey?.base64EncodedString()
-		try self.credentialsDb.setCredentialsEncryptionKey(encryptionKey: base64)
-	}
-
-	func encryptUsingKeychain(_ data: Data, _ encryptionMode: CredentialEncryptionMode) async throws -> Data {
-		return try self.keychainManager.encryptData(encryptionMode: encryptionMode, data: data)
-	}
-
-	private func decryptUsingKeychain(_ encryptedData: Data, _ encryptionMode: CredentialEncryptionMode) async throws -> Data {
-		let data = try self.keychainManager.decryptData(encryptionMode: encryptionMode, encryptedData: encryptedData)
-		return data
+	private func getCredentialsEncryptionKey() async throws -> Data? {
+		let encryptionMode = (try self.getCredentialEncryptionMode()) ?? CredentialEncryptionMode.deviceLock
+		let existingKey = try self.credentialsDb.getCredentialsEncryptionKey().map { $0.data }
+		if let existingKey {
+			return try await self.keychainEncryption.decryptUsingKeychain(existingKey, encryptionMode)
+		} else {
+			return nil
+		}
 	}
 
 	public func getSupportedEncryptionModes() async -> [CredentialEncryptionMode] {
@@ -84,20 +77,19 @@ public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 		let accessToken = try aesEncryptData(unencryptedCredentials.accessToken.data(using: .utf8)!, withKey:credentialsEncryptionKey)
 		return try PersistedCredentials(
 			credentialInfo: unencryptedCredentials.credentialInfo,
-			accessToken: accessToken.base64EncodedString(),
-			databaseKey: unencryptedCredentials.databaseKey.map { dbKey in try aesEncryptKey(dbKey.data, withKey: credentialsEncryptionKey).base64EncodedString() },
+			accessToken: accessToken.wrap(),
+			databaseKey: unencryptedCredentials.databaseKey.map { dbKey in try aesEncryptKey(dbKey.data, withKey: credentialsEncryptionKey).wrap() },
 			encryptedPassword: unencryptedCredentials.encryptedPassword
 		)
 	}
 
 	private func decryptCredentials(persistedCredentials: PersistedCredentials, credentialsKey: Data) throws ->  UnencryptedCredentials {
 			do {
-				let accessTokenData: Data = Data(base64Encoded: persistedCredentials.accessToken)!
 				return try UnencryptedCredentials(
 					credentialInfo: persistedCredentials.credentialInfo,
-					accessToken: String(bytes: aesDecryptData(accessTokenData, withKey: credentialsKey), encoding: .utf8)!,
+					accessToken: String(bytes: aesDecryptData(persistedCredentials.accessToken.data, withKey: credentialsKey), encoding: .utf8)!,
 					databaseKey: persistedCredentials.databaseKey.map({ dbKey in
-						try aesDecryptKey(Data(base64Encoded: dbKey)!, withKey: credentialsKey).wrap()
+						try aesDecryptKey(dbKey.data, withKey: credentialsKey).wrap()
 					}),
 					encryptedPassword: persistedCredentials.encryptedPassword
 				)
@@ -107,15 +99,14 @@ public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 		}
 
 	private func getOrCreateCredentialEncryptionKey() async throws -> Data {
-		let encryptionMode = (try self.getCredentialEncryptionMode()) ?? CredentialEncryptionMode.deviceLock
-		let exisingKey = try self.getCredentialsEncryptionKey()
-		if let exisingKey {
-			let decryptedKey = try await self.decryptUsingKeychain(exisingKey, encryptionMode)
-			return decryptedKey
+		let existingKey = try await self.getCredentialsEncryptionKey()
+		if let existingKey {
+			return existingKey
 		} else {
+			let encryptionMode = (try self.getCredentialEncryptionMode()) ?? CredentialEncryptionMode.deviceLock
 			let newKey = aesGenerateKey()
-			let encryptedKey = try await self.encryptUsingKeychain(newKey, encryptionMode)
-			try self.setCredentialsEncryptionKey(encryptedKey)
+			let encryptedKey = try await self.keychainEncryption.encryptUsingKeychain(newKey, encryptionMode)
+			try self.credentialsDb.setCredentialsEncryptionKey(encryptionKey: encryptedKey.wrap())
 			return newKey
 		}
 	}

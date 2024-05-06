@@ -15,8 +15,8 @@ public class CredentialsDatabase {
 				(login TEXT NOT NULL,
 				userId TEXT NOT NULL,
 				type TEXT NOT NULL,
-				accessToken TEXT NOT NULL,
-				databaseKey TEXT,
+				accessToken BLOB NOT NULL,
+				databaseKey BLOB,
 				encryptedPassword TEXT NOT NULL,
 				PRIMARY KEY (userId),
 				UNIQUE(login))
@@ -39,7 +39,7 @@ public class CredentialsDatabase {
 		try db.prepare(
 			query: """
 			CREATE TABLE IF NOT EXISTS credentialEncryptionKey (id INTEGER NOT NULL,
-			credentialEncryptionKey TEXT NOT NULL, PRIMARY KEY (id), CHECK (id=0))
+			credentialEncryptionKey BLOB NOT NULL, PRIMARY KEY (id), CHECK (id=0))
 			"""
 		)
 		.run()
@@ -59,10 +59,10 @@ public class CredentialsDatabase {
 				type: CredentialType(rawValue: try sqlRow["type"]!.asString())!
 			)
 
-			let databaseKey: String? = if case let .string(value) = sqlRow["databaseKey"] { value } else { nil }
+			let databaseKey: DataWrapper? = if case let .bytes(value) = sqlRow["databaseKey"] { value } else { nil }
 			return PersistedCredentials(
 				credentialInfo: credentialsInfo,
-				accessToken: try sqlRow["accessToken"]!.asString(),
+				accessToken: try sqlRow["accessToken"]!.asBytes(),
 				databaseKey: databaseKey,
 				encryptedPassword: try sqlRow["encryptedPassword"]!.asString()
 			)
@@ -70,7 +70,7 @@ public class CredentialsDatabase {
 	}
 
 	public func store(credentials: PersistedCredentials) throws {
-		let databaseKey: TaggedSqlValue = if let databaseKey = credentials.databaseKey { .string(value: databaseKey) } else { .null }
+		let databaseKey: TaggedSqlValue = if let databaseKey = credentials.databaseKey { .bytes(value: databaseKey) } else { .null }
 		try db.prepare(
 			query: """
 				INSERT INTO credentials (login, userId, type, accessToken, databaseKey, encryptedPassword) 
@@ -79,7 +79,7 @@ public class CredentialsDatabase {
 		)
 		.bindParams([
 			.string(value: credentials.credentialInfo.login), .string(value: credentials.credentialInfo.userId),
-			.string(value: credentials.credentialInfo.type.rawValue), .string(value: credentials.accessToken), databaseKey,
+			.string(value: credentials.credentialInfo.type.rawValue), .bytes(value: credentials.accessToken), databaseKey,
 			.string(value: credentials.encryptedPassword),
 		])
 		.run()
@@ -106,12 +106,12 @@ public class CredentialsDatabase {
 		}
 	}
 
-	public func getCredentialsEncryptionKey() throws -> String?  {
+	public func getCredentialsEncryptionKey() throws -> DataWrapper?  {
 		return try db.prepare(
 			query: """
 				SELECT credentialEncryptionKey FROM credentialEncryptionKey LIMIT 1
 				""")
-		.get()?["credentialEncryptionKey"]?.asString()
+		.get()?["credentialEncryptionKey"]?.asBytes()
 
 	}
 
@@ -132,14 +132,14 @@ public class CredentialsDatabase {
 		}
 	}
 
-	public func setCredentialsEncryptionKey(encryptionKey: Base64?) throws {
+	public func setCredentialsEncryptionKey(encryptionKey: DataWrapper?) throws {
 		if let encryptionKey {
 			try db.prepare(
 				query: """
 				INSERT OR REPLACE INTO credentialEncryptionKey (id, credentialEncryptionKey) VALUES (0, ?)
 				""")
 			.bindParams([
-				.string(value: encryptionKey)
+				.bytes(value: encryptionKey)
 			]).run()
 		} else {
 			try db.prepare(
@@ -162,4 +162,5 @@ private extension TaggedSqlValue {
 	struct InvalidSqlType: Error { init() {} }
 
 	func asString() throws -> String { if case let .string(value) = self { return value } else { throw InvalidSqlType() } }
+	func asBytes() throws -> DataWrapper { if case let .bytes(value) = self { return value } else { throw InvalidSqlType() }}
 }

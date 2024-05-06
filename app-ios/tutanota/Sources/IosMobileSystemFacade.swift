@@ -3,6 +3,24 @@ import TutanotaSharedFramework
 import Foundation
 
 class IosMobileSystemFacade: MobileSystemFacade {
+	func getAppLockMethod() async throws -> TutanotaSharedFramework.AppLockMethod {
+		// FIXME
+		return .system_pass_or_biometrics
+	}
+	
+	func setAppLockMethod(_ method: TutanotaSharedFramework.AppLockMethod) async throws {
+		// FIXME
+	}
+	
+	func enforceAppLock(_ method: TutanotaSharedFramework.AppLockMethod) async throws {
+		// FIXME
+	}
+	
+	func getSupportedAppLockMethods() async throws -> [TutanotaSharedFramework.AppLockMethod] {
+		// FIXME
+		return [.system_pass_or_biometrics]
+	}
+	
 	private let viewController: ViewController
 
 	init(viewController: ViewController) { self.viewController = viewController }

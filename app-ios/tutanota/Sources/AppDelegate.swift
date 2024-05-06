@@ -33,6 +33,7 @@ import TutanotaSharedFramework
 		let userPreferencesProvider = UserPreferencesProviderImpl()
 		let notificationStorage = NotificationStorage(userPreferencesProvider: userPreferencesProvider)
 		let keychainManager = KeychainManager(keyGenerator: KeyGenerator())
+		let keychainEncryption = KeychainEncryption(keychainManager: keychainManager)
 
 		let alarmModel = AlarmModel(dateProvider: SystemDateProvider())
 		self.alarmManager = AlarmManager(
@@ -46,7 +47,7 @@ import TutanotaSharedFramework
 		// FIXME should probably not crash
 		let credentialsDb = try! CredentialsDatabase(db: SqliteDb())
 		let credentialsEncryption = IosNativeCredentialsFacade(
-			keychainManager: keychainManager,
+			keychainEncryption: keychainEncryption,
 			credentialsDb: credentialsDb,
 			userDefaults: UserDefaults(suiteName: getAppGroupName())!
 		)

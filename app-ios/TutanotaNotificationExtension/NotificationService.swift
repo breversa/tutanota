@@ -12,13 +12,13 @@ class NotificationService: UNNotificationServiceExtension {
 
 		if let bestAttemptContent = bestAttemptContent {
 			Task {
-				await populateNotification(content:bestAttemptContent)
+				try await populateNotification(content:bestAttemptContent)
 				contentHandler(bestAttemptContent)
 			}
 		}
 	}
 
-	private func populateNotification(content: UNMutableNotificationContent) async {
+	private func populateNotification(content: UNMutableNotificationContent) async throws {
 		// Init
 		let credentialsDb = try! CredentialsDatabase(db: SqliteDb())
 		let keychainManager = KeychainManager(keyGenerator: KeyGenerator())
@@ -36,16 +36,18 @@ class NotificationService: UNNotificationServiceExtension {
 			return
 		}
 
+		let notificationMode = try await notificationStorage.getExtendedNotificationConfig(userId)
+
 		do {
 			guard let credentials = try await credentialsEncryption.loadByUserId(userId) else {
 				return
 			}
 
 			// Modify the notification content here...
-			// FIXME do not show access token lol
-			content.title = "mailId: \(mailId?.joined(separator: ", ") ?? ""), accessToken: \(credentials.accessToken)"
+			// FIXME translation
+			content.title = "New email received."
 
-			if mailId != nil {
+			if notificationMode != .no_sender_or_subject && mailId != nil {
 				var additionalHeaders = [String: String]()
 				addTutanotaModelHeaders(to: &additionalHeaders)
 

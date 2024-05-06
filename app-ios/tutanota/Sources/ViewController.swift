@@ -26,7 +26,8 @@ class ViewController: UIViewController, WKNavigationDelegate, UIScrollViewDelega
 		notificaionsHandler: NotificationsHandler,
 		credentialsEncryption: IosNativeCredentialsFacade,
 		blobUtils: BlobUtil,
-		contactsSynchronization: IosMobileContactsFacade
+		contactsSynchronization: IosMobileContactsFacade,
+		userPreferencesProvider: UserPreferencesProvider
 	) {
 		self.themeManager = themeManager
 		self.alarmManager = alarmManager
@@ -70,7 +71,8 @@ class ViewController: UIViewController, WKNavigationDelegate, UIScrollViewDelega
 			keychainManager: keychainManager,
 			webAuthnFacade: IosWebauthnFacade(viewController: self),
 			sqlCipherFacade: self.sqlCipherFacade,
-			contactsSynchronization: contactsSynchronization
+			contactsSynchronization: contactsSynchronization,
+			userPreferencesProvider: userPreferencesProvider
 		)
 	}
 

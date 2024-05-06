@@ -53,7 +53,11 @@ ${e.stack}`,
 					await this.mobileSystemFacade.setAppLockMethod(credentialEncryptionModeToAppLockMethod(encryptionMode))
 				}
 				console.log("migrating credentials", allPersistedCredentials)
-				await this.nativeCredentialFacade.migrateToNativeCredentials(allPersistedCredentials, encryptionMode, credentialsKey)
+				try {
+					await this.nativeCredentialFacade.migrateToNativeCredentials(allPersistedCredentials, encryptionMode, credentialsKey)
+				} catch {
+					// FIXME
+				}
 			} else {
 				console.log("Skipping migration as encryption data is not there")
 			}

@@ -68,6 +68,8 @@
 		3D4E3C9E28EC5B31001FA9D1 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D4E3C9D28EC5B31001FA9D1 /* Security.framework */; };
 		3D4E3CA028EC5B43001FA9D1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D4E3C9F28EC5B43001FA9D1 /* Foundation.framework */; };
 		3D4E3CA228EC5C4F001FA9D1 /* IosSqlCipherFade.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D4E3CA128EC5C4F001FA9D1 /* IosSqlCipherFade.swift */; };
+		3D51A08F2BE90A4F0036B966 /* CancelledError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D7A107F29472A6000311B6B /* CancelledError.swift */; };
+		3D51A0912BE913AB0036B966 /* AppLockHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D51A0902BE913AB0036B966 /* AppLockHandler.swift */; };
 		3D5C6FA12B7BC15D00342E8C /* PermissionError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D5C6FA02B7BC15D00342E8C /* PermissionError.swift */; };
 		3D63A0E5233D0C1400D05259 /* TUTLogTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 3D63A0E4233D0C1400D05259 /* TUTLogTest.m */; };
 		3D648B202AB98BEA00893C8D /* argon2.h in Headers */ = {isa = PBXBuildFile; fileRef = 3D648B0F2AB98BEA00893C8D /* argon2.h */; };
@@ -88,7 +90,6 @@
 		3D69DE002AD4427E00C6C900 /* Kyber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D69DDFF2AD4427E00C6C900 /* Kyber.swift */; };
 		3D6A0AEA212C1701001CD791 /* CompatibilityTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 3D6A0AE9212C1701001CD791 /* CompatibilityTest.m */; settings = {COMPILER_FLAGS = "-Itutanota/include"; }; };
 		3D73DA312731953E008E7A8A /* RemoteProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D73DA302731953E008E7A8A /* RemoteProtocol.swift */; };
-		3D7A108029472A6000311B6B /* CancelledError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D7A107F29472A6000311B6B /* CancelledError.swift */; };
 		3D84F56B2721B92C00858A58 /* MissedNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D84F56A2721B92C00858A58 /* MissedNotification.swift */; };
 		3D84F5732722F35600858A58 /* IosNativeCryptoFacade.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D84F5722722F35600858A58 /* IosNativeCryptoFacade.swift */; };
 		3D84F5762723112400858A58 /* FileViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D84F5752723112400858A58 /* FileViewer.swift */; };
@@ -472,6 +473,7 @@
 		3D4E3C9D28EC5B31001FA9D1 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		3D4E3C9F28EC5B43001FA9D1 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		3D4E3CA128EC5C4F001FA9D1 /* IosSqlCipherFade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IosSqlCipherFade.swift; sourceTree = "<group>"; };
+		3D51A0902BE913AB0036B966 /* AppLockHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLockHandler.swift; sourceTree = "<group>"; };
 		3D5C6FA02B7BC15D00342E8C /* PermissionError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionError.swift; sourceTree = "<group>"; };
 		3D63A0E4233D0C1400D05259 /* TUTLogTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TUTLogTest.m; sourceTree = "<group>"; };
 		3D648B0F2AB98BEA00893C8D /* argon2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = argon2.h; sourceTree = "<group>"; };
@@ -1052,7 +1054,6 @@
 				3D9B1293272167D4002B46A1 /* IconFactory.swift */,
 				3D9B129927216DE0002B46A1 /* Response.swift */,
 				3D84F57B27231F1F00858A58 /* Serialization.swift */,
-				3D7A107F29472A6000311B6B /* CancelledError.swift */,
 				3D4A426829B6513900B10451 /* DateProvider.swift */,
 				3DCC3F462ACED5DB00C9C27E /* UnfairLock.swift */,
 				3D5C6FA02B7BC15D00342E8C /* PermissionError.swift */,
@@ -1778,6 +1779,7 @@
 				3DF976992BB1A2B900AF3FDE /* StructuredContactTypes.swift */,
 				3DF976572BB1A2B900AF3FDE /* TaggedSqlValue.swift */,
 				3DF9764D2BB1A2B900AF3FDE /* TutanotaSharedFramework.h */,
+				3D51A0902BE913AB0036B966 /* AppLockHandler.swift */,
 			);
 			path = TutanotaSharedFramework;
 			sourceTree = "<group>";
@@ -1809,6 +1811,7 @@
 		3DF976412BB1A2B900AF3FDE /* Utils */ = {
 			isa = PBXGroup;
 			children = (
+				3D7A107F29472A6000311B6B /* CancelledError.swift */,
 				3DCA74F52B63BE900007A1B0 /* UserPreferences.swift */,
 				3DD2ADB72BB2CBAB00DE30B8 /* MurMurHash.swift */,
 				3DF9764C2BB1A2B900AF3FDE /* PSPDFFastEnumeration.h */,
@@ -2482,7 +2485,6 @@
 				3D9B1294272167D4002B46A1 /* IconFactory.swift in Sources */,
 				3D378EE72536F51F0001F1F3 /* FileChooser.swift in Sources */,
 				3D9B12A027218AF9002B46A1 /* RepeatRule.swift in Sources */,
-				3D7A108029472A6000311B6B /* CancelledError.swift in Sources */,
 				3D73DA312731953E008E7A8A /* RemoteProtocol.swift in Sources */,
 				3DB07C7B27303F0600BFBB4D /* Keys.swift in Sources */,
 				3D0E44AA2B3C3CE500F933A1 /* reduce.c in Sources */,
@@ -2588,6 +2590,7 @@
 				3DEFA1C92BE8D99A009460AE /* AppLockMethod.swift in Sources */,
 				3DF976D82BB1A2B900AF3FDE /* StructuredAddress.swift in Sources */,
 				3DF976A92BB1A2B900AF3FDE /* SyncCompletion.swift in Sources */,
+				3D51A0912BE913AB0036B966 /* AppLockHandler.swift in Sources */,
 				3DF976F72BB1A2B900AF3FDE /* PermissionType.swift in Sources */,
 				3DF976BB2BB1A2B900AF3FDE /* KeychainManager.swift in Sources */,
 				3DF9769E2BB1A2B900AF3FDE /* TUTCrypto.m in Sources */,
@@ -2636,6 +2639,7 @@
 				3DF976CE2BB1A2B900AF3FDE /* RsaPublicKey.swift in Sources */,
 				3DF976F42BB1A2B900AF3FDE /* NativeKey.swift in Sources */,
 				3DF976CF2BB1A2B900AF3FDE /* SqlCipherFacade.swift in Sources */,
+				3D51A08F2BE90A4F0036B966 /* CancelledError.swift in Sources */,
 				3DF976BC2BB1A2B900AF3FDE /* IosNativeCredentialsFacade.swift in Sources */,
 				3DF976BA2BB1A2B900AF3FDE /* KeyGeneratorSecureEnclave.swift in Sources */,
 				3DF976F62BB1A2B900AF3FDE /* CommonNativeFacade.swift in Sources */,

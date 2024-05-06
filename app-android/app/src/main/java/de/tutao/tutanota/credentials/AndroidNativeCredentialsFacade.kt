@@ -83,7 +83,8 @@ class AndroidNativeCredentialsFacade(
 	override suspend fun migrateToNativeCredentials(
 		credentials: List<PersistedCredentials>, encryptionMode: CredentialEncryptionMode, credentialsKey: DataWrapper
 	) {
-		db.keyValueDao().putString(CREDENTIALS_ENCRYPTION_MODE_KEY, encryptionMode.name)
+		// FIXME Re-encrypt
+		db.keyValueDao().putString(CREDENTIALS_ENCRYPTION_MODE_KEY, CredentialEncryptionMode.DEVICE_LOCK)
 		db.keyBinaryDao().put(
 			CREDENTIALS_ENCRYPTION_KEY_KEY, credentialsKey.data
 		)

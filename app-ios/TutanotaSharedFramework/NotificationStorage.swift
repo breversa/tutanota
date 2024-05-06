@@ -19,12 +19,16 @@ public class NotificationStorage {
 		}
 	}
 
-	public func store(pushIdentifier: String, userId: String, sseOrigin: String) {
+	public func store(pushIdentifier: String, userId: String, sseOrigin: String) async throws {
+
 		if var sseInfo = self.sseInfo {
 			sseInfo.pushIdentifier = pushIdentifier
 			sseInfo.sseOrigin = sseOrigin
 			var userIds = sseInfo.userIds
-			if !userIds.contains(userId) { userIds.append(userId) }
+			if !userIds.contains(userId) {
+				userIds.append(userId)
+				try await self.setExtendedNotificationConfig(userId, .sender_and_subject)
+			}
 			sseInfo.userIds = userIds
 			self.put(sseInfo: sseInfo)
 		} else {

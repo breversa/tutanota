@@ -33,7 +33,20 @@ public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 		// on mobile we alsways use DEVICE_LOCK encryption method but previously it could have been another one
 		// we need to re-encrypt the credentials here
 		// and handle the possible auth failure in the web part
-		fatalError("FIXME Not implemented")
+		try self.setCredentialEncryptionMode(.deviceLock)
+		if encryptionMode != .deviceLock {
+			let newCredentialsKey = try await self.createCredentialEncryptionKey()
+			try self.credentialsDb.setCredentialsEncryptionKey(encryptionKey: newCredentialsKey.wrap())
+			for persistedCredentials in credentials {
+				let unencryptedCredentials = try self.decryptCredentials(persistedCredentials: persistedCredentials, credentialsKey: credentialsKey.data)
+				try await self.storeEncrypted(self.encryptCredentials(unencryptedCredentials, newCredentialsKey))
+			}
+		} else {
+			try self.credentialsDb.setCredentialsEncryptionKey(encryptionKey: credentialsKey)
+			for persistedCredentials in credentials {
+				try await self.storeEncrypted(persistedCredentials)
+			}
+		}
 	}
 
 	public func loadByUserId(_ id: String) async throws -> UnencryptedCredentials? {
@@ -47,7 +60,7 @@ public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 	public func getCredentialEncryptionMode() throws -> CredentialEncryptionMode? {
 		return try self.credentialsDb.getCredentialEncryptionMode()
 	}
-	public func setCredentialEncryptionMode(_ encryptionMode: CredentialEncryptionMode) async throws {
+	public func setCredentialEncryptionMode(_ encryptionMode: CredentialEncryptionMode) throws {
 		try self.credentialsDb.setCredentialEncryptionMode(encryptionMode: encryptionMode)
 	}
 	private func getCredentialsEncryptionKey() async throws -> Data? {
@@ -61,14 +74,7 @@ public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 	}
 
 	public func getSupportedEncryptionModes() async -> [CredentialEncryptionMode] {
-		var supportedModes = [CredentialEncryptionMode.deviceLock]
-		let context = LAContext()
-
-		let systemPasswordSupported = context.canEvaluatePolicy(.deviceOwnerAuthentication)
-		if systemPasswordSupported { supportedModes.append(.systemPassword) }
-		let biometricsSupported = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics)
-		if biometricsSupported { supportedModes.append(.biometrics) }
-		return supportedModes
+		return [CredentialEncryptionMode.deviceLock]
 	}
 
 	private func encryptCredentials(_ unencryptedCredentials: UnencryptedCredentials, _ credentialsEncryptionKey: Data) throws -> PersistedCredentials {
@@ -96,26 +102,21 @@ public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 			}
 		}
 
+	private func createCredentialEncryptionKey() async throws -> Data {
+		let encryptionMode = (try self.getCredentialEncryptionMode()) ?? CredentialEncryptionMode.deviceLock
+		let newKey = aesGenerateKey()
+		let encryptedKey = try await self.keychainEncryption.encryptUsingKeychain(newKey, encryptionMode)
+		try self.credentialsDb.setCredentialsEncryptionKey(encryptionKey: encryptedKey.wrap())
+		return newKey
+	}
+
 	private func getOrCreateCredentialEncryptionKey() async throws -> Data {
 		let existingKey = try await self.getCredentialsEncryptionKey()
 		if let existingKey {
 			return existingKey
 		} else {
-			let encryptionMode = (try self.getCredentialEncryptionMode()) ?? CredentialEncryptionMode.deviceLock
-			let newKey = aesGenerateKey()
-			let encryptedKey = try await self.keychainEncryption.encryptUsingKeychain(newKey, encryptionMode)
-			try self.credentialsDb.setCredentialsEncryptionKey(encryptionKey: encryptedKey.wrap())
-			return newKey
+			return try await createCredentialEncryptionKey()
 		}
 	}
 
-}
-
-fileprivate extension LAContext {
-	func canEvaluatePolicy(_ policy: LAPolicy) -> Bool {
-		var error: NSError?
-		let supported = self.canEvaluatePolicy(policy, error: &error)
-		if let error { TUTSLog("Cannot evaluate policy \(policy): \(error.debugDescription)") }
-		return supported
-	}
 }

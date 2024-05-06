@@ -39,7 +39,7 @@ class IosNativePushFacade: NativePushFacade {
 		_ pushIdentifierId: String,
 		_ pushIdentifierSessionKey: DataWrapper
 	) async throws {
-		self.notificationStorage.store(pushIdentifier: identifier, userId: userId, sseOrigin: sseOrigin)
+		try await self.notificationStorage.store(pushIdentifier: identifier, userId: userId, sseOrigin: sseOrigin)
 		try self.keychainManager.storeKey(pushIdentifierSessionKey.data, withId: pushIdentifierId)
 	}
 

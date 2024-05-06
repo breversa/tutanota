@@ -60,7 +60,7 @@ import TutanotaSharedFramework
 			notificaionsHandler: notificationsHandler,
 			credentialsEncryption: credentialsEncryption,
 			blobUtils: BlobUtil(),
-			contactsSynchronization: IosMobileContactsFacade(userDefault: UserDefaults.standard)
+			contactsSynchronization: IosMobileContactsFacade(userDefault: UserDefaults.standard), userPreferencesProvider: userPreferencesProvider
 		)
 		self.window!.rootViewController = viewController
 

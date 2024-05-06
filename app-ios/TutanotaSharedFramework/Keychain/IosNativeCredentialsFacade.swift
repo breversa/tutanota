@@ -11,12 +11,10 @@ public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 
 	private let keychainEncryption: KeychainEncryption
 	private let credentialsDb: CredentialsDatabase
-	private let userDefaults: UserDefaults
 
-	public init(keychainEncryption: KeychainEncryption, credentialsDb: CredentialsDatabase, userDefaults: UserDefaults) {
+	public init(keychainEncryption: KeychainEncryption, credentialsDb: CredentialsDatabase) {
 		self.keychainEncryption = keychainEncryption
 		self.credentialsDb = credentialsDb
-		self.userDefaults = userDefaults
 	}
 
 	public func loadAll() async throws -> [PersistedCredentials] { try self.credentialsDb.getAll() }

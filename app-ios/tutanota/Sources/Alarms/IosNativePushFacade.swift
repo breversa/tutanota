@@ -2,15 +2,6 @@ import Foundation
 import TutanotaSharedFramework
 
 class IosNativePushFacade: NativePushFacade {
-	func setExtendedNotificationConfig(_ userId: String, _ mode: TutanotaSharedFramework.ExtendedNotificationMode) async throws {
-		// FIXME
-	}
-	
-	func getExtendedNotificationConfig(_ userId: String) async throws -> TutanotaSharedFramework.ExtendedNotificationMode {
-		// FIXME
-		return .sender_and_subject
-	}
-
 	private let appDelegate: AppDelegate
 	private let alarmManager: AlarmManager
 	private let notificationStorage: NotificationStorage
@@ -63,4 +54,13 @@ class IosNativePushFacade: NativePushFacade {
 	func invalidateAlarmsForUser(_ userId: String) async throws { alarmManager.unscheduleAllAlarms(userId: userId) }
 
 	func removeUser(_ userId: String) async throws { self.notificationStorage.removeUser(userId) }
+	
+	func setExtendedNotificationConfig(_ userId: String, _ mode: TutanotaSharedFramework.ExtendedNotificationMode) async throws {
+		try await self.notificationStorage.setExtendedNotificationConfig(userId, mode)
+	}
+
+	func getExtendedNotificationConfig(_ userId: String) async throws -> TutanotaSharedFramework.ExtendedNotificationMode {
+		return try await self.notificationStorage.getExtendedNotificationConfig(userId)
+	}
+
 }

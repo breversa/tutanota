@@ -2,14 +2,16 @@ import Contacts
 import TutanotaSharedFramework
 import Foundation
 
+private let APP_LOCK_METHOD = "AppLockMethod"
+
 class IosMobileSystemFacade: MobileSystemFacade {
 	func getAppLockMethod() async throws -> TutanotaSharedFramework.AppLockMethod {
-		// FIXME
-		return .system_pass_or_biometrics
+		let methodStr = self.userPreferencesProvider.getObject(forKey: APP_LOCK_METHOD) as! String
+		return AppLockMethod(rawValue: methodStr) ?? .none
 	}
 	
 	func setAppLockMethod(_ method: TutanotaSharedFramework.AppLockMethod) async throws {
-		// FIXME
+		self.userPreferencesProvider.setValue(method.rawValue, forKey: APP_LOCK_METHOD)
 	}
 	
 	func enforceAppLock(_ method: TutanotaSharedFramework.AppLockMethod) async throws {
@@ -22,8 +24,15 @@ class IosMobileSystemFacade: MobileSystemFacade {
 	}
 	
 	private let viewController: ViewController
+	private let userPreferencesProvider: UserPreferencesProvider
 
-	init(viewController: ViewController) { self.viewController = viewController }
+	init(
+		viewController: ViewController,
+		userPreferencesProvider: UserPreferencesProvider
+	) {
+		self.viewController = viewController
+		self.userPreferencesProvider = userPreferencesProvider
+	}
 
 	func goToSettings() async throws {
 		DispatchQueue.main.async {

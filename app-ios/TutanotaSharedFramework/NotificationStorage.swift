@@ -5,6 +5,7 @@ private let SSE_INFO_KEY = "sseInfo"
 private let ALARMS_KEY = "repeatingAlarmNotification"
 private let LAST_PROCESSED_NOTIFICAION_ID_KEY = "lastProcessedNotificationId"
 private let LAST_MISSED_NOTIFICATION_CHECK_TIME = "lastMissedNotificationCheckTime"
+private let EXTENDED_NOTIFICATION_MODE = "extendedNotificationMode"
 
 public class NotificationStorage {
 	private let userPreferencesProvider: UserPreferencesProvider
@@ -78,6 +79,15 @@ public class NotificationStorage {
 			self.lastMissedNotificationCheckTime = nil
 			self.store(alarms: [])
 		}
+	}
+
+	public func setExtendedNotificationConfig(_ userId: String, _ mode: TutanotaSharedFramework.ExtendedNotificationMode) async throws {
+		self.userPreferencesProvider.setValue(mode.rawValue, forKey: "\(EXTENDED_NOTIFICATION_MODE):\(userId)")
+	}
+
+	public func getExtendedNotificationConfig(_ userId: String) async throws -> TutanotaSharedFramework.ExtendedNotificationMode {
+		let modeStr = self.userPreferencesProvider.getObject(forKey: "\(EXTENDED_NOTIFICATION_MODE):\(userId)") as! String
+		return ExtendedNotificationMode(rawValue: modeStr) ?? .no_sender_or_subject
 	}
 
 	private func put(sseInfo: SSEInfo?) {

@@ -25,8 +25,7 @@ class NotificationService: UNNotificationServiceExtension {
 		let keychainEncryption = KeychainEncryption(keychainManager: keychainManager)
 		let credentialsEncryption = IosNativeCredentialsFacade(
 			keychainEncryption: keychainEncryption,
-			credentialsDb: credentialsDb,
-			userDefaults: UserDefaults(suiteName: getAppGroupName())!
+			credentialsDb: credentialsDb
 		)
 		let notificationStorage = NotificationStorage(userPreferencesProvider: UserPreferencesProviderImpl())
 

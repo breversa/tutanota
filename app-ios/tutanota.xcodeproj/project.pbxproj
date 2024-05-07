@@ -46,6 +46,8 @@
 		3D1801542AB0B85100C72613 /* AlarmEntitiesTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D1801532AB0B85100C72613 /* AlarmEntitiesTest.swift */; };
 		3D220205293F75C100366FD2 /* IosWebauthnFacade.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D220204293F75C100366FD2 /* IosWebauthnFacade.swift */; };
 		3D239302287EC96200DD7396 /* CustomSchemeHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D239301287EC96200DD7396 /* CustomSchemeHandlers.swift */; };
+		3D2671DA2BEA8A020022C12F /* TutanotaSharedFramework.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DF9739E2BB18ABA00AF3FDE /* TutanotaSharedFramework.framework */; platformFilter = ios; };
+		3D2671E72BEA8A100022C12F /* Mockingbird in Frameworks */ = {isa = PBXBuildFile; productRef = 3D2671E62BEA8A100022C12F /* Mockingbird */; settings = {ATTRIBUTES = (Required, ); }; };
 		3D36BCC2274E4A6100428878 /* CryptoTokenKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D36BCC1274E4A6100428878 /* CryptoTokenKit.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		3D378EE72536F51F0001F1F3 /* FileChooser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D378EE62536F51F0001F1F3 /* FileChooser.swift */; };
 		3D3AFAE8285B0DB60077F302 /* IosMobileSystemFacade.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D3AFAE7285B0DB60077F302 /* IosMobileSystemFacade.swift */; };
@@ -160,6 +162,7 @@
 		3D9A1F4922031B99002C2455 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 3D9A1F0222031B99002C2455 /* InfoPlist.strings */; };
 		3D9A1F4A22031B99002C2455 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 3D9A1F0522031B99002C2455 /* LaunchScreen.storyboard */; };
 		3D9A1F4B22031B99002C2455 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 3D9A1F0722031B99002C2455 /* Main.storyboard */; };
+		3D9AEC702BEA8E7C00B359AB /* CredentialsFacadeTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D9AEC6F2BEA8E7C00B359AB /* CredentialsFacadeTest.swift */; };
 		3D9B1294272167D4002B46A1 /* IconFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D9B1293272167D4002B46A1 /* IconFactory.swift */; };
 		3D9B129A27216DE0002B46A1 /* Response.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D9B129927216DE0002B46A1 /* Response.swift */; };
 		3D9B129D272189BB002B46A1 /* AlarmModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D9B129C272189BB002B46A1 /* AlarmModel.swift */; };
@@ -182,6 +185,7 @@
 		3DD10DB227EA148D0076C9A2 /* BlobUtil.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DD10DB127EA148D0076C9A2 /* BlobUtil.swift */; };
 		3DD4A09020F8C6260086EB36 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3DD4A08F20F8C6260086EB36 /* Assets.xcassets */; };
 		3DD4A09320F8C6260086EB36 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 3DD4A09120F8C6260086EB36 /* LaunchScreen.storyboard */; };
+		3DD4C44A2BEA77FD0069073A /* CryptoFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DD4C4492BEA77FD0069073A /* CryptoFunctions.swift */; };
 		3DD4EA3B2726F41200D58207 /* DictionaryCoding in Frameworks */ = {isa = PBXBuildFile; productRef = 3DD4EA3A2726F41200D58207 /* DictionaryCoding */; };
 		3DDB5E6F28FDA59100E1E4BE /* libcrypto.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3DDB5E6E28FDA59100E1E4BE /* libcrypto.xcframework */; };
 		3DDE413B28F4665700837BE6 /* SqlCipherDb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DDE413A28F4665700837BE6 /* SqlCipherDb.swift */; };
@@ -310,9 +314,24 @@
 		3DF977112BB1A98600AF3FDE /* SharingStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D448A8A292BB1D00030DB2F /* SharingStorage.swift */; };
 		3DF977122BB1A98B00AF3FDE /* SharingUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D3B516129376C2200C1B7DA /* SharingUtils.swift */; };
 		3DF977142BB1AA1A00AF3FDE /* FileUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D84F56C2722CEF900858A58 /* FileUtils.swift */; };
+		46C85EE24585B8E78AC80BCA /* TutanotaSharedTests-TutanotaSharedFrameworkMocks.generated.swift in Sources */ = {isa = PBXBuildFile; fileRef = 569F115EE0B682B51925D484 /* TutanotaSharedTests-TutanotaSharedFrameworkMocks.generated.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		3D2671DB2BEA8A020022C12F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3DD4A07B20F8C6240086EB36 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3DF9739D2BB18ABA00AF3FDE;
+			remoteInfo = TutanotaSharedFramework;
+		};
+		3D2671E42BEA8A0B0022C12F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3DD4A07B20F8C6240086EB36 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3DD4A08220F8C6240086EB36;
+			remoteInfo = tutanota;
+		};
 		3D6715312B4412D600E26D7D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3DD4A07B20F8C6240086EB36 /* Project object */;
@@ -451,6 +470,7 @@
 		3D1801532AB0B85100C72613 /* AlarmEntitiesTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmEntitiesTest.swift; sourceTree = "<group>"; };
 		3D220204293F75C100366FD2 /* IosWebauthnFacade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IosWebauthnFacade.swift; sourceTree = "<group>"; };
 		3D239301287EC96200DD7396 /* CustomSchemeHandlers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomSchemeHandlers.swift; sourceTree = "<group>"; };
+		3D2671D62BEA8A020022C12F /* TutanotaSharedTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TutanotaSharedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3D36BCC1274E4A6100428878 /* CryptoTokenKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CryptoTokenKit.framework; path = System/Library/Frameworks/CryptoTokenKit.framework; sourceTree = SDKROOT; };
 		3D378ED22536F3A80001F1F3 /* tutanota-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "tutanota-Bridging-Header.h"; sourceTree = "<group>"; };
 		3D378EE62536F51F0001F1F3 /* FileChooser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileChooser.swift; sourceTree = "<group>"; };
@@ -569,6 +589,7 @@
 		3D9A1F0322031B99002C2455 /* pl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pl; path = InfoPlist.strings; sourceTree = "<group>"; };
 		3D9A1F0622031B99002C2455 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		3D9A1F0822031B99002C2455 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Main.storyboard; sourceTree = "<group>"; };
+		3D9AEC6F2BEA8E7C00B359AB /* CredentialsFacadeTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CredentialsFacadeTest.swift; sourceTree = "<group>"; };
 		3D9B1293272167D4002B46A1 /* IconFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconFactory.swift; sourceTree = "<group>"; };
 		3D9B129927216DE0002B46A1 /* Response.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Response.swift; sourceTree = "<group>"; };
 		3D9B129C272189BB002B46A1 /* AlarmModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmModel.swift; sourceTree = "<group>"; };
@@ -599,6 +620,7 @@
 		3DD4A09420F8C6260086EB36 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3DD4A09B20F8C6260086EB36 /* tutanotaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = tutanotaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3DD4A0A120F8C6260086EB36 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		3DD4C4492BEA77FD0069073A /* CryptoFunctions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoFunctions.swift; sourceTree = "<group>"; };
 		3DDB5E6E28FDA59100E1E4BE /* libcrypto.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = libcrypto.xcframework; sourceTree = "<group>"; };
 		3DDE413A28F4665700837BE6 /* SqlCipherDb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SqlCipherDb.swift; sourceTree = "<group>"; };
 		3DE1E44426666F0A0018C9DE /* UIColor+utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIColor+utils.swift"; sourceTree = "<group>"; };
@@ -733,9 +755,19 @@
 		3DF9770E2BB1A76100AF3FDE /* TutanotaShareExtensionDebug Staging.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "TutanotaShareExtensionDebug Staging.entitlements"; sourceTree = "<group>"; };
 		3DF9770F2BB1A76A00AF3FDE /* TutanotaShareExtensionRelease Development.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "TutanotaShareExtensionRelease Development.entitlements"; sourceTree = "<group>"; };
 		3DF977102BB1A79000AF3FDE /* TutanotaShareExtensionRelease Staging.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "TutanotaShareExtensionRelease Staging.entitlements"; sourceTree = "<group>"; };
+		569F115EE0B682B51925D484 /* TutanotaSharedTests-TutanotaSharedFrameworkMocks.generated.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = "TutanotaSharedTests-TutanotaSharedFrameworkMocks.generated.swift"; path = "MockingbirdMocks/TutanotaSharedTests-TutanotaSharedFrameworkMocks.generated.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		3D2671D32BEA8A020022C12F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3D2671E72BEA8A100022C12F /* Mockingbird in Frameworks */,
+				3D2671DA2BEA8A020022C12F /* TutanotaSharedFramework.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		3DD4A08020F8C6240086EB36 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -909,6 +941,14 @@
 				3D220204293F75C100366FD2 /* IosWebauthnFacade.swift */,
 			);
 			path = Webauthn;
+			sourceTree = "<group>";
+		};
+		3D2671D72BEA8A020022C12F /* TutanotaSharedTests */ = {
+			isa = PBXGroup;
+			children = (
+				3D9AEC6F2BEA8E7C00B359AB /* CredentialsFacadeTest.swift */,
+			);
+			path = TutanotaSharedTests;
 			sourceTree = "<group>";
 		};
 		3D448A89292BB17B0030DB2F /* Sharing */ = {
@@ -1599,6 +1639,8 @@
 				3DF9762F2BB1A2B900AF3FDE /* TutanotaSharedFramework */,
 				3DEF18F12924E1F1009C4B55 /* TutanotaShareExtension */,
 				3DD4A09E20F8C6260086EB36 /* tutanotaTests */,
+				3D2671D72BEA8A020022C12F /* TutanotaSharedTests */,
+				CA9955A73D4B56D09B230F54 /* Generated Mocks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1610,6 +1652,7 @@
 				3DEF18F02924E1F1009C4B55 /* TutanotaShareExtension.appex */,
 				3DF9739E2BB18ABA00AF3FDE /* TutanotaSharedFramework.framework */,
 				3DF9746F2BB18F1600AF3FDE /* TutanotaNotificationExtension.appex */,
+				3D2671D62BEA8A020022C12F /* TutanotaSharedTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1795,6 +1838,7 @@
 				3DF976392BB1A2B900AF3FDE /* TUTCrypto.h */,
 				3DF976352BB1A2B900AF3FDE /* TUTCrypto.m */,
 				3DF976332BB1A2B900AF3FDE /* ValueEncryption.swift */,
+				3DD4C4492BEA77FD0069073A /* CryptoFunctions.swift */,
 			);
 			path = Crypto;
 			sourceTree = "<group>";
@@ -1919,6 +1963,14 @@
 			path = Files;
 			sourceTree = "<group>";
 		};
+		CA9955A73D4B56D09B230F54 /* Generated Mocks */ = {
+			isa = PBXGroup;
+			children = (
+				569F115EE0B682B51925D484 /* TutanotaSharedTests-TutanotaSharedFrameworkMocks.generated.swift */,
+			);
+			name = "Generated Mocks";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -1991,6 +2043,29 @@
 /* End PBXLegacyTarget section */
 
 /* Begin PBXNativeTarget section */
+		3D2671D52BEA8A020022C12F /* TutanotaSharedTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3D2671DD2BEA8A020022C12F /* Build configuration list for PBXNativeTarget "TutanotaSharedTests" */;
+			buildPhases = (
+				C3AE2961CC90B56809AB2BA8 /* Generate Mockingbird Mocks */,
+				3D2671D22BEA8A020022C12F /* Sources */,
+				3D2671D32BEA8A020022C12F /* Frameworks */,
+				3D2671D42BEA8A020022C12F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3D2671DC2BEA8A020022C12F /* PBXTargetDependency */,
+				3D2671E52BEA8A0B0022C12F /* PBXTargetDependency */,
+			);
+			name = TutanotaSharedTests;
+			packageProductDependencies = (
+				3D2671E62BEA8A100022C12F /* Mockingbird */,
+			);
+			productName = TutanotaSharedTests;
+			productReference = 3D2671D62BEA8A020022C12F /* TutanotaSharedTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		3DD4A08220F8C6240086EB36 /* tutanota */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3DD4A0A420F8C6260086EB36 /* Build configuration list for PBXNativeTarget "tutanota" */;
@@ -2112,6 +2187,11 @@
 				LastUpgradeCheck = 1300;
 				ORGANIZATIONNAME = "Tutao GmbH";
 				TargetAttributes = {
+					3D2671D52BEA8A020022C12F = {
+						CreatedOnToolsVersion = 15.2;
+						LastSwiftMigration = 1520;
+						TestTargetID = 3DD4A08220F8C6240086EB36;
+					};
 					3D67152D2B4410B200E26D7D = {
 						CreatedOnToolsVersion = 15.0.1;
 					};
@@ -2238,6 +2318,7 @@
 			packageReferences = (
 				3DD4EA392726F41200D58207 /* XCRemoteSwiftPackageReference "DictionaryCoding" */,
 				3D3B5167293797DC00C1B7DA /* XCRemoteSwiftPackageReference "swift-atomics" */,
+				3D0881F92BEA648200E37D7D /* XCRemoteSwiftPackageReference "mockingbird" */,
 			);
 			productRefGroup = 3DD4A08420F8C6240086EB36 /* Products */;
 			projectDirPath = "";
@@ -2249,11 +2330,19 @@
 				3D67152D2B4410B200E26D7D /* liboqs header setup */,
 				3DF9739D2BB18ABA00AF3FDE /* TutanotaSharedFramework */,
 				3DF9746E2BB18F1600AF3FDE /* TutanotaNotificationExtension */,
+				3D2671D52BEA8A020022C12F /* TutanotaSharedTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		3D2671D42BEA8A020022C12F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		3DD4A08120F8C6240086EB36 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -2475,9 +2564,34 @@
 			shellPath = /bin/sh;
 			shellScript = "# Modified from the SwiftLint readme: https://github.com/realm/SwiftLint\nif [[ \"$(uname -m)\" == arm64 ]]; then\n    export PATH=\"/opt/homebrew/bin:$PATH\"\nfi\n\nif which swift-format > /dev/null; then\n  swift-format lint --configuration .swift-format.json --recursive --parallel tutanotaShareExtension\nelse\n  echo \"warning: swift-format not installed, download from https://github.com/apple/swift-format\"\nfi\n";
 		};
+		C3AE2961CC90B56809AB2BA8 /* Generate Mockingbird Mocks */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate Mockingbird Mocks";
+			outputPaths = (
+				"$(SRCROOT)/MockingbirdMocks/TutanotaSharedTests-TutanotaSharedFrameworkMocks.generated.swift",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\n\n# Prevent Xcode 13 from running this script while indexing.\n[[ \"${ACTION}\" == \"indexbuild\" ]] && exit 0\n\n# Infer the derived data location from the build environment.\n[[ -z \"${DERIVED_DATA+x}\" ]] && DERIVED_DATA=\"$(echo \"${BUILD_ROOT}\" | sed -n 's|\\(.*\\)/Build/.*|\\1|p')\"\n\n\"${DERIVED_DATA}/SourcePackages/checkouts/mockingbird/mockingbird\" generate --targets \"TutanotaSharedFramework\" --outputs \"${SRCROOT}/MockingbirdMocks/TutanotaSharedTests-TutanotaSharedFrameworkMocks.generated.swift\"\n";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		3D2671D22BEA8A020022C12F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3D9AEC702BEA8E7C00B359AB /* CredentialsFacadeTest.swift in Sources */,
+				46C85EE24585B8E78AC80BCA /* TutanotaSharedTests-TutanotaSharedFrameworkMocks.generated.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		3DD4A07F20F8C6240086EB36 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -2660,6 +2774,7 @@
 				3DF976B62BB1A2B900AF3FDE /* EncryptedAlarmNotification.swift in Sources */,
 				3DF976FD2BB1A2B900AF3FDE /* CredentialsDatabase.swift in Sources */,
 				3DF976B52BB1A2B900AF3FDE /* IdTuple.swift in Sources */,
+				3DD4C44A2BEA77FD0069073A /* CryptoFunctions.swift in Sources */,
 				3DEFA1CB2BE8F1C8009460AE /* KeychainEncryption.swift in Sources */,
 				3DF976C92BB1A2B900AF3FDE /* RsaKeyPair.swift in Sources */,
 				3DF976D72BB1A2B900AF3FDE /* MobileFacade.swift in Sources */,
@@ -2699,6 +2814,17 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		3D2671DC2BEA8A020022C12F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			platformFilter = ios;
+			target = 3DF9739D2BB18ABA00AF3FDE /* TutanotaSharedFramework */;
+			targetProxy = 3D2671DB2BEA8A020022C12F /* PBXContainerItemProxy */;
+		};
+		3D2671E52BEA8A0B0022C12F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3DD4A08220F8C6240086EB36 /* tutanota */;
+			targetProxy = 3D2671E42BEA8A0B0022C12F /* PBXContainerItemProxy */;
+		};
 		3D6715322B4412D600E26D7D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 3D67152D2B4410B200E26D7D /* liboqs header setup */;
@@ -3252,6 +3378,429 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		3D2671DE2BEA8A020022C12F /* Debug Development */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = JKCH89Z3M9;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = de.tutao.tutanota.TutanotaSharedTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tuta D.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tuta D";
+			};
+			name = "Debug Development";
+		};
+		3D2671DF2BEA8A020022C12F /* Debug Staging */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = JKCH89Z3M9;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = de.tutao.tutanota.TutanotaSharedTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tuta D.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tuta D";
+			};
+			name = "Debug Staging";
+		};
+		3D2671E02BEA8A020022C12F /* Debug Production */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = JKCH89Z3M9;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = de.tutao.tutanota.TutanotaSharedTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tuta D.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tuta D";
+			};
+			name = "Debug Production";
+		};
+		3D2671E12BEA8A020022C12F /* Release Development */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = JKCH89Z3M9;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = de.tutao.tutanota.TutanotaSharedTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tuta D.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tuta D";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = "Release Development";
+		};
+		3D2671E22BEA8A020022C12F /* Release Staging */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = JKCH89Z3M9;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = de.tutao.tutanota.TutanotaSharedTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tuta D.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tuta D";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = "Release Staging";
+		};
+		3D2671E32BEA8A020022C12F /* Release Production */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = JKCH89Z3M9;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = de.tutao.tutanota.TutanotaSharedTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tuta D.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tuta D";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = "Release Production";
+		};
 		3D67152E2B4410B300E26D7D /* Debug Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -5655,6 +6204,19 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		3D2671DD2BEA8A020022C12F /* Build configuration list for PBXNativeTarget "TutanotaSharedTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3D2671DE2BEA8A020022C12F /* Debug Development */,
+				3D2671DF2BEA8A020022C12F /* Debug Staging */,
+				3D2671E02BEA8A020022C12F /* Debug Production */,
+				3D2671E12BEA8A020022C12F /* Release Development */,
+				3D2671E22BEA8A020022C12F /* Release Staging */,
+				3D2671E32BEA8A020022C12F /* Release Production */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = "Release Development";
+		};
 		3D6715302B4410B300E26D7D /* Build configuration list for PBXLegacyTarget "liboqs header setup" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -5749,6 +6311,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		3D0881F92BEA648200E37D7D /* XCRemoteSwiftPackageReference "mockingbird" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/birdrides/mockingbird";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 0.20.0;
+			};
+		};
 		3D3B5167293797DC00C1B7DA /* XCRemoteSwiftPackageReference "swift-atomics" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-atomics.git";
@@ -5768,6 +6338,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		3D2671E62BEA8A100022C12F /* Mockingbird */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3D0881F92BEA648200E37D7D /* XCRemoteSwiftPackageReference "mockingbird" */;
+			productName = Mockingbird;
+		};
 		3D3B5168293797DC00C1B7DA /* Atomics */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 3D3B5167293797DC00C1B7DA /* XCRemoteSwiftPackageReference "swift-atomics" */;

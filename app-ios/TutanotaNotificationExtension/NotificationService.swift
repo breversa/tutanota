@@ -23,7 +23,7 @@ class NotificationService: UNNotificationServiceExtension {
 		let credentialsDb = try! CredentialsDatabase(db: SqliteDb())
 		let keychainManager = KeychainManager(keyGenerator: KeyGenerator())
 		let keychainEncryption = KeychainEncryption(keychainManager: keychainManager)
-		let credentialsFacade = IosNativeCredentialsFacade(keychainEncryption: keychainEncryption, credentialsDb: credentialsDb)
+		let credentialsFacade = IosNativeCredentialsFacade(keychainEncryption: keychainEncryption, credentialsDb: credentialsDb, cryptoFns: CryptoFunctions())
 		let notificationStorage = NotificationStorage(userPreferencesProvider: UserPreferencesProviderImpl())
 
 		let mailId = content.userInfo["mailId"] as? [String]

@@ -26,16 +26,13 @@ public class AppLockHandler {
 				switch LAError.Code(rawValue: laError.errorCode) {
 				case LAError.appCancel, LAError.systemCancel, LAError.userCancel:
 					throw CancelledError(message: "Permission for biometrics denied, cancelled by user, or incorrect.")
-				default:
-					throw CredentialAuthenticationError(underlyingError: laError)
+				default: throw CredentialAuthenticationError(underlyingError: laError)
 				}
 			} else {
 				throw CredentialAuthenticationError(message: "Unknown error during app lock", underlyingError: error)
 			}
 		}
-		if !evaluateResult {
-			throw CancelledError(message: "Permission for biometrics denied, cancelled by user, or incorrect.")
-		}
+		if !evaluateResult { throw CancelledError(message: "Permission for biometrics denied, cancelled by user, or incorrect.") }
 	}
 
 	public func isSystemPasswordSupported() -> Bool { context.canEvaluatePolicy(.deviceOwnerAuthentication) }

@@ -1,4 +1,16 @@
-public class CredentialsDatabase {
+// separate protocol to facilitate mocking
+public protocol CredentialsStorage {
+	func getAll() throws -> [PersistedCredentials]
+	func store(credentials: PersistedCredentials) throws
+	func delete(userId: String) throws
+	func getCredentialEncryptionMode() throws -> CredentialEncryptionMode?
+	func getCredentialsEncryptionKey() throws -> Data?
+	func setCredentialEncryptionMode(encryptionMode: CredentialEncryptionMode?) throws
+	func setCredentialsEncryptionKey(encryptionKey: Data?) throws
+	func deleteAllCredentials() throws
+}
+
+public class CredentialsDatabase: CredentialsStorage {
 	private let db: SqliteDb
 
 	public init(db: SqliteDb) throws {
@@ -8,7 +20,7 @@ public class CredentialsDatabase {
 		try self.createCredentialTable()
 	}
 
-	public func createCredentialTable() throws {
+	func createCredentialTable() throws {
 		try db.prepare(
 			query: """
 				CREATE TABLE IF NOT EXISTS credentials
@@ -62,7 +74,7 @@ public class CredentialsDatabase {
 			let databaseKey: DataWrapper? = if case let .bytes(value) = sqlRow["databaseKey"] { value } else { nil }
 			return PersistedCredentials(
 				credentialInfo: credentialsInfo,
-				accessToken: try sqlRow["accessToken"]!.asBytes(),
+				accessToken: try sqlRow["accessToken"]!.asBytes().wrap(),
 				databaseKey: databaseKey,
 				encryptedPassword: try sqlRow["encryptedPassword"]!.asString()
 			)
@@ -105,7 +117,7 @@ public class CredentialsDatabase {
 			.flatMap { mode in CredentialEncryptionMode(rawValue: try mode.asString()) }
 	}
 
-	public func getCredentialsEncryptionKey() throws -> DataWrapper? {
+	public func getCredentialsEncryptionKey() throws -> Data? {
 		try db
 			.prepare(
 				query: """
@@ -135,14 +147,14 @@ public class CredentialsDatabase {
 		}
 	}
 
-	public func setCredentialsEncryptionKey(encryptionKey: DataWrapper?) throws {
+	public func setCredentialsEncryptionKey(encryptionKey: Data?) throws {
 		if let encryptionKey {
 			try db.prepare(
 				query: """
 					INSERT OR REPLACE INTO credentialEncryptionKey (id, credentialEncryptionKey) VALUES (0, ?)
 					"""
 			)
-			.bindParams([.bytes(value: encryptionKey)]).run()
+			.bindParams([.bytes(value: encryptionKey.wrap())]).run()
 		} else {
 			try db.prepare(
 				query: """
@@ -164,8 +176,8 @@ public class CredentialsDatabase {
 }
 
 private extension TaggedSqlValue {
-	struct InvalidSqlType: Error { init() { } }
+	struct InvalidSqlType: Error { init() {} }
 
 	func asString() throws -> String { if case let .string(value) = self { return value } else { throw InvalidSqlType() } }
-	func asBytes() throws -> DataWrapper { if case let .bytes(value) = self { return value } else { throw InvalidSqlType() } }
+	func asBytes() throws -> Data { if case let .bytes(value) = self { return value.data } else { throw InvalidSqlType() } }
 }

@@ -46,7 +46,11 @@ import UIKit
 		self.window = UIWindow(frame: UIScreen.main.bounds)
 		// FIXME should probably not crash
 		let credentialsDb = try! CredentialsDatabase(db: SqliteDb())
-		let credentialsEncryption = IosNativeCredentialsFacade(keychainEncryption: keychainEncryption, credentialsDb: credentialsDb)
+		let credentialsEncryption = IosNativeCredentialsFacade(
+			keychainEncryption: keychainEncryption,
+			credentialsDb: credentialsDb,
+			cryptoFns: CryptoFunctions()
+		)
 
 		self.viewController = ViewController(
 			crypto: IosNativeCryptoFacade(),

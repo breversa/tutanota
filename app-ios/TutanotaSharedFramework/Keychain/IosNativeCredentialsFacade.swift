@@ -10,11 +10,13 @@ public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 	private static let CREDENTIALS_ENCRYPTION_KEY_KEY = "credentialsEncryptionKey"
 
 	private let keychainEncryption: KeychainEncryption
-	private let credentialsDb: CredentialsDatabase
+	private let credentialsDb: CredentialsStorage
+	private let cryptoFns: CryptoFunctions
 
-	public init(keychainEncryption: KeychainEncryption, credentialsDb: CredentialsDatabase) {
+	public init(keychainEncryption: KeychainEncryption, credentialsDb: CredentialsStorage, cryptoFns: CryptoFunctions) {
 		self.keychainEncryption = keychainEncryption
 		self.credentialsDb = credentialsDb
+		self.cryptoFns = cryptoFns
 	}
 
 	public func loadAll() async throws -> [PersistedCredentials] { try self.credentialsDb.getAll() }
@@ -33,7 +35,7 @@ public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 		async throws
 	{
 		try self.credentialsDb.setCredentialEncryptionMode(encryptionMode: encryptionMode)
-		try self.credentialsDb.setCredentialsEncryptionKey(encryptionKey: credentialsKey)
+		try self.credentialsDb.setCredentialsEncryptionKey(encryptionKey: credentialsKey.data)
 		for persistedCredentials in credentials { try await self.storeEncrypted(persistedCredentials) }
 	}
 
@@ -44,7 +46,7 @@ public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 		if let encryptionMode = try self.getCredentialEncryptionMode(), encryptionMode != .deviceLock {
 			TUTSLog("Migrating encryption mode to DEVICE_LOCK")
 			let encryptedKey = try await self.keychainEncryption.encryptUsingKeychain(credentialsKey, .deviceLock)
-			try self.credentialsDb.setCredentialsEncryptionKey(encryptionKey: encryptedKey.wrap())
+			try self.credentialsDb.setCredentialsEncryptionKey(encryptionKey: encryptedKey)
 			try self.credentialsDb.setCredentialEncryptionMode(encryptionMode: .deviceLock)
 			TUTSLog("Encryption mode migration complete")
 		}
@@ -60,18 +62,20 @@ public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 	}
 	private func getCredentialsEncryptionKey() async throws -> Data? {
 		let encryptionMode = (try self.getCredentialEncryptionMode()) ?? CredentialEncryptionMode.deviceLock
-		let existingKey = try self.credentialsDb.getCredentialsEncryptionKey().map { $0.data }
+		let existingKey = try self.credentialsDb.getCredentialsEncryptionKey()
 		if let existingKey { return try await self.keychainEncryption.decryptUsingKeychain(existingKey, encryptionMode) } else { return nil }
 	}
 
 	public func getSupportedEncryptionModes() async -> [CredentialEncryptionMode] { [CredentialEncryptionMode.deviceLock] }
 
 	private func encryptCredentials(_ unencryptedCredentials: UnencryptedCredentials, _ credentialsEncryptionKey: Data) throws -> PersistedCredentials {
-		let accessToken = try aesEncryptData(unencryptedCredentials.accessToken.data(using: .utf8)!, withKey: credentialsEncryptionKey)
+		let accessToken = try self.cryptoFns.aesEncryptData(unencryptedCredentials.accessToken.data(using: .utf8)!, withKey: credentialsEncryptionKey)
 		return try PersistedCredentials(
 			credentialInfo: unencryptedCredentials.credentialInfo,
 			accessToken: accessToken.wrap(),
-			databaseKey: unencryptedCredentials.databaseKey.map { dbKey in try aesEncryptKey(dbKey.data, withKey: credentialsEncryptionKey).wrap() },
+			databaseKey: unencryptedCredentials.databaseKey.map { dbKey in
+				try self.cryptoFns.aesEncryptKey(dbKey.data, withKey: credentialsEncryptionKey).wrap()
+			},
 			encryptedPassword: unencryptedCredentials.encryptedPassword
 		)
 	}
@@ -80,8 +84,8 @@ public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 		do {
 			return try UnencryptedCredentials(
 				credentialInfo: persistedCredentials.credentialInfo,
-				accessToken: String(bytes: aesDecryptData(persistedCredentials.accessToken.data, withKey: credentialsKey), encoding: .utf8)!,
-				databaseKey: persistedCredentials.databaseKey.map({ dbKey in try aesDecryptKey(dbKey.data, withKey: credentialsKey).wrap() }),
+				accessToken: String(bytes: self.cryptoFns.aesDecryptData(persistedCredentials.accessToken.data, withKey: credentialsKey), encoding: .utf8)!,
+				databaseKey: persistedCredentials.databaseKey.map({ dbKey in try self.cryptoFns.aesDecryptKey(dbKey.data, withKey: credentialsKey).wrap() }),
 				encryptedPassword: persistedCredentials.encryptedPassword
 			)
 		} catch { throw KeyPermanentlyInvalidatedError(underlyingError: error) }
@@ -89,9 +93,9 @@ public class IosNativeCredentialsFacade: NativeCredentialsFacade {
 
 	private func createCredentialEncryptionKey() async throws -> Data {
 		let encryptionMode = (try self.getCredentialEncryptionMode()) ?? CredentialEncryptionMode.deviceLock
-		let newKey = aesGenerateKey()
+		let newKey = self.cryptoFns.aesGenerateKey()
 		let encryptedKey = try await self.keychainEncryption.encryptUsingKeychain(newKey, encryptionMode)
-		try self.credentialsDb.setCredentialsEncryptionKey(encryptionKey: encryptedKey.wrap())
+		try self.credentialsDb.setCredentialsEncryptionKey(encryptionKey: encryptedKey)
 		return newKey
 	}
 

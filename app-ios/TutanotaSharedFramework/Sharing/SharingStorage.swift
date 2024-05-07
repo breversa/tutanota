@@ -1,6 +1,6 @@
 import Foundation
-import UIKit
 import RegexBuilder
+import UIKit
 
 public let TUTANOTA_SHARE_SCHEME = "tutashare"
 

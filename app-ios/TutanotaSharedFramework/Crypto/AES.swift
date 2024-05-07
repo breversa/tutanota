@@ -8,9 +8,7 @@ private let MAC_IDENTIFIER: [UInt8] = [0x01]
 private let TUTAO_FIXED_IV: Data = Data(repeating: 0x88, count: TUTAO_IV_BYTE_SIZE)
 private let MAC_TOTAL_OVERHEAD_LENGTH = MAC_DIGEST_LENGTH + MAC_IDENTIFIER.count
 
-public func aesGenerateKey() -> Data {
-	return TUTCrypto.generateAES256Key()
-}
+public func aesGenerateKey() -> Data { TUTCrypto.generateAES256Key() }
 
 /// Decrypt the encrypted data with padding.
 ///

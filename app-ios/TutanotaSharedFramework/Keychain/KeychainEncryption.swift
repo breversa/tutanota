@@ -4,12 +4,10 @@ import LocalAuthentication
 public class KeychainEncryption {
 	private let keychainManager: KeychainManager
 
-	public init (keychainManager: KeychainManager) {
-		self.keychainManager = keychainManager
-	}
+	public init(keychainManager: KeychainManager) { self.keychainManager = keychainManager }
 
 	func encryptUsingKeychain(_ data: Data, _ encryptionMode: CredentialEncryptionMode) async throws -> Data {
-		return try self.keychainManager.encryptData(encryptionMode: encryptionMode, data: data)
+		try self.keychainManager.encryptData(encryptionMode: encryptionMode, data: data)
 	}
 
 	func decryptUsingKeychain(_ encryptedData: Data, _ encryptionMode: CredentialEncryptionMode) async throws -> Data {

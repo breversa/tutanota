@@ -8,9 +8,7 @@ public func decrypt<T>(base64: Base64, key: Key) throws -> T where T: AesDecrypt
 
 public protocol AesDecryptable { static func aesDecrypt(base64: Base64, key: Key) throws -> Self }
 
-public protocol SimpleStringDecodable: AesDecryptable {
-	init?(string: String)
-}
+public protocol SimpleStringDecodable: AesDecryptable { init?(string: String) }
 
 extension SimpleStringDecodable {
 	public static func aesDecrypt(base64: Base64, key: Key) throws -> Self {

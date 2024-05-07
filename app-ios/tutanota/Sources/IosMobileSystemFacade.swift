@@ -1,43 +1,39 @@
 import Contacts
-import TutanotaSharedFramework
 import Foundation
+import TutanotaSharedFramework
 
 private let APP_LOCK_METHOD = "AppLockMethod"
 
 class IosMobileSystemFacade: MobileSystemFacade {
-	func getAppLockMethod() async throws -> TutanotaSharedFramework.AppLockMethod {
-		let methodStr = self.userPreferencesProvider.getObject(forKey: APP_LOCK_METHOD) as! String
-		return AppLockMethod(rawValue: methodStr) ?? .none
+	private let viewController: ViewController
+	private let userPreferencesProvider: UserPreferencesProvider
+	private let appLockHandler: AppLockHandler
+
+	init(viewController: ViewController, userPreferencesProvider: UserPreferencesProvider, appLockHandler: AppLockHandler) {
+		self.viewController = viewController
+		self.userPreferencesProvider = userPreferencesProvider
+		self.appLockHandler = appLockHandler
 	}
-	
+
+	func getAppLockMethod() async throws -> TutanotaSharedFramework.AppLockMethod {
+		self.userPreferencesProvider.getObject(forKey: APP_LOCK_METHOD).map { method in AppLockMethod(rawValue: method as! String)! } ?? .none
+	}
+
 	func setAppLockMethod(_ method: TutanotaSharedFramework.AppLockMethod) async throws {
 		self.userPreferencesProvider.setValue(method.rawValue, forKey: APP_LOCK_METHOD)
 	}
-	
-	func enforceAppLock(_ method: TutanotaSharedFramework.AppLockMethod) async throws {
-		try await AppLockHandler.showAppLockPrompt(method)
-	}
-	
+
+	func enforceAppLock(_ method: TutanotaSharedFramework.AppLockMethod) async throws { try await self.appLockHandler.showAppLockPrompt(method) }
+
 	func getSupportedAppLockMethods() async throws -> [TutanotaSharedFramework.AppLockMethod] {
 		var supportedMethods = [AppLockMethod.none]
 
-		let systemPasswordSupported = AppLockHandler.isSystemPasswordSupported()
+		let systemPasswordSupported = self.appLockHandler.isSystemPasswordSupported()
 		if systemPasswordSupported { supportedMethods.append(.system_pass_or_biometrics) }
-		let biometricsSupported = AppLockHandler.isBiometricsSupported()
+		let biometricsSupported = self.appLockHandler.isBiometricsSupported()
 		if biometricsSupported { supportedMethods.append(.biometrics) }
 
 		return supportedMethods
-	}
-	
-	private let viewController: ViewController
-	private let userPreferencesProvider: UserPreferencesProvider
-
-	init(
-		viewController: ViewController,
-		userPreferencesProvider: UserPreferencesProvider
-	) {
-		self.viewController = viewController
-		self.userPreferencesProvider = userPreferencesProvider
 	}
 
 	func goToSettings() async throws {

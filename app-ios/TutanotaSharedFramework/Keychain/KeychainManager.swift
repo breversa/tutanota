@@ -11,14 +11,16 @@ private let CREDENTIAL_AUTHENTICATION_ERROR_DOMAIN = "de.tutao.tutanota.Credenti
 
 class KeyPermanentlyInvalidatedError: TutanotaError {
 	init(underlyingError: Error) { super.init(message: underlyingError.localizedDescription, underlyingError: underlyingError) }
+	init(message: String) { super.init(message: message, underlyingError: nil) }
 
 	override var name: String { get { KEY_PERMANENTLY_INVALIDATED_ERROR_DOMAIN } }
 }
 
-class CredentialAuthenticationError: TutanotaError {
-	init(underlyingError: Error) { super.init(message: underlyingError.localizedDescription, underlyingError: underlyingError) }
+public class CredentialAuthenticationError: TutanotaError {
+	public init(underlyingError: Error) { super.init(message: underlyingError.localizedDescription, underlyingError: underlyingError) }
+	override public init(message: String, underlyingError: Error?) { super.init(message: message, underlyingError: underlyingError) }
 
-	override var name: String { get { CREDENTIAL_AUTHENTICATION_ERROR_DOMAIN } }
+	public override var name: String { get { CREDENTIAL_AUTHENTICATION_ERROR_DOMAIN } }
 }
 
 public class KeychainManager: NSObject {

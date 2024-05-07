@@ -1,5 +1,5 @@
-import UserNotifications
 import TutanotaSharedFramework
+import UserNotifications
 
 class NotificationService: UNNotificationServiceExtension {
 
@@ -12,7 +12,7 @@ class NotificationService: UNNotificationServiceExtension {
 
 		if let bestAttemptContent = bestAttemptContent {
 			Task {
-				try await populateNotification(content:bestAttemptContent)
+				try await populateNotification(content: bestAttemptContent)
 				contentHandler(bestAttemptContent)
 			}
 		}
@@ -23,29 +23,23 @@ class NotificationService: UNNotificationServiceExtension {
 		let credentialsDb = try! CredentialsDatabase(db: SqliteDb())
 		let keychainManager = KeychainManager(keyGenerator: KeyGenerator())
 		let keychainEncryption = KeychainEncryption(keychainManager: keychainManager)
-		let credentialsEncryption = IosNativeCredentialsFacade(
-			keychainEncryption: keychainEncryption,
-			credentialsDb: credentialsDb
-		)
+		let credentialsFacade = IosNativeCredentialsFacade(keychainEncryption: keychainEncryption, credentialsDb: credentialsDb)
 		let notificationStorage = NotificationStorage(userPreferencesProvider: UserPreferencesProviderImpl())
 
 		let mailId = content.userInfo["mailId"] as? [String]
 		let userId = content.userInfo["userId"] as? String
 
-		guard let userId else {
-			return
-		}
+		guard let userId else { return }
 
-		let notificationMode = try await notificationStorage.getExtendedNotificationConfig(userId)
+		let notificationMode = try notificationStorage.getExtendedNotificationConfig(userId)
 
 		do {
-			guard let credentials = try await credentialsEncryption.loadByUserId(userId) else {
-				return
-			}
+			guard let credentials = try await credentialsFacade.loadByUserId(userId) else { return }
 
 			// Modify the notification content here...
-			// FIXME translation
-			content.title = "New email received."
+			// We use recipient's address as default value for body. It will be overwritten once
+			// we download email metadata
+			content.body = try await credentialsFacade.loadByUserId(userId)?.credentialInfo.login ?? ""
 
 			if notificationMode != .no_sender_or_subject && mailId != nil {
 				var additionalHeaders = [String: String]()
@@ -69,38 +63,29 @@ class NotificationService: UNNotificationServiceExtension {
 					TUTSLog("Fetched mail with status code \(httpResponse.statusCode)")
 
 					switch HttpStatusCode(rawValue: httpResponse.statusCode) {
-					case .serviceUnavailable, .tooManyRequests:
-						TUTSLog("ServiceUnavailable when downloading mail")
+					case .serviceUnavailable, .tooManyRequests: TUTSLog("ServiceUnavailable when downloading mail")
 					case .notFound: return
 					case .ok:
 						do {
-							let mail = try JSONDecoder().decode(MailMetadata.self, from: responseTuple!.0 )
+							let mail = try JSONDecoder().decode(MailMetadata.self, from: responseTuple!.0)
 							content.title = mail.sender.address
 							content.body = mail.firstRecipient.address
-						} catch {
-							TUTSLog("Failed to parse response for the mail, \(error)")
-						}
+						} catch { TUTSLog("Failed to parse response for the mail, \(error)") }
 					default:
 						let errorId = httpResponse.allHeaderFields["Error-Id"]
 						TUTSLog("Failed to fetch mail, error id: \(errorId ?? "")")
 					}
 				}
 			}
-		} catch {
-			TUTSLog("Failed! \(error)")
-		}
+		} catch { TUTSLog("Failed! \(error)") }
 	}
 
 	override func serviceExtensionTimeWillExpire() {
 		// Called just before the extension will be terminated by the system.
 		// Use this as an opportunity to deliver your "best attempt" at modified content, otherwise the original push payload will be used.
-		if let contentHandler = contentHandler, let bestAttemptContent =  bestAttemptContent {
-			contentHandler(bestAttemptContent)
-		}
+		if let contentHandler = contentHandler, let bestAttemptContent = bestAttemptContent { contentHandler(bestAttemptContent) }
 	}
 
 	// FIXME share between platforms
-	private func mailUrl(origin: String, mailId: [String]) -> String {
-		return "\(origin)/rest/tutanota/mail/\(mailId[0])/\(mailId[1])"
-	}
+	private func mailUrl(origin: String, mailId: [String]) -> String { "\(origin)/rest/tutanota/mail/\(mailId[0])/\(mailId[1])" }
 }

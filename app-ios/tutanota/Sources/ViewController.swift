@@ -1,6 +1,6 @@
 import AuthenticationServices
-import TutanotaSharedFramework
 import DictionaryCoding
+import TutanotaSharedFramework
 import UIKit
 import UserNotifications
 import WebKit

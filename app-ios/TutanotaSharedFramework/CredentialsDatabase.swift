@@ -25,22 +25,22 @@ public class CredentialsDatabase {
 		.run()
 		try db.prepare(
 			query: """
-			CREATE TABLE IF NOT EXISTS credentialEncryptionModeEnum (mode TEXT UNIQUE)
-			"""
+				CREATE TABLE IF NOT EXISTS credentialEncryptionModeEnum (mode TEXT UNIQUE)
+				"""
 		)
 		.run()
 		try db.prepare(
 			query: """
-			CREATE TABLE IF NOT EXISTS credentialEncryptionMode (id INTEGER NOT NULL,
-			credentialEncryptionMode TEXT NOT NULL, FOREIGN KEY(credentialEncryptionMode) REFERENCES credentialEncryptionModeEnum(mode), PRIMARY KEY (id), CHECK (id=0))
-			"""
+				CREATE TABLE IF NOT EXISTS credentialEncryptionMode (id INTEGER NOT NULL,
+				credentialEncryptionMode TEXT NOT NULL, FOREIGN KEY(credentialEncryptionMode) REFERENCES credentialEncryptionModeEnum(mode), PRIMARY KEY (id), CHECK (id=0))
+				"""
 		)
 		.run()
 		try db.prepare(
 			query: """
-			CREATE TABLE IF NOT EXISTS credentialEncryptionKey (id INTEGER NOT NULL,
-			credentialEncryptionKey BLOB NOT NULL, PRIMARY KEY (id), CHECK (id=0))
-			"""
+				CREATE TABLE IF NOT EXISTS credentialEncryptionKey (id INTEGER NOT NULL,
+				credentialEncryptionKey BLOB NOT NULL, PRIMARY KEY (id), CHECK (id=0))
+				"""
 		)
 		.run()
 	}
@@ -94,24 +94,26 @@ public class CredentialsDatabase {
 		.bindParams([.string(value: userId)]).run()
 	}
 
-
 	public func getCredentialEncryptionMode() throws -> CredentialEncryptionMode? {
-		return try db.prepare(
-			query: """
-				SELECT credentialEncryptionMode FROM credentialEncryptionMode LIMIT 1
-				""")
-		.get()?["credentialEncryptionMode"]
-		.flatMap { mode in
-			CredentialEncryptionMode(rawValue: try mode.asString())
-		}
+		try db
+			.prepare(
+				query: """
+					SELECT credentialEncryptionMode FROM credentialEncryptionMode LIMIT 1
+					"""
+			)
+			.get()?["credentialEncryptionMode"]
+			.flatMap { mode in CredentialEncryptionMode(rawValue: try mode.asString()) }
 	}
 
-	public func getCredentialsEncryptionKey() throws -> DataWrapper?  {
-		return try db.prepare(
-			query: """
-				SELECT credentialEncryptionKey FROM credentialEncryptionKey LIMIT 1
-				""")
-		.get()?["credentialEncryptionKey"]?.asBytes()
+	public func getCredentialsEncryptionKey() throws -> DataWrapper? {
+		try db
+			.prepare(
+				query: """
+					SELECT credentialEncryptionKey FROM credentialEncryptionKey LIMIT 1
+					"""
+			)
+			.get()?["credentialEncryptionKey"]?
+			.asBytes()
 
 	}
 
@@ -119,16 +121,17 @@ public class CredentialsDatabase {
 		if let encryptionMode {
 			try db.prepare(
 				query: """
-				INSERT OR REPLACE INTO credentialEncryptionMode (id, credentialEncryptionMode) VALUES (0, ?)
-				""")
-			.bindParams([
-				.string(value: encryptionMode.rawValue)
-			]).run()
+					INSERT OR REPLACE INTO credentialEncryptionMode (id, credentialEncryptionMode) VALUES (0, ?)
+					"""
+			)
+			.bindParams([.string(value: encryptionMode.rawValue)]).run()
 		} else {
 			try db.prepare(
-			query: """
-			DELETE FROM credentialEncryptionMode
-			""").run()
+				query: """
+					DELETE FROM credentialEncryptionMode
+					"""
+			)
+			.run()
 		}
 	}
 
@@ -136,31 +139,33 @@ public class CredentialsDatabase {
 		if let encryptionKey {
 			try db.prepare(
 				query: """
-				INSERT OR REPLACE INTO credentialEncryptionKey (id, credentialEncryptionKey) VALUES (0, ?)
-				""")
-			.bindParams([
-				.bytes(value: encryptionKey)
-			]).run()
+					INSERT OR REPLACE INTO credentialEncryptionKey (id, credentialEncryptionKey) VALUES (0, ?)
+					"""
+			)
+			.bindParams([.bytes(value: encryptionKey)]).run()
 		} else {
 			try db.prepare(
-				query:"""
-				DELETE FROM credentialEncryptionKey
-				"""
-			).run()
+				query: """
+					DELETE FROM credentialEncryptionKey
+					"""
+			)
+			.run()
 		}
 	}
 
 	public func deleteAllCredentials() throws {
-		try db.prepare(query:"""
-		DELETE FROM credentials
-		""")
+		try db.prepare(
+			query: """
+				DELETE FROM credentials
+				"""
+		)
 		.run()
 	}
 }
 
 private extension TaggedSqlValue {
-	struct InvalidSqlType: Error { init() {} }
+	struct InvalidSqlType: Error { init() { } }
 
 	func asString() throws -> String { if case let .string(value) = self { return value } else { throw InvalidSqlType() } }
-	func asBytes() throws -> DataWrapper { if case let .bytes(value) = self { return value } else { throw InvalidSqlType() }}
+	func asBytes() throws -> DataWrapper { if case let .bytes(value) = self { return value } else { throw InvalidSqlType() } }
 }

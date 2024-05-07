@@ -19,7 +19,7 @@ public class NotificationStorage {
 		}
 	}
 
-	public func store(pushIdentifier: String, userId: String, sseOrigin: String) async throws {
+	public func store(pushIdentifier: String, userId: String, sseOrigin: String) throws {
 
 		if var sseInfo = self.sseInfo {
 			sseInfo.pushIdentifier = pushIdentifier
@@ -27,7 +27,7 @@ public class NotificationStorage {
 			var userIds = sseInfo.userIds
 			if !userIds.contains(userId) {
 				userIds.append(userId)
-				try await self.setExtendedNotificationConfig(userId, .sender_and_subject)
+				try self.setExtendedNotificationConfig(userId, .sender_and_subject)
 			}
 			sseInfo.userIds = userIds
 			self.put(sseInfo: sseInfo)
@@ -85,13 +85,13 @@ public class NotificationStorage {
 		}
 	}
 
-	public func setExtendedNotificationConfig(_ userId: String, _ mode: TutanotaSharedFramework.ExtendedNotificationMode) async throws {
+	public func setExtendedNotificationConfig(_ userId: String, _ mode: TutanotaSharedFramework.ExtendedNotificationMode) throws {
 		self.userPreferencesProvider.setValue(mode.rawValue, forKey: "\(EXTENDED_NOTIFICATION_MODE):\(userId)")
 	}
 
-	public func getExtendedNotificationConfig(_ userId: String) async throws -> TutanotaSharedFramework.ExtendedNotificationMode {
-		let modeStr = self.userPreferencesProvider.getObject(forKey: "\(EXTENDED_NOTIFICATION_MODE):\(userId)") as! String
-		return ExtendedNotificationMode(rawValue: modeStr) ?? .no_sender_or_subject
+	public func getExtendedNotificationConfig(_ userId: String) throws -> TutanotaSharedFramework.ExtendedNotificationMode {
+		self.userPreferencesProvider.getObject(forKey: "\(EXTENDED_NOTIFICATION_MODE):\(userId)")
+			.map { mode in ExtendedNotificationMode(rawValue: mode as! String)! } ?? .no_sender_or_subject
 	}
 
 	private func put(sseInfo: SSEInfo?) {

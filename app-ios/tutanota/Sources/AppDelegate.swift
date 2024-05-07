@@ -1,5 +1,5 @@
-import UIKit
 import TutanotaSharedFramework
+import UIKit
 
 @UIApplicationMain class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 	var window: UIWindow?
@@ -46,10 +46,7 @@ import TutanotaSharedFramework
 		self.window = UIWindow(frame: UIScreen.main.bounds)
 		// FIXME should probably not crash
 		let credentialsDb = try! CredentialsDatabase(db: SqliteDb())
-		let credentialsEncryption = IosNativeCredentialsFacade(
-			keychainEncryption: keychainEncryption,
-			credentialsDb: credentialsDb
-		)
+		let credentialsEncryption = IosNativeCredentialsFacade(keychainEncryption: keychainEncryption, credentialsDb: credentialsDb)
 
 		self.viewController = ViewController(
 			crypto: IosNativeCryptoFacade(),
@@ -60,7 +57,8 @@ import TutanotaSharedFramework
 			notificaionsHandler: notificationsHandler,
 			credentialsEncryption: credentialsEncryption,
 			blobUtils: BlobUtil(),
-			contactsSynchronization: IosMobileContactsFacade(userDefault: UserDefaults.standard), userPreferencesProvider: userPreferencesProvider
+			contactsSynchronization: IosMobileContactsFacade(userDefault: UserDefaults.standard),
+			userPreferencesProvider: userPreferencesProvider
 		)
 		self.window!.rootViewController = viewController
 

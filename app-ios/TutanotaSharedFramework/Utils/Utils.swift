@@ -1,6 +1,8 @@
 import Foundation
 
-public func translate(_ key: String, default defaultValue: String) -> String { Bundle.main.localizedString(forKey: key, value: defaultValue, table: "InfoPlist") }
+public func translate(_ key: String, default defaultValue: String) -> String {
+	Bundle.main.localizedString(forKey: key, value: defaultValue, table: "InfoPlist")
+}
 
 // // keep in sync with src/native/main/NativePushServiceApp.ts
 let SYS_MODEL_VERSION = 96

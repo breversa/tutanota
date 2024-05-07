@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3D0881E62BEA588400E37D7D /* AppLockHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D51A0902BE913AB0036B966 /* AppLockHandler.swift */; };
 		3D0E44562B3C384B00F933A1 /* rand_entropy.h in Headers */ = {isa = PBXBuildFile; fileRef = 3D0E44552B3C384B00F933A1 /* rand_entropy.h */; };
 		3D0E44A42B3C3CE500F933A1 /* symmetric-shake.c in Sources */ = {isa = PBXBuildFile; fileRef = 3D0E44842B3C3CE500F933A1 /* symmetric-shake.c */; };
 		3D0E44A52B3C3CE500F933A1 /* cbd.c in Sources */ = {isa = PBXBuildFile; fileRef = 3D0E44852B3C3CE500F933A1 /* cbd.c */; };
@@ -69,7 +70,6 @@
 		3D4E3CA028EC5B43001FA9D1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D4E3C9F28EC5B43001FA9D1 /* Foundation.framework */; };
 		3D4E3CA228EC5C4F001FA9D1 /* IosSqlCipherFade.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D4E3CA128EC5C4F001FA9D1 /* IosSqlCipherFade.swift */; };
 		3D51A08F2BE90A4F0036B966 /* CancelledError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D7A107F29472A6000311B6B /* CancelledError.swift */; };
-		3D51A0912BE913AB0036B966 /* AppLockHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D51A0902BE913AB0036B966 /* AppLockHandler.swift */; };
 		3D5C6FA12B7BC15D00342E8C /* PermissionError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D5C6FA02B7BC15D00342E8C /* PermissionError.swift */; };
 		3D63A0E5233D0C1400D05259 /* TUTLogTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 3D63A0E4233D0C1400D05259 /* TUTLogTest.m */; };
 		3D648B202AB98BEA00893C8D /* argon2.h in Headers */ = {isa = PBXBuildFile; fileRef = 3D648B0F2AB98BEA00893C8D /* argon2.h */; };
@@ -995,6 +995,7 @@
 		3D74536121089D2200B16F2E /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				3D51A0902BE913AB0036B966 /* AppLockHandler.swift */,
 				3DAED2AD29A6266800806DEA /* Push */,
 				3D220203293F75B000366FD2 /* Webauthn */,
 				3D378ED22536F3A80001F1F3 /* tutanota-Bridging-Header.h */,
@@ -1779,7 +1780,6 @@
 				3DF976992BB1A2B900AF3FDE /* StructuredContactTypes.swift */,
 				3DF976572BB1A2B900AF3FDE /* TaggedSqlValue.swift */,
 				3DF9764D2BB1A2B900AF3FDE /* TutanotaSharedFramework.h */,
-				3D51A0902BE913AB0036B966 /* AppLockHandler.swift */,
 			);
 			path = TutanotaSharedFramework;
 			sourceTree = "<group>";
@@ -2497,6 +2497,7 @@
 				3DCE7AAC27200E0A0085E40D /* WebviewHacks.m in Sources */,
 				3D4A426929B6513900B10451 /* DateProvider.swift in Sources */,
 				3D0E44BA2B3C3CE500F933A1 /* xkcp_sha3.c in Sources */,
+				3D0881E62BEA588400E37D7D /* AppLockHandler.swift in Sources */,
 				3D0E44AC2B3C3CE500F933A1 /* kem.c in Sources */,
 				3D69DE002AD4427E00C6C900 /* Kyber.swift in Sources */,
 				3D0E44A62B3C3CE500F933A1 /* ntt.c in Sources */,
@@ -2590,7 +2591,6 @@
 				3DEFA1C92BE8D99A009460AE /* AppLockMethod.swift in Sources */,
 				3DF976D82BB1A2B900AF3FDE /* StructuredAddress.swift in Sources */,
 				3DF976A92BB1A2B900AF3FDE /* SyncCompletion.swift in Sources */,
-				3D51A0912BE913AB0036B966 /* AppLockHandler.swift in Sources */,
 				3DF976F72BB1A2B900AF3FDE /* PermissionType.swift in Sources */,
 				3DF976BB2BB1A2B900AF3FDE /* KeychainManager.swift in Sources */,
 				3DF9769E2BB1A2B900AF3FDE /* TUTCrypto.m in Sources */,

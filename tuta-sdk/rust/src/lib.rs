@@ -32,6 +32,10 @@ mod util;
 mod entities;
 mod instance_mapper;
 mod typed_entity_client;
+mod login_controller;
+mod login_facade;
+mod cache_storage;
+mod login_listener;
 
 uniffi::setup_scaffolding!();
 

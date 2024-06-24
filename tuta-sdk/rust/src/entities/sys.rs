@@ -1,6 +1,8 @@
 #![allow(non_snake_case, unused_imports)]
+
+use serde::{Deserialize, Serialize};
+
 use super::*;
-use serde::{Serialize, Deserialize};
 
 #[derive(uniffi::Record, Clone, Serialize, Deserialize)]
 pub struct AccountingInfo {

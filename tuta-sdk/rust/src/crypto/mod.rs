@@ -4,9 +4,9 @@
 
 
 pub mod aes;
-mod sha;
+pub mod sha;
 mod hkdf;
-mod argon2_id;
+pub mod argon2_id;
 mod ecc;
 mod kyber;
 mod rsa;

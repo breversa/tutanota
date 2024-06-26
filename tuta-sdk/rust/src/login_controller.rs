@@ -14,7 +14,7 @@ pub enum KdfType {
 
 pub struct ExternalUserKeyDeriver {
     kdf_type: KdfType,
-    salt: Vec<u8>,
+    pub salt: Vec<u8>,
 }
 
 pub struct UnencryptedCredentials {

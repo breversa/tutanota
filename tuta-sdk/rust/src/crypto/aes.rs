@@ -38,7 +38,7 @@ pub enum EnforceMac {
 pub struct Aes128Key([u8; 16]);
 
 impl Aes128Key {
-    fn as_bytes(&self) -> &[u8; 16] {
+    pub fn as_bytes(&self) -> &[u8; 16] {
         &self.0
     }
 

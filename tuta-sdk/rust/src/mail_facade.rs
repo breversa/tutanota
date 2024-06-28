@@ -1,10 +1,11 @@
 use std::borrow::ToOwned;
 use std::sync::Arc;
+
 use crate::{ApiCallError, IdTuple, TypeRef};
 use crate::element_value::ParsedEntity;
+use crate::entity_client::{EntityClientHandlers, IdType};
+#[mockall_double::double]
 use crate::entity_client::EntityClient;
-use crate::entity_client::IdType;
-
 
 /// Provides high level functions to manipulate mail entities via the REST API
 #[derive(uniffi::Object)]

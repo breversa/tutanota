@@ -1,18 +1,65 @@
 use std::sync::Arc;
 
-use crate::{ApiCallError, AuthHeadersProvider, IdTuple, RestClient, TypeRef};
+use crate::{ApiCallError, AuthHeadersProvider, IdTuple, ListLoadDirection, RestClient, TypeRef};
 use crate::element_value::{ElementValue, ParsedEntity};
-use crate::json_serializer::JsonSerializer;
+use crate::id::Id;
 use crate::json_element::RawEntity;
+use crate::json_serializer::JsonSerializer;
 use crate::metamodel::TypeModel;
 use crate::rest_client::{HttpMethod, RestClientOptions};
-use crate::rest_error::{HttpError};
-use crate::type_model_provider::{TypeModelProvider};
+use crate::rest_error::HttpError;
+use crate::type_model_provider::TypeModelProvider;
 
 /// The value used to identify an entity/instance within the backend
 pub enum IdType {
     Single(String),
     Tuple(IdTuple),
+}
+
+// TODO: A better name for this or rename the struct
+pub trait EntityClientHandlers {
+    /// Gets an entity/instance of type `type_ref` from the backend
+    async fn load(
+        &self,
+        type_ref: &TypeRef,
+        id: &IdType,
+    ) -> Result<ParsedEntity, ApiCallError>;
+    /// Returns the definition of an entity/instance type using the internal `TypeModelProvider`
+    fn get_type_model(&self, type_ref: &TypeRef) -> Result<&TypeModel, ApiCallError>;
+    /// Fetches and returns all entities/instances in a list element type
+    async fn load_all(
+        &self,
+        type_ref: &TypeRef,
+        list_id: &IdTuple,
+        start: Option<String>,
+    ) -> Result<Vec<ParsedEntity>, ApiCallError>;
+    /// Fetches and returns a specified number (`count`) of entities/instances
+    /// in a list element type starting at the index `start_id`
+    async fn load_range(
+        &self,
+        type_ref: &TypeRef,
+        list_id: &IdTuple,
+        start_id: &str,
+        count: &str,
+        list_load_direction: ListLoadDirection,
+    ) -> Result<Vec<ParsedEntity>, ApiCallError>;
+    // TODO: Check if this is the right return type
+    /// Stores a newly created entity/instance as a single element on the backend
+    async fn setup_element(&self, type_ref: &TypeRef, entity: RawEntity) -> Vec<String>;
+    /// Stores a newly created entity/instance as a part of a list element on the backend
+    async fn setup_list_element(
+        &self,
+        type_ref: &TypeRef,
+        list_id: &IdTuple,
+        entity: RawEntity,
+    ) -> Vec<String>;
+    /// Updates an existing entity/instance on the backend
+    async fn update(&self, type_ref: &TypeRef, entity: ParsedEntity, model_version: u32)
+                    -> Result<(), ApiCallError>;
+    /// Deletes an existing single entity/instance on the backend
+    async fn erase_element(&self, type_ref: &TypeRef, id: &Id) -> Result<(), ApiCallError>;
+    /// Deletes an existing entity/instance of a list element type on the backend
+    async fn erase_list_element(&self, type_ref: &TypeRef, id: IdTuple) -> Result<(), ApiCallError>;
 }
 
 /// A high level interface to manipulate entities/instances via the REST API
@@ -163,4 +210,51 @@ impl EntityClient {
     // }
     //
     // pub async fn erase_list_element(&self, type_ref: &TypeRef, id: IdTuple) {}
+}
+
+#[cfg(test)]
+mockall::mock! {
+    pub EntityClient {
+        pub fn new(
+            rest_client: Arc<dyn RestClient>,
+            json_serializer: Arc<JsonSerializer>,
+            base_url: &str,
+            auth_headers_provider: Arc<dyn AuthHeadersProvider + Send + Sync>,
+            type_model_provider: Arc<TypeModelProvider>,
+        ) -> Self;
+    }
+    impl EntityClientHandlers for EntityClient {
+        async fn load(
+            &self,
+            type_ref: &TypeRef,
+            id: &IdType,
+         ) -> Result<ParsedEntity, ApiCallError>;
+        // FIXME: Don't use static
+        fn get_type_model(&self, type_ref: &TypeRef) -> Result<&'static TypeModel, ApiCallError>;
+        async fn load_all(
+            &self,
+            type_ref: &TypeRef,
+            list_id: &IdTuple,
+            start: Option<String>,
+        ) -> Result<Vec<ParsedEntity>, ApiCallError>;
+        async fn load_range(
+            &self,
+            type_ref: &TypeRef,
+            list_id: &IdTuple,
+            start_id: &str,
+            count: &str,
+            list_load_direction: ListLoadDirection,
+        ) -> Result<Vec<ParsedEntity>, ApiCallError>;
+        async fn setup_element(&self, type_ref: &TypeRef, entity: RawEntity) -> Vec<String>;
+        async fn setup_list_element(
+            &self,
+            type_ref: &TypeRef,
+            list_id: &IdTuple,
+            entity: RawEntity,
+        ) -> Vec<String>;
+        async fn update(&self, type_ref: &TypeRef, entity: ParsedEntity, model_version: u32)
+                        -> Result<(), ApiCallError>;
+        async fn erase_element(&self, type_ref: &TypeRef, id: &Id) -> Result<(), ApiCallError>;
+        async fn erase_list_element(&self, type_ref: &TypeRef, id: IdTuple) -> Result<(), ApiCallError>;
+    }
 }

@@ -1,8 +1,13 @@
 use std::sync::Arc;
+
 use serde::Deserialize;
+
 use crate::ApiCallError;
 use crate::entities::Entity;
-use crate::entity_client::{EntityClient, IdType};
+#[mockall_double::double]
+use crate::entity_client::EntityClient;
+use crate::entity_client::EntityClientHandlers;
+use crate::entity_client::IdType;
 use crate::instance_mapper::InstanceMapper;
 
 pub struct TypedEntityClient {

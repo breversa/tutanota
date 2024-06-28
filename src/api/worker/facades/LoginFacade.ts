@@ -195,7 +195,8 @@ export class LoginFacade {
 		private readonly databaseKeyFactory: DatabaseKeyFactory,
 		private readonly argon2idFacade: Argon2idFacade,
 		private readonly noncachingEntityClient: EntityClient,
-	) {}
+	) {
+	}
 
 	init(eventBusClient: EventBusClient) {
 		this.eventBusClient = eventBusClient
@@ -489,20 +490,20 @@ export class LoginFacade {
 			session: sessionId,
 		})
 		await this.serviceExecutor
-			.delete(SecondFactorAuthService, secondFactorAuthDeleteData)
-			.catch(
-				ofClass(NotFoundError, (e) => {
-					// This can happen during some odd behavior in browser where main loop would be blocked by webauthn (hello, FF) and then we would try to
-					// cancel too late. No harm here anyway if the session is already gone.
-					console.warn("Tried to cancel second factor but it was not there anymore", e)
-				}),
-			)
-			.catch(
-				ofClass(LockedError, (e) => {
-					// Might happen if we trigger cancel and confirm at the same time.
-					console.warn("Tried to cancel second factor but it is currently locked", e)
-				}),
-			)
+				  .delete(SecondFactorAuthService, secondFactorAuthDeleteData)
+				  .catch(
+					  ofClass(NotFoundError, (e) => {
+						  // This can happen during some odd behavior in browser where main loop would be blocked by webauthn (hello, FF) and then we would try to
+						  // cancel too late. No harm here anyway if the session is already gone.
+						  console.warn("Tried to cancel second factor but it was not there anymore", e)
+					  }),
+				  )
+				  .catch(
+					  ofClass(LockedError, (e) => {
+						  // Might happen if we trigger cancel and confirm at the same time.
+						  console.warn("Tried to cancel second factor but it is currently locked", e)
+					  }),
+				  )
 		this.loginRequestSessionId = null
 		this.loggingInPromiseWrapper?.reject(new CancelledError("login cancelled"))
 	}
@@ -826,21 +827,21 @@ export class LoginFacade {
 		}
 		const queryParams: Dict = pushIdentifier == null ? {} : { pushIdentifier }
 		return this.restClient
-			.request(path, HttpMethod.DELETE, {
-				headers,
-				responseType: MediaType.Json,
-				queryParams,
-			})
-			.catch(
-				ofClass(NotAuthenticatedError, () => {
-					console.log("authentication failed => session is already closed")
-				}),
-			)
-			.catch(
-				ofClass(NotFoundError, () => {
-					console.log("authentication failed => session instance is already deleted")
-				}),
-			)
+				   .request(path, HttpMethod.DELETE, {
+					   headers,
+					   responseType: MediaType.Json,
+					   queryParams,
+				   })
+				   .catch(
+					   ofClass(NotAuthenticatedError, () => {
+						   console.log("authentication failed => session is already closed")
+					   }),
+				   )
+				   .catch(
+					   ofClass(NotFoundError, () => {
+						   console.log("authentication failed => session instance is already deleted")
+					   }),
+				   )
 	}
 
 	private getSessionElementId(accessToken: Base64Url): Id {
@@ -866,17 +867,17 @@ export class LoginFacade {
 		}
 		// we cannot use the entity client yet because this type is encrypted and we don't have an owner key yet
 		return this.restClient
-			.request(path, HttpMethod.GET, {
-				headers,
-				responseType: MediaType.Json,
-			})
-			.then((instance) => {
-				let session = JSON.parse(instance)
-				return {
-					userId: session.user,
-					accessKey: session.accessKey ? base64ToKey(session.accessKey) : null,
-				}
-			})
+				   .request(path, HttpMethod.GET, {
+					   headers,
+					   responseType: MediaType.Json,
+				   })
+				   .then((instance) => {
+					   let session = JSON.parse(instance)
+					   return {
+						   userId: session.user,
+						   accessKey: session.accessKey ? base64ToKey(session.accessKey) : null,
+					   }
+				   })
 	}
 
 	/**

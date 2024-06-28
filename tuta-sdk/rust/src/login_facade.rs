@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use base64::Engine;
-use base64::prelude::{BASE64_STANDARD, BASE64_URL_SAFE};
+use base64::prelude::{BASE64_STANDARD, BASE64_URL_SAFE_NO_PAD};
 
 use crate::{ApiCallError, IdTuple};
 use crate::ApiCallError::InternalSdkError;
@@ -13,7 +13,9 @@ use crate::crypto::argon2_id::generate_key_from_passphrase;
 use crate::crypto::sha::sha256;
 use crate::entities::{Entity, Id};
 use crate::entities::sys::{GroupInfo, Session, User};
-use crate::entity_client::{EntityClient, IdType};
+use crate::entity_client::{EntityClientHandlers, IdType};
+#[mockall_double::double]
+use crate::entity_client::EntityClient;
 use crate::instance_mapper::InstanceMapper;
 use crate::login_controller::{Credentials, ExternalUserKeyDeriver, KdfType};
 use crate::login_listener::{LoginFailReason, LoginListener};
@@ -27,7 +29,7 @@ struct LoginFacade {
     entity_client: Arc<EntityClient>,
     instance_mapper: Arc<InstanceMapper>,
     user_facade: Arc<Mutex<UserFacade>>,
-    login_listener: Arc<dyn LoginListener>,
+    login_listener: Arc<LoginListener>,
     rest_client: Arc<dyn RestClient>,
     type_model_provider: Arc<TypeModelProvider>,
     base_url: String,
@@ -109,7 +111,7 @@ impl LoginFacade {
         entity_client: Arc<EntityClient>,
         instance_mapper: Arc<InstanceMapper>,
         user_facade: Arc<Mutex<UserFacade>>,
-        login_listener: Arc<dyn LoginListener>,
+        login_listener: Arc<LoginListener>,
         rest_client: Arc<dyn RestClient>,
         type_model_provider: Arc<TypeModelProvider>,
         base_url: &str,
@@ -127,19 +129,19 @@ impl LoginFacade {
     }
 
     fn get_session_element_id(&self, access_token: &str) -> String {
-        let bytes = match BASE64_URL_SAFE.decode(access_token) {
+        let bytes = match BASE64_URL_SAFE_NO_PAD.decode(access_token) {
             Ok(bytes) => bytes,
             _ => panic!("Failed to parse session element id")
         };
-        BASE64_URL_SAFE.encode(sha256(&bytes[GENERATED_ID_BYTES_LENGTH..]))
+        BASE64_URL_SAFE_NO_PAD.encode(sha256(&bytes[GENERATED_ID_BYTES_LENGTH..]))
     }
 
     fn get_session_list_id(&self, access_token: &str) -> String {
-        let bytes = match BASE64_URL_SAFE.decode(access_token) {
+        let bytes = match BASE64_URL_SAFE_NO_PAD.decode(access_token) {
             Ok(bytes) => bytes,
-            _ => panic!("Failed to parse session list id")
+            Err(e) => panic!("Failed to parse session list id for token {}. Error {}", access_token, e)
         };
-        BASE64_URL_SAFE.encode(sha256(&bytes[0..GENERATED_ID_BYTES_LENGTH]))
+        BASE64_URL_SAFE_NO_PAD.encode(sha256(&bytes[0..GENERATED_ID_BYTES_LENGTH]))
     }
 
     fn get_session_id(&self, access_token: &str) -> IdTuple {
@@ -302,11 +304,14 @@ impl LoginFacade {
     async fn finish_resume_session(&mut self, credentials: &Credentials, passphrase_salt: [u8; 16], external_user_key_deriver: Option<ExternalUserKeyDeriver>) -> Result<ResumeSessionResult, ApiCallError> {
         let session_id = self.get_session_id(credentials.access_token.as_str());
         let session_data = self.load_session_data(credentials.access_token.as_str()).await?;
-        // Decode with base64
-        let encrypted_password = credentials.encrypted_password.as_str().as_bytes();
+        let encrypted_password = match BASE64_STANDARD.decode(credentials.encrypted_password.as_str().as_bytes()) {
+            Ok(password) => Ok(password),
+            Err(e) => Err(InternalSdkError { error_message: e.to_string() })
+        }?;
+
         let passphrase = match session_data.access_key.as_ref() {
-            Some(Aes128(key)) => aes_128_decrypt(&key, encrypted_password),
-            Some(Aes256(key)) => aes_256_decrypt(&key, encrypted_password),
+            Some(Aes128(key)) => aes_128_decrypt(&key, encrypted_password.as_slice()),
+            Some(Aes256(key)) => aes_256_decrypt(&key, encrypted_password.as_slice()),
             None => return Err(InternalSdkError { error_message: "Missing user's acess_key".to_string() })
         }.map_err(|e| InternalSdkError { error_message: e.to_string() })?;
 
@@ -381,7 +386,7 @@ impl LoginFacade {
         }
     }
 
-    pub async fn resume_session(&mut self, credentials: Credentials, external_user_key_deriver: Option<ExternalUserKeyDeriver>, database_key: Option<&[u8]>, time_range_days: Option<u64>) -> Result<ResumeSessionResult, ApiCallError> {
+    pub async fn resume_session(&mut self, credentials: Credentials, external_user_key_deriver: Option<ExternalUserKeyDeriver>) -> Result<ResumeSessionResult, ApiCallError> {
         let user_facade = self.user_facade.to_owned();
         let mut locked_user_facade = match user_facade.lock() {
             Ok(facade) => facade,
@@ -397,10 +402,10 @@ impl LoginFacade {
             });
         }
 
-        if self.async_login_state.state == "idle" {
+        if !self.async_login_state.state.eq("idle") {
             return Err(InternalSdkError {
                 error_message: format!(
-                    "Trying to resume the session for user {user_id} while the asyncLoginState is ${state}",
+                    "Trying to resume the session for user {user_id} while the asyncLoginState is {state}",
                     user_id = &credentials.user_id,
                     state = self.async_login_state.state)
             });
@@ -463,5 +468,45 @@ impl LoginFacade {
                 session_id,
             },
         }))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::{Arc, Mutex};
+
+    use crate::entity_client::MockEntityClient;
+    use crate::instance_mapper::InstanceMapper;
+    use crate::json_serializer::JsonSerializer;
+    use crate::login_controller::{Credentials, CredentialType};
+    use crate::login_facade::LoginFacade;
+    use crate::login_facade::ResumeSessionResult::Success;
+    use crate::login_listener::LoginListener;
+    use crate::rest_client::MockRestClient;
+    use crate::type_model_provider::init_type_model_provider;
+    use crate::typed_entity_client::TypedEntityClient;
+    use crate::user_facade::UserFacade;
+
+    #[tokio::test]
+    async fn test_resume_session() {
+        let type_model_provider = Arc::new(init_type_model_provider());
+        let json_serializer = Arc::new(JsonSerializer::new(Arc::clone(&type_model_provider)));
+        let rest_client = Arc::new(MockRestClient::new());
+        let instance_mapper = Arc::new(InstanceMapper::new());
+        let mock_entity_client = Arc::new(MockEntityClient::default());
+        let typed_entity_client = Arc::new(TypedEntityClient::new(Arc::clone(&mock_entity_client), Arc::clone(&instance_mapper)));
+        let user_facade = Arc::new(Mutex::new(UserFacade::new(typed_entity_client)));
+        let login_listener = Arc::new(LoginListener::new());
+        let mut login_facade = LoginFacade::new(Arc::clone(&mock_entity_client), instance_mapper, user_facade, login_listener, rest_client, type_model_provider, "base_url");
+
+        let session_result = login_facade.resume_session(Credentials {
+            login: "".to_string(),
+            user_id: "NuY8w6t----0".to_string(),
+            access_token: "Y6jJ8J-AAYABRs9QAcQUV432DdFVGQ2H6Q".to_string(),
+            encrypted_password: "AcD2OL4t+8+suW2vEVEBzM9yzOG2mt+29O5v47IzV0+cbVkA4ejxgNwVnGUEjnw4ElL8iWUgOW6Nu5bv19yaRPU=".to_string(),
+            credential_type: CredentialType::Internal,
+        }, None).await.unwrap();
+
+        assert!(matches!(session_result, Success {..}))
     }
 }

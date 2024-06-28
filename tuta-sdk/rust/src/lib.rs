@@ -8,6 +8,7 @@ use thiserror::Error;
 
 use rest_client::{RestClient, RestClientError};
 
+#[mockall_double::double]
 use crate::entity_client::EntityClient;
 use crate::instance_mapper::InstanceMapper;
 use crate::json_serializer::{InstanceMapperError, JsonSerializer};
@@ -35,6 +36,7 @@ mod typed_entity_client;
 mod login_controller;
 mod login_facade;
 mod login_listener;
+mod id;
 
 uniffi::setup_scaffolding!();
 
@@ -64,7 +66,7 @@ impl Display for TypeRef {
     }
 }
 
-trait AuthHeadersProvider {
+pub trait AuthHeadersProvider {
     /// Gets the HTTP request headers used for authorizing REST requests
     fn auth_headers(&self, model_version: u32) -> HashMap<String, String>;
 }

@@ -22,7 +22,7 @@ pipeline {
     }
 
     agent {
-        agent {
+        dockerfile {
         	filename 'ci/Desktop.jenkinsfile'
         }
     }

@@ -24,7 +24,7 @@ pipeline {
     agent {
 		dockerfile {
 			filename 'ci/Desktop.dockerfile'
-			label 'desktop'
+			label 'linux'
 		}
     }
 

@@ -22,22 +22,27 @@ pipeline {
 		 )
     }
 
-    agent {
-    	docker {
-    		image 'node:20.15.1-alpine3.20'
-//     		label 'node'
-    	}
-// 		dockerfile {
-// 			filename 'ci/Desktop.dockerfile'
-// 			label 'linux'
-// 		}
-    }
+//     agent {
+//     	docker {
+//     		image 'node:20.15.1-alpine3.20'
+// //     		label 'node'
+//     	}
+// // 		dockerfile {
+// // 			filename 'ci/Desktop.dockerfile'
+// // 			label 'linux'
+// // 		}
+//     }
+
+	agent {
+		label 'linux'
+	}
 
     stages {
 		stage('test') {
 			steps {
-				sh 'ls'
-				sh 'node -v'
+				sh  'ls -l /var'
+				sh 'ls -l /var/tmp'
+// 				sh 'node -v'
 			} // steps
 		} // stage
 	} // stages

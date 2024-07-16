@@ -20,8 +20,8 @@ pipeline {
 			steps {
 			    sh 'printenv'
 			    script  {
-			        def ci = sh(returnStdout: true, script: "sudo podman run -t -d node")
-			        sh("docker exec -t $ci node -v")
+			        def ci = sh(returnStdout: true, script: "sudo podman run -t -d hello-world")
+// 			        sh("docker exec -t $ci node -v")
 			    }
 			} // steps
 		} // stage

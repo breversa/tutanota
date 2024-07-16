@@ -22,14 +22,17 @@ pipeline {
     }
 
     agent {
-		label 'linux'
+		dockerfile {
+			filename 'ci/Desktop.dockerfile'
+			label 'desktop'
+		}
     }
 
     stages {
 		stage('test') {
 			steps {
-				sh 'podman build -t test ci'
-				sh 'podman run test -it \'ls\''
+				sh 'ls'
+				sh 'node -v'
 			} // steps
 		} // stage
 	} // stages

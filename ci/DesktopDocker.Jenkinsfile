@@ -14,7 +14,7 @@ pipeline {
 		stage('docker') {
 			agent {
 				docker {
-					image 'node:20.15.1-alpine3.20'
+					image 'node'
 					label 'linux'
 				} // docker
 			} // agent

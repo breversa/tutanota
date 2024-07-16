@@ -23,10 +23,14 @@ pipeline {
     }
 
     agent {
-		dockerfile {
-			filename 'ci/Desktop.dockerfile'
-			label 'linux'
-		}
+    	docker {
+    		image 'node:20.15.1-alpine3.20'
+//     		label 'node'
+    	}
+// 		dockerfile {
+// 			filename 'ci/Desktop.dockerfile'
+// 			label 'linux'
+// 		}
     }
 
     stages {

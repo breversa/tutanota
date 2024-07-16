@@ -38,13 +38,23 @@ pipeline {
 	}
 
     stages {
-		stage('test') {
+		stage('ls') {
 			steps {
 				sh  'ls -l /var'
 				sh 'ls -l /var/tmp'
 // 				sh 'node -v'
 			} // steps
 		} // stage
+		stage('docker') {
+			agent  {
+				docker {
+					image 'node:20.15.1-alpine3.20'
+				}
+			}
+			steps {
+				sh 'node -v'
+			}
+		}
 	} // stages
 } // pipeline
 

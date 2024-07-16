@@ -43,8 +43,10 @@ pipeline {
 // 				sh  'ls -l /var'
 // 				sh 'ls -l /var/tmp'
 				sh 'docker -v'
-				docker.image("node").inside {
-					sh 'node -v'
+				script {
+					docker.image("node").inside {
+						sh 'node -v'
+					}
 				}
 // 				sh 'docker stop --all -t 1'
 // 				sh 'docker rm --all'

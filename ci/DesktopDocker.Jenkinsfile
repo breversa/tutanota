@@ -43,15 +43,18 @@ pipeline {
 // 				sh  'ls -l /var'
 // 				sh 'ls -l /var/tmp'
 				sh 'docker -v'
-				sh 'docker stop --all -t 1'
-				sh 'docker rm --all'
-				script {
-					def cid = sh(returnStdout: true, script: 'docker run -t -d -u 7009:7009 node:20.15.1-alpine3.20 cat').trim()
-					sh 'docker ps'
-					sh "docker top $cid"
-					sh "docker top $cid pid seccomp args %C"
-					sh "docker top $cid -eo pid,comm"
+				docker.image("node").inside {
+					sh 'node -v'
 				}
+// 				sh 'docker stop --all -t 1'
+// 				sh 'docker rm --all'
+// 				script {
+// 					def cid = sh(returnStdout: true, script: 'docker run -t -d -u 7009:7009 node:20.15.1-alpine3.20 cat').trim()
+// 					sh 'docker ps'
+// 					sh "docker top $cid"
+// 					sh "docker top $cid pid seccomp args %C"
+// 					sh "docker top $cid -eo pid,comm"
+// 				}
 // 				sh 'node -v'
 			} // steps
 		} // stage

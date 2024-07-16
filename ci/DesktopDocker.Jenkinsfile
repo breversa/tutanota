@@ -42,6 +42,7 @@ pipeline {
 			steps {
 				sh  'ls -l /var'
 				sh 'ls -l /var/tmp'
+				sh 'docker stop --all'
 				sh 'docker rm --all'
 				script {
 					def cid = sh(returnStdout: true, script: 'docker run -t -d -u 7009:7009 node:20.15.1-alpine3.20 cat')

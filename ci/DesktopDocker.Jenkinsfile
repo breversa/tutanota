@@ -12,14 +12,17 @@ pipeline {
 
     stages {
 		stage('docker') {
-			agent {
-				docker {
-					image 'node'
-					label 'linux'
-				} // docker
-			} // agent
+// 			agent {
+// 				docker {
+// 					image 'node'
+// 					label 'linux'
+// 				} // docker
+// 			} // agent
 			steps {
-				sh 'node -v'
+			    script  {
+			        def ci = sh(returnStdout: true, script: "docker run -t -d node")
+			        sh("docker exec -t $ci node -v")
+			    }
 			} // steps
 		} // stage
 	} // stages

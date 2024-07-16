@@ -3,7 +3,7 @@ pipeline {
     	// on m1 macs, this is a symlink that must be updated. see wiki.
         NODE_MAC_PATH = '/usr/local/opt/node@20/bin/'
         VERSION = sh(returnStdout: true, script: "${env.NODE_PATH}/node -p -e \"require('./package.json').version\" | tr -d \"\n\"")
-        TMPDIR=/tmp
+        TMPDIR='/tmp'
     }
 
 	agent {
@@ -12,7 +12,7 @@ pipeline {
 
     stages {
 		stage('docker') {
-			agent  {
+			agent {
 				docker {
 					image 'node:20.15.1-alpine3.20'
 					label 'linux'

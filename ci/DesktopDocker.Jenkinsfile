@@ -42,6 +42,11 @@ pipeline {
 			steps {
 				sh  'ls -l /var'
 				sh 'ls -l /var/tmp'
+				script {
+					def cid = sh 'docker run -t -d -u 7009:7009 node:20.15.1-alpine3.20 cat'
+					sh 'docker ps'
+					sh "docker top $cid"
+				}
 // 				sh 'node -v'
 			} // steps
 		} // stage

@@ -19,6 +19,9 @@ pipeline {
 // 			} // agent
 			steps {
 			    sh 'printenv'
+			    sh 'which crun'
+			    sh 'ls /sys/fs/cgroup'
+			    sh 'findmnt -R /sys/fs/cgroup'
 			    script  {
 			        def ci = sh(returnStdout: true, script: "sudo podman run -t -d hello-world")
 // 			        sh("docker exec -t $ci node -v")

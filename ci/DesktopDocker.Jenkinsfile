@@ -18,12 +18,13 @@ pipeline {
 // 				} // docker
 // 			} // agent
 			steps {
+				sh 'whoami'
 			    sh 'printenv'
-			    sh 'which crun'
+			    sh 'groups'
 			    sh 'ls /sys/fs/cgroup/machine.slice'
 			    sh 'findmnt -R /sys/fs/cgroup'
 			    script  {
-			        def ci = sh(returnStdout: true, script: "sudo podman run -t -d hello-world")
+			        def ci = sh(returnStdout: true, script: "podman ps --all")
 // 			        sh("docker exec -t $ci node -v")
 			    }
 			} // steps

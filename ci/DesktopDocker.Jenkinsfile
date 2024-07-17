@@ -20,7 +20,7 @@ pipeline {
 			steps {
 			    sh 'printenv'
 			    sh 'which crun'
-			    sh 'ls /sys/fs/cgroup'
+			    sh 'ls /sys/fs/cgroup/machine.slice'
 			    sh 'findmnt -R /sys/fs/cgroup'
 			    script  {
 			        def ci = sh(returnStdout: true, script: "sudo podman run -t -d hello-world")

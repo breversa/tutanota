@@ -357,6 +357,7 @@ export async function prepareAssets(stage, host, version, domainConfigs) {
 
 	// write empty file
 	await fs.writeFile("build/polyfill.js", "")
+	await fs.writeFile("build-calendar-app/polyfill.js", "")
 
 	/** @type {EnvMode[]} */
 	const modes = ["Browser", "App", "Desktop"]

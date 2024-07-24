@@ -1,7 +1,5 @@
 #  XCodeGen configuration file
 name: tutanota # Also known as tutanooota (while testing xcodegen)
-include:
-  - path: "../xcodegen_common.yml"
 options:
   useBaseInternationalization: true
   schemePathPrefix: "../" # Recommended for workspace based projects by XCodeGen devs
@@ -10,6 +8,10 @@ settings:
     PRODUCT_NAME: "tutanota"
     DEVELOPMENT_TEAM: "JKCH89Z3M9" # Tutao GmbH
     ASSETCATALOG_COMPILER_APPICON_NAME: "AppIcon"
+    bundleIdPrefix: "de.tutao.tutanota"
+# Include MUST come after settings because it depends on bundleIdPrefix
+include:
+  - path: "../xcodegen_common.yml"
 settingGroups:
   codeSigning:
     base:
@@ -19,7 +21,7 @@ settingGroups:
       Debug Production:
         CODE_SIGN_ENTITLEMENTS: "$(TARGET_NAME)/$(TARGET_NAME).entitlements"
       Release Development:
-        PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]: "match AdHoc de.tutao.tutanota.$(PRODUCT_NAME)"
+        PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]: "match AdHoc ${bundleIdPrefix}.$(PRODUCT_NAME)"
       Release Staging:
         PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]: "match AdHoc $(PRODUCT_BUNDLE_IDENTIFIER)"
       Release Production:
@@ -43,14 +45,11 @@ targets:
         excludes:
           [
             "tutanota-web",
-            "Sources/Crypto/liboqs",
-            "Sources/Crypto/phc-winner-argon2",
             "Sources/sdktest.swift",
           ]
         compilerFlags:
           [
-            "-I$(BUILD_DIR)/liboqs-include",
-            "-Itutanota/Sources/Crypto/phc-winner-argon2/include",
+            "-ITutanotaSharedFramework/Crypto/phc-winner-argon2/include",
           ]
         # XCode will not resolve symbolic links when adding a folder reference, so we will just use a relative path
       - path: "../build"
@@ -67,24 +66,17 @@ targets:
         SWIFT_OBJC_BRIDGING_HEADER: "tutanota/Sources/tutanota-Bridging-Header.h"
         HEADER_SEARCH_PATHS:
           [
-            "$(BUILD_DIR)/liboqs-include",
-            "${PROJECT_DIR}/tutanota/include",
-            "tutanota/Sources/Crypto/phc-winner-argon2/include",
+            "TutanotaSharedFramework/Crypto/phc-winner-argon2/include",
           ]
         CLANG_CXX_LANGUAGE_STANDARD: "gnu++14"
         GCC_PREPROCESSOR_DEFINITIONS:
-          ["SQLITE_HAS_CODEC=1", "OQS_ENABLE_KEM_kyber_1024=1", "$(inherited)"]
+          ["SQLITE_HAS_CODEC=1", "$(inherited)"]
         OTHER_CFLAGS[arch=*]:
           [
             "-DSQLITE_HAS_CODEC",
             "-DSQLITE_TEMP_STORE=3",
             "-DSQLCIPHER_CRYPTO_CC",
             "-DNDEBUG",
-            "-DKYBER_K=4",
-            "-DOQS_VERSION_TEXT=\\\"whatever\\\"",
-            "-DOQS_ENABLE_KEM_kyber_1024=1",
-            "-DOQS_DIST_BUILD=1",
-            "-DOQS_ENABLE_KEM_KYBER=1",
           ]
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: "NO"
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: "NO"
@@ -125,54 +117,7 @@ targets:
         embed: false
       - framework: StoreKit.framework
         embed: false
-      - target: oqs
       - target: argon2
-  oqs:
-    type: "library.static"
-    settings:
-      PRODUCT_NAME: "oqs"
-      # Don't show warnings for vendored code
-      WARNING_CFLAGS: "-w"
-    sources:
-      - path: "tutanota/Sources/Crypto/liboqs"
-        includes:
-          [
-            "src/kem/kem.c",
-            "src/kem/kyber/pqcrystals-kyber_kyber1024_ref/kem.c",
-            "src/kem/kyber/pqcrystals-kyber_kyber1024_ref/verify.c",
-            "src/kem/kyber/pqcrystals-kyber_kyber1024_ref/indcpa.c",
-            "src/kem/kyber/pqcrystals-kyber_kyber1024_ref/symmetric-shake.c",
-            "src/kem/kyber/pqcrystals-kyber_kyber1024_ref/poly.c",
-            "src/kem/kyber/pqcrystals-kyber_kyber1024_ref/polyvec.c",
-            "src/kem/kyber/pqcrystals-kyber_kyber1024_ref/cbd.c",
-            "src/kem/kyber/pqcrystals-kyber_kyber1024_ref/ntt.c",
-            "src/kem/kyber/pqcrystals-kyber_kyber1024_ref/reduce.c",
-            "src/kem/kyber/kem_kyber_1024.c",
-            "src/common/pqclean_shims/fips202.c",
-            "src/common/sha3/xkcp_sha3.c",
-            "src/common/sha3/xkcp_low/KeccakP-1600/plain-64bits/KeccakP-1600-opt64.c",
-            "src/common/common.c",
-          ]
-        compilerFlags:
-          [
-            "-I$(BUILD_DIR)/liboqs-include",
-            "-Itutanota/Sources/Crypto/liboqs/src/common/pqclean_shims",
-            "-Itutanota/Sources/Crypto/liboqs/src/kem/kyber/pqcrystals-kyber_kyber1024_ref",
-            "-Itutanota/Sources/Crypto/liboqs/src/common/pqclean_shims",
-            "-DOQS_VERSION_TEXT=\\\"tutakyber\\\"",
-            "-DOQS_ENABLE_KEM_kyber_1024=1",
-            "-DOQS_ENABLE_KEM_KYBER=1",
-            "-DOQS_DIST_BUILD=1",
-            "-DKYBER_K=4",
-          ]
-    platform: "iOS"
-    preBuildScripts:
-      - path: "buildScripts/generate-include.sh"
-        name: "Generate liboqs' headers"
-        shell: "/bin/sh"
-        showEnvVars: true
-        basedOnDependencyAnalysis: true
-        outputFiles: ["$(BUILD_DIR)/liboqs-include"]
   argon2:
     type: "library.static"
     settings:
@@ -180,7 +125,7 @@ targets:
       # Don't show warnings for vendored code
       WARNING_CFLAGS: "-w"
     sources:
-      - path: "tutanota/Sources/Crypto/phc-winner-argon2"
+      - path: "TutanotaSharedFramework/Crypto/phc-winner-argon2"
         includes:
           [
             "src/argon2.c",
@@ -192,7 +137,7 @@ targets:
           ]
         compilerFlags:
           [
-            "-Itutanota/Sources/Crypto/phc-winner-argon2/include",
+            "-ITutanotaSharedFramework/Crypto/phc-winner-argon2/include",
             "-DARGON2_NO_THREADS",
             "-O3",
           ]
@@ -205,7 +150,6 @@ targets:
         excludes: ["CompatibilityTest.m"]
       - path: "tutanotaTests"
         includes: ["CompatibilityTest.m"]
-        compilerFlags: "-Itutanota/include"
     settings:
       ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: "YES"
       CODE_SIGN_STYLE: "Automatic"
@@ -216,9 +160,7 @@ targets:
       PRODUCT_NAME: "$(TARGET_NAME)"
       HEADER_SEARCH_PATHS:
         [
-          "$(BUILD_DIR)/liboqs-include",
-          "${PROJECT_DIR}/tutanota/include",
-          "tutanota/Sources/Crypto/phc-winner-argon2/include",
+          "TutanotaSharedFramework/Crypto/phc-winner-argon2/include",
         ]
       TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Tuta D.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tuta D"
       SWIFT_OBJC_BRIDGING_HEADER: "tutanotaTests/tutanotaTests-Bridging-Header.h"
@@ -237,7 +179,10 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: "$(inherited).TutanotaShareExtension"
         IPHONEOS_DEPLOYMENT_TARGET: "15.5" # Why?
         INFOPLIST_FILE: "TutanotaShareExtension/Info.plist"
-        HEADER_SEARCH_PATHS: '"${PROJECT_DIR}/tutanota/include"/**'
+        HEADER_SEARCH_PATHS:           
+          [
+            "-I$(PROJECT_DIR)/TutanotaSharedFramework/Crypto/phc-winner-argon2/include",
+          ]
         MARKETING_VERSION: "3.104.5"
         CLANG_CXX_LANGUAGE_STANDARD: "gnu++17"
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: "NO"
@@ -256,10 +201,22 @@ targets:
       - path: "TutanotaSharedFramework"
         headerVisibility: "public"
         # Exclude TUTBigNum.h so we change it's visiblity to 'project' in another source
-        excludes: ["Crypto/TUTBigNum.h", "*.md", "Sql/sqlite3.c"]
+        excludes: [
+            "Crypto/TUTBigNum.h", 
+            "*.md", 
+            "Sql/sqlite3.c", 
+            "Crypto/phc-winner-argon2",
+          ]
+        compilerFlags:
+          [
+            "-I$(PROJECT_DIR)/TutanotaSharedFramework/Crypto/phc-winner-argon2/include",
+          ]
       - path: "TutanotaSharedFramework/Crypto"
         includes: ["TUTBigNum.h"]
         headerVisibility: "project"
+      - path: "TutanotaSharedFramework/Crypto/phc-winner-argon2/include/"
+        includes: ["argon2.h"]
+        headerVisibility: "public"
       - path: "TutanotaSharedFramework/Sql"
         # Don't show warnings for vendored code
         includes: ["sqlite3.c"]
@@ -268,14 +225,21 @@ targets:
       PRODUCT_NAME: "TutanotaSharedFramework"
       PRODUCT_BUNDLE_IDENTIFIER: "$(inherited).TutanotaSharedFramework"
       INSTALL_PATH: "$(LOCAL_LIBRARY_DIR)/Frameworks"
-      GCC_PREPROCESSOR_DEFINITIONS: ["SQLITE_HAS_CODEC=1", "$(inherited)"]
-      OTHER_CFLAGS:
+      HEADER_SEARCH_PATHS:
+        [
+          "TutanotaSharedFramework/Crypto/phc-winner-argon2/include",
+        ]   
+      OTHER_CFLAGS[arch=*]:
         [
           "-DSQLITE_HAS_CODEC",
           "-DSQLITE_TEMP_STORE=3",
-          "-DNDEBUG",
           "-DSQLCIPHER_CRYPTO_CC",
+          "-DNDEBUG",
         ]
+      GCC_PREPROCESSOR_DEFINITIONS: [
+        "SQLITE_HAS_CODEC=1", 
+        "$(inherited)"
+      ]
       APPLICATION_EXTENSION_API_ONLY: "YES"
       ENABLE_USER_SCRIPT_SANDBOXING: "YES"
       SKIP_INSTALL: "YES"
@@ -294,7 +258,6 @@ targets:
       MARKETING_VERSION: "1.0"
       VERSIONING_SYSTEM: "apple-generic"
       GCC_NO_COMMON_BLOCKS: "YES"
-      CLANG_CXX_LANGUAGE_STANDARD: "gnu++20"
       ENABLE_MODULE_VERIFIER: "YES"
       MODULE_VERIFIER_SUPPORTED_LANGUAGES: "objective-c objective-c++"
       MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS: "$(GCC_C_LANGUAGE_STANDARD) $(CLANG_CXX_LANGUAGE_STANDARD)"
@@ -306,6 +269,10 @@ targets:
         product: "DictionaryCoding"
       - framework: libcrypto.xcframework
         embed: false
+      - framework: tutasdk.framework
+        embed: false
+      - target: argon2
+        link: true
   TutanotaNotificationExtension:
     type: "app-extension"
     platform: "iOS"

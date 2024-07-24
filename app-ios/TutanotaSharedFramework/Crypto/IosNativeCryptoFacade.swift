@@ -1,12 +1,13 @@
-import TutanotaSharedFramework
+import tutasdk
 
 /// High-level cryptographic operations API
 /// Is an actor because we want to have serial execution for all the cryptogaphic operations, doing them in parallel is usually too
 /// much for the device.
-actor IosNativeCryptoFacade: NativeCryptoFacade {
+public actor IosNativeCryptoFacade: NativeCryptoFacade {
 	private let crypto: TUTCrypto = TUTCrypto()
+	public init() {}
 
-	func aesEncryptFile(_ key: DataWrapper, _ fileUri: String, _ iv: DataWrapper) async throws -> EncryptedFileInfo {
+	public func aesEncryptFile(_ key: DataWrapper, _ fileUri: String, _ iv: DataWrapper) async throws -> EncryptedFileInfo {
 
 		if !FileUtils.fileExists(atPath: fileUri) { throw CryptoError(message: "File to encrypt does not exist \(fileUri)") }
 		let encryptedFolder = try FileUtils.getEncryptedFolder()
@@ -21,7 +22,7 @@ actor IosNativeCryptoFacade: NativeCryptoFacade {
 		return result
 	}
 
-	func aesDecryptFile(_ key: DataWrapper, _ fileUri: String) async throws -> String {
+	public func aesDecryptFile(_ key: DataWrapper, _ fileUri: String) async throws -> String {
 		if !FileUtils.fileExists(atPath: fileUri) { throw CryptoError(message: "File to decrypt does not exist") }
 
 		let encryptedData = try Data(contentsOf: URL(fileURLWithPath: fileUri))
@@ -35,15 +36,15 @@ actor IosNativeCryptoFacade: NativeCryptoFacade {
 		return plaintextPath
 	}
 
-	func rsaEncrypt(_ publicKey: RsaPublicKey, _ data: DataWrapper, _ seed: DataWrapper) async throws -> DataWrapper {
+	public func rsaEncrypt(_ publicKey: RsaPublicKey, _ data: DataWrapper, _ seed: DataWrapper) async throws -> DataWrapper {
 		try self.crypto.rsaEncrypt(with: publicKey.toObjcKey(), data: data.data, seed: seed.data).wrap()
 	}
 
-	func rsaDecrypt(_ privateKey: RsaPrivateKey, _ data: DataWrapper) async throws -> DataWrapper {
+	public func rsaDecrypt(_ privateKey: RsaPrivateKey, _ data: DataWrapper) async throws -> DataWrapper {
 		try self.crypto.rsaDecrypt(with: privateKey.toObjcKey(), data: data.data).wrap()
 	}
 
-	func argon2idHashRaw(_ password: DataWrapper, _ salt: DataWrapper, _ timeCost: Int, _ memoryCost: Int, _ parallelism: Int, _ hashLength: Int) async throws
+	public func argon2idHashRaw(_ password: DataWrapper, _ salt: DataWrapper, _ timeCost: Int, _ memoryCost: Int, _ parallelism: Int, _ hashLength: Int) async throws
 		-> DataWrapper
 	{
 		try generateArgon2idHash(
@@ -57,14 +58,27 @@ actor IosNativeCryptoFacade: NativeCryptoFacade {
 		.wrap()
 	}
 
-	func generateKyberKeypair(_ seed: DataWrapper) async throws -> KyberKeyPair { tutanota.generateKyberKeypair(withSeed: seed.data) }
-
-	func kyberEncapsulate(_ publicKey: KyberPublicKey, _ seed: DataWrapper) async throws -> KyberEncapsulation {
-		try tutanota.kyberEncapsulate(publicKey: publicKey, withSeed: seed.data)
+	public func generateKyberKeypair(_ seed: DataWrapper) async throws -> KyberKeyPair {
+		let keypair = tutasdk.generateKyberKeypair()
+		return KyberKeyPair(publicKey: KyberPublicKey(raw: keypair.publicKey.wrap()), privateKey: KyberPrivateKey(raw: keypair.privateKey.wrap()))
 	}
 
-	func kyberDecapsulate(_ privateKey: KyberPrivateKey, _ ciphertext: DataWrapper) async throws -> DataWrapper {
-		try tutanota.kyberDecapsulate(ciphertext: ciphertext.data, withPrivateKey: privateKey)
+	public func kyberEncapsulate(_ publicKey: KyberPublicKey, _ seed: DataWrapper) async throws -> KyberEncapsulation {
+		do {
+			let sdkEncapsulation = try tutasdk.kyberEncapsulateWithPubKey(publicKeyBytes: publicKey.raw.data)
+			return KyberEncapsulation(ciphertext: sdkEncapsulation.ciphertext.wrap(), sharedSecret: sdkEncapsulation.sharedSecret.wrap())
+		} catch {
+			throw CryptoError(message: error.localizedDescription)
+		}
+	}
+
+	public func kyberDecapsulate(_ privateKey: KyberPrivateKey, _ ciphertext: DataWrapper) async throws -> DataWrapper {
+		do {
+			return try tutasdk.kyberDecapsulateWithPrivKey(privateKeyBytes: privateKey.raw.data, ciphertext: ciphertext.data).wrap()
+		} catch {
+			throw CryptoError(message: error.localizedDescription)
+		}
+
 	}
 }
 

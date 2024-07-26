@@ -207,12 +207,12 @@ export class CalendarModel {
 		if (!this.logins.isInternalUserLoggedIn() || findFirstPrivateCalendar(calendarInfos)) {
 			return calendarInfos
 		} else {
-			await this.createCalendar("", null, [])
+			await this.createCalendar("", null, [], null)
 			return await this.loadCalendarInfos(progressMonitor)
 		}
 	}
 
-	async createCalendar(name: string, color: string | null, alarms: AlarmInterval[]): Promise<void> {
+	async createCalendar(name: string, color: string | null, alarms: AlarmInterval[], sourceUrl: string | null): Promise<void> {
 		// when a calendar group is added, a group membership is added to the user. we might miss this websocket event
 		// during startup if the websocket is not connected fast enough. Therefore, we explicitly update the user
 		// this should be removed once we handle missed events during startup
@@ -227,9 +227,34 @@ export class CalendarModel {
 				color: color,
 				name: null,
 				defaultAlarmsList: serializedAlarms,
+				sourceUrl,
 			})
+
 			userSettingsGroupRoot.groupSettings.push(newGroupSettings)
 			await this.entityClient.update(userSettingsGroupRoot)
+
+			this.handleUrlSubscription(sourceUrl)
+		}
+	}
+
+	private async handleUrlSubscription(url: string | null) {
+		if (!url) return
+		try {
+			const response = await fetch(url)
+
+			if (!response.ok) throw new Error(`Response status: ${response.status}`)
+			if (!response.body) throw new Error(`Failed to get response.body: ${response}`)
+
+			const reader = response.body.pipeThrough(new TextDecoderStream()).getReader()
+			let processingUrl = true
+			while (processingUrl) {
+				let { value, done } = await reader.read()
+				processingUrl = !done
+				if (!processingUrl) break
+				console.log(value)
+			}
+		} catch (e) {
+			console.error(e)
 		}
 	}
 
@@ -297,7 +322,7 @@ export class CalendarModel {
 			if (calendars.size > 0) {
 				return calendars
 			} else {
-				await this.createCalendar("", null, [])
+				await this.createCalendar("", null, [], null)
 				return this.calendarInfos.reload()
 			}
 		})

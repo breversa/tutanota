@@ -151,9 +151,9 @@ export class SearchView extends BaseTopLevelView implements TopLevelView<SearchV
 										m(NavButton, {
 											label: "emails_label",
 											icon: () => BootIcons.Mail,
-											href: "#",
+											href: this.searchViewModel.getUrlFromSearchCategory(SearchCategoryTypes.mail),
 											click: () => {
-												this.switchCategory(SearchCategoryTypes.mail)
+												this.viewSlider.focus(this.resultListColumn)
 											},
 											isSelectedPrefix: "/search/mail",
 											colors: NavButtonColor.Nav,
@@ -165,9 +165,9 @@ export class SearchView extends BaseTopLevelView implements TopLevelView<SearchV
 										m(NavButton, {
 											label: "contacts_label",
 											icon: () => BootIcons.Contacts,
-											href: "#",
+											href: this.searchViewModel.getUrlFromSearchCategory(SearchCategoryTypes.contact),
 											click: () => {
-												this.switchCategory(SearchCategoryTypes.contact)
+												this.viewSlider.focus(this.resultListColumn)
 											},
 											isSelectedPrefix: "/search/contact",
 											colors: NavButtonColor.Nav,
@@ -179,9 +179,9 @@ export class SearchView extends BaseTopLevelView implements TopLevelView<SearchV
 										m(NavButton, {
 											label: "calendar_label",
 											icon: () => BootIcons.Calendar,
-											href: "#",
+											href: this.searchViewModel.getUrlFromSearchCategory(SearchCategoryTypes.calendar),
 											click: () => {
-												this.switchCategory(SearchCategoryTypes.calendar)
+												this.viewSlider.focus(this.resultListColumn)
 											},
 											isSelectedPrefix: "/search/calendar",
 											colors: NavButtonColor.Nav,
@@ -241,11 +241,6 @@ export class SearchView extends BaseTopLevelView implements TopLevelView<SearchV
 			},
 		)
 		this.viewSlider = new ViewSlider([this.folderColumn, this.resultListColumn, this.resultDetailsColumn])
-	}
-
-	private switchCategory(category: SearchCategoryTypes): void {
-		this.searchViewModel.switchSearchCategory(category)
-		this.viewSlider.focus(this.resultListColumn)
 	}
 
 	private getResultColumnLayout() {
